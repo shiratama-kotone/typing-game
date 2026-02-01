@@ -1,15 +1,13 @@
 /* =========================
-   単語データ（words.json不要）
+   単語データ読み込み
 ========================= */
-const words = [
-  { word:"一期一会", kana:["い","ち","ご","い","ち","え"] },
-  { word:"関西", kana:["か","ん","さ","い"] },
-  { word:"スーパー", kana:["す","ー","ぱ","ー"] }
-  // 必要ならここに追加
-];
+let words = [];
+fetch("./words.json")
+  .then(r => r.json())
+  .then(json => { words = json; });
 
 /* =========================
-   ローマ字変換（romaji.js相当）
+   ローマ字変換
 ========================= */
 function kanaToRomajiPatterns(kanaArray){
   const map = {
@@ -40,16 +38,7 @@ function kanaToRomajiPatterns(kanaArray){
     "びゃ":"bya","びゅ":"byu","びょ":"byo",
     "ぴゃ":"pya","ぴゅ":"pyu","ぴょ":"pyo"
   };
-
   return kanaArray.map(k=>map[k]||k);
-}
-
-function isCorrectInput(buffer, patterns){
-  return patterns.some(p=>p.startsWith(buffer));
-}
-
-function isCompleteInput(buffer, patterns){
-  return patterns.includes(buffer);
 }
 
 /* =========================
@@ -81,44 +70,35 @@ const RANKS = [
 /* =========================
    ゲーム状態
 ========================= */
-let currentWord = null;
-let romajiPatterns = [];
-let inputBuffer = "";
-let correctCount = 0;
-let missCount = 0;
-let startTime = 0;
-let timerId = null;
-let timeLimit = 60;
-
-let mode = "normal";
-let currentRank = null;
+let currentWord=null;
+let romajiPatterns=[];
+let inputBuffer="";
+let correctCount=0;
+let missCount=0;
+let startTime=0;
+let timerId=null;
+let timeLimit=60;
+let mode="normal";
+let currentRank=null;
 
 /* =========================
    成績保存
 ========================= */
 function loadSave(){ return JSON.parse(localStorage.getItem("typingSave")||"{}"); }
-function saveResult(rank, score){
-  const save = loadSave();
-  if(!save[rank]||save[rank]<score){ save[rank]=score; }
-  localStorage.setItem("typingSave", JSON.stringify(save));
-}
+function saveResult(rank, score){ const save=loadSave(); if(!save[rank]||save[rank]<score) save[rank]=score; localStorage.setItem("typingSave",JSON.stringify(save)); }
 
 /* =========================
    段位解放
 ========================= */
 function loadUnlockedRank(){ return parseInt(localStorage.getItem("unlockedRank")||"0"); }
-function unlockNextRank(){ let u=loadUnlockedRank(); if(u<RANKS.length-1){ localStorage.setItem("unlockedRank",u+1); } }
-function updateRankUI(){
-  const unlocked=loadUnlockedRank();
-  document.querySelectorAll(".rank").forEach((el,i)=>{
-    el.style.filter = i<=unlocked?"brightness(100%)":"brightness(30%)";
-  });
-}
+function unlockNextRank(){ let u=loadUnlockedRank(); if(u<RANKS.length-1) localStorage.setItem("unlockedRank",u+1); }
+function updateRankUI(){ const unlocked=loadUnlockedRank(); document.querySelectorAll(".rank").forEach((el,i)=>{ el.style.filter=i<=unlocked?"brightness(100%)":"brightness(30%)"; }); }
 
 /* =========================
    単語処理
 ========================= */
 function nextWord(){
+  if(words.length===0) return;
   currentWord = words[Math.floor(Math.random()*words.length)];
   romajiPatterns = kanaToRomajiPatterns(currentWord.kana);
   inputBuffer="";
@@ -132,7 +112,6 @@ function nextWord(){
 function startGame(selectedRank=null){
   mode = selectedRank?"rank":"normal";
   currentRank=selectedRank;
-
   correctCount=0;
   missCount=0;
 
@@ -143,7 +122,6 @@ function startGame(selectedRank=null){
   startTime=Date.now();
   updateTimer();
   nextWord();
-
   timerId=setInterval(updateTimer,100);
 }
 
@@ -162,15 +140,15 @@ function updateTimer(){
 }
 
 /* =========================
-   入力
+   入力処理
 ========================= */
 document.addEventListener("keydown", e=>{
   if(currentWord && e.key.length===1){
     inputBuffer += e.key.toLowerCase();
-    if(isCorrectInput(inputBuffer, romajiPatterns)){
+    if(romajiPatterns.some(p=>p.startsWith(inputBuffer))){
       document.getElementById("input").textContent=inputBuffer;
       correctCount++;
-      if(isCompleteInput(inputBuffer, romajiPatterns)) nextWord();
+      if(romajiPatterns.includes(inputBuffer)) nextWord();
     }else{
       missCount++;
       inputBuffer=inputBuffer.slice(0,-1);
@@ -207,7 +185,7 @@ function endGame(forceFail=true){
 }
 
 /* =========================
-   段位選択キー操作
+   段位選択操作
 ========================= */
 let selectedRankIndex=0;
 const rankElements=document.querySelectorAll(".rank");
@@ -221,12 +199,7 @@ document.addEventListener("keydown", e=>{
   if(!rankSelectEl.classList.contains("hidden")){
     if(e.key==="ArrowRight"){ selectedRankIndex=Math.min(rankElements.length-1,selectedRankIndex+1); updateRankHighlight(); }
     else if(e.key==="ArrowLeft"){ selectedRankIndex=Math.max(0,selectedRankIndex-1); updateRankHighlight(); }
-    else if(e.key==="Enter"){
-      startGame(RANKS[selectedRankIndex]);
-      rankSelectEl.style.transition="opacity 0.5s";
-      rankSelectEl.style.opacity=0;
-      setTimeout(()=>rankSelectEl.classList.add("hidden"),500);
-    }
+    else if(e.key==="Enter"){ startGame(RANKS[selectedRankIndex]); rankSelectEl.style.transition="opacity 0.5s"; rankSelectEl.style.opacity=0; setTimeout(()=>rankSelectEl.classList.add("hidden"),500); }
   }
 });
 
