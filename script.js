@@ -11,8 +11,11 @@ let gameState = {
     correctCount: 0,
     missCount: 0,
     currentWord: null,
+    displayWord: null,
     currentRomaji: [],
     currentPosition: 0,
+    currentCharIndex: 0,
+    currentCharPosition: 0,
     wordList: [],
     wordIndex: 0,
     timeLeft: 60,
@@ -59,10 +62,26 @@ const ROMAJI_TABLE = {
     'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
     'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
     'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n'],
-    'ゃ': ['xya', 'lya'], 'ゅ': ['xyu', 'lyu'], 'ょ': ['xyo', 'lyo'],
-    'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le'], 'ぉ': ['xo', 'lo'],
-    'っ': ['xtu', 'ltu', 'ltsu'],
     'ー': ['-']
+};
+
+// 拗音組み合わせローマ字
+const COMBO_ROMAJI = {
+    'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'],
+    'しゃ': ['sya', 'sha'], 'しゅ': ['syu', 'shu'], 'しょ': ['syo', 'sho'],
+    'ちゃ': ['tya', 'cha'], 'ちゅ': ['tyu', 'chu'], 'ちょ': ['tyo', 'cho'],
+    'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'],
+    'ひゃ': ['hya'], 'ひゅ': ['hyu'], 'ひょ': ['hyo'],
+    'みゃ': ['mya'], 'みゅ': ['myu'], 'みょ': ['myo'],
+    'りゃ': ['rya'], 'りゅ': ['ryu'], 'りょ': ['ryo'],
+    'ぎゃ': ['gya'], 'ぎゅ': ['gyu'], 'ぎょ': ['gyo'],
+    'じゃ': ['zya', 'ja', 'jya'], 'じゅ': ['zyu', 'ju', 'jyu'], 'じょ': ['zyo', 'jo', 'jyo'],
+    'びゃ': ['bya'], 'びゅ': ['byu'], 'びょ': ['byo'],
+    'ぴゃ': ['pya'], 'ぴゅ': ['pyu'], 'ぴょ': ['pyo'],
+    'ふぁ': ['fa'], 'ふぃ': ['fi'], 'ふぇ': ['fe'], 'ふぉ': ['fo'],
+    'うぃ': ['wi'], 'うぇ': ['we'],
+    'てぃ': ['thi'], 'てゅ': ['thu'],
+    'でぃ': ['dhi'], 'でゅ': ['dhu']
 };
 
 // 初期化
@@ -133,7 +152,6 @@ function createRankCarousel() {
     const unlockedRanks = getUnlockedRanks();
     let selectedIndex = 0;
     
-    // 表示する段位の範囲を計算（選択中を中心に前後2つずつ）
     const displayStart = Math.max(0, selectedIndex - 2);
     const displayEnd = Math.min(RANKS.length - 1, selectedIndex + 2);
     
@@ -155,7 +173,6 @@ function createRankCarousel() {
         carousel.appendChild(rankBox);
     }
     
-    // 初期選択
     carousel.dataset.selectedIndex = selectedIndex;
 }
 
@@ -168,7 +185,6 @@ function updateRankCarousel(selectedIndex) {
     
     const unlockedRanks = getUnlockedRanks();
     
-    // 表示する段位の範囲を計算
     const displayStart = Math.max(0, selectedIndex - 2);
     const displayEnd = Math.min(RANKS.length - 1, selectedIndex + 2);
     
@@ -221,7 +237,6 @@ function handleRankSelectKeydown(e) {
         return;
     }
     
-    // 選択を更新してカルーセルを再描画
     carousel.dataset.selectedIndex = newIndex;
     updateRankCarousel(newIndex);
 }
@@ -308,21 +323,22 @@ function initGame() {
         correctCount: 0,
         missCount: 0,
         currentWord: null,
+        displayWord: null,
         currentRomaji: [],
         currentPosition: 0,
+        currentCharIndex: 0,
+        currentCharPosition: 0,
         wordList: [],
         wordIndex: 0,
-        timeLeft: currentMode === 'normal' ? 60 : 999,
+        timeLeft: 60,
         totalKeystrokes: 0
     };
     
-    // 単語データチェック
     if (!wordsData) {
         console.error('単語データが読み込まれていません');
         return;
     }
     
-    // 単語リスト作成
     const allWords = [
         ...wordsData.short,
         ...wordsData.medium,
@@ -331,17 +347,14 @@ function initGame() {
     
     console.log('全単語数:', allWords.length);
     
-    // シャッフル
     gameState.wordList = shuffleArray([...allWords]);
     
-    // UI初期化
     const scoreEl = document.getElementById('score');
     const inputField = document.getElementById('input-field');
     
     if (scoreEl) scoreEl.textContent = '0';
     if (inputField) inputField.value = '';
     
-    // ゲージ初期化
     if (currentMode === 'rank') {
         const gauges = document.getElementById('gauges');
         const timeDisplay = document.getElementById('time-display');
@@ -349,6 +362,7 @@ function initGame() {
         const correctGauge = document.getElementById('correct-gauge');
         const missGaugeText = document.getElementById('miss-gauge-text');
         const missGauge = document.getElementById('miss-gauge');
+        const timeEl = document.getElementById('time');
         
         if (gauges) gauges.style.display = 'flex';
         if (correctGaugeText) correctGaugeText.textContent = `0 / ${currentRank.requirement}`;
@@ -362,7 +376,8 @@ function initGame() {
             if (missGauge) missGauge.style.width = '100%';
         }
         
-        if (timeDisplay) timeDisplay.style.display = 'none';
+        if (timeDisplay) timeDisplay.style.display = 'block';
+        if (timeEl) timeEl.textContent = '60';
     } else {
         const gauges = document.getElementById('gauges');
         const timeDisplay = document.getElementById('time-display');
@@ -382,19 +397,16 @@ function startGame() {
     startTime = Date.now();
     loadNextWord();
     
-    if (currentMode === 'normal') {
-        gameTimer = setInterval(() => {
-            gameState.timeLeft--;
-            const timeEl = document.getElementById('time');
-            if (timeEl) timeEl.textContent = gameState.timeLeft;
-            
-            if (gameState.timeLeft <= 0) {
-                endGame();
-            }
-        }, 1000);
-    }
+    gameTimer = setInterval(() => {
+        gameState.timeLeft--;
+        const timeEl = document.getElementById('time');
+        if (timeEl) timeEl.textContent = gameState.timeLeft;
+        
+        if (gameState.timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
     
-    // 入力フィールドにフォーカス
     setTimeout(() => {
         const inputField = document.getElementById('input-field');
         if (inputField) {
@@ -414,7 +426,6 @@ function loadNextWord() {
     }
     
     if (gameState.wordIndex >= gameState.wordList.length) {
-        // 単語が足りない場合は再シャッフル
         const allWords = [
             ...wordsData.short,
             ...wordsData.medium,
@@ -424,108 +435,90 @@ function loadNextWord() {
         gameState.wordIndex = 0;
     }
     
-    gameState.currentWord = gameState.wordList[gameState.wordIndex++];
+    const wordObj = gameState.wordList[gameState.wordIndex++];
+    gameState.currentWord = wordObj.kana;
+    gameState.displayWord = wordObj.word;
     gameState.currentRomaji = convertToRomaji(gameState.currentWord);
-    gameState.currentPosition = 0;
+    gameState.currentCharIndex = 0;
+    gameState.currentCharPosition = 0;
     
-    console.log('新しい単語:', gameState.currentWord.join(''));
+    console.log('新しい単語:', gameState.displayWord, '読み:', gameState.currentWord.join(''));
     
     displayWord();
 }
 
-// ひらがなをローマ字に変換
+// ひらがなをローマ字に変換（拗音は組み合わせで扱う）
 function convertToRomaji(hiraganaArray) {
     const result = [];
+    let i = 0;
     
-    for (let i = 0; i < hiraganaArray.length; i++) {
-        const char = hiraganaArray[i];
-        
-        // 促音処理
-        if (char === 'っ') {
-            if (i + 1 < hiraganaArray.length) {
-                const nextChar = hiraganaArray[i + 1];
-                const nextRomaji = ROMAJI_TABLE[nextChar];
-                if (nextRomaji && nextRomaji[0]) {
-                    const firstChar = nextRomaji[0][0];
-                    result.push([firstChar, 'xtu', 'ltu']);
-                    continue;
-                }
-            }
-            result.push(ROMAJI_TABLE['っ']);
-            continue;
-        }
-        
-        // 拗音処理
-        if (i + 1 < hiraganaArray.length) {
+    while (i < hiraganaArray.length) {
+        // 促音チェック
+        if (hiraganaArray[i] === 'っ' && i + 1 < hiraganaArray.length) {
             const nextChar = hiraganaArray[i + 1];
-            if (['ゃ', 'ゅ', 'ょ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ'].includes(nextChar)) {
-                const comboRomaji = getComboRomaji(char, nextChar);
-                if (comboRomaji) {
-                    result.push(comboRomaji);
-                    i++;
-                    continue;
-                }
+            const nextRomaji = ROMAJI_TABLE[nextChar];
+            if (nextRomaji && nextRomaji[0]) {
+                const consonant = nextRomaji[0][0];
+                result.push({
+                    options: [consonant, 'xtu', 'ltu'],
+                    current: consonant
+                });
+                i++;
+                continue;
             }
         }
         
-        // 「ん」の処理
-        if (char === 'ん') {
+        // 2文字組み合わせチェック（拗音など）
+        if (i + 1 < hiraganaArray.length) {
+            const combo = hiraganaArray[i] + hiraganaArray[i + 1];
+            if (COMBO_ROMAJI[combo]) {
+                result.push({
+                    options: COMBO_ROMAJI[combo],
+                    current: COMBO_ROMAJI[combo][0]
+                });
+                i += 2;
+                continue;
+            }
+        }
+        
+        // 「ん」の特殊処理
+        if (hiraganaArray[i] === 'ん') {
             if (i === hiraganaArray.length - 1) {
-                // 最後の「ん」はnn固定
-                result.push(['nn']);
+                result.push({
+                    options: ['nn'],
+                    current: 'nn'
+                });
             } else {
-                // 途中の「ん」
                 const nextChar = hiraganaArray[i + 1];
                 const nextRomaji = ROMAJI_TABLE[nextChar];
-                if (nextRomaji && nextRomaji[0]) {
-                    const firstChar = nextRomaji[0][0];
-                    // n + aiueoyna以外ならnでもOK
-                    if (!'aiueoyn'.includes(firstChar)) {
-                        result.push(['nn', 'n']);
-                    } else {
-                        result.push(['nn']);
-                    }
+                if (nextRomaji && nextRomaji[0] && !'aiueoyn'.includes(nextRomaji[0][0])) {
+                    result.push({
+                        options: ['nn', 'n'],
+                        current: 'nn'
+                    });
                 } else {
-                    result.push(['nn', 'n']);
+                    result.push({
+                        options: ['nn'],
+                        current: 'nn'
+                    });
                 }
             }
+            i++;
             continue;
         }
         
         // 通常の文字
+        const char = hiraganaArray[i];
         if (ROMAJI_TABLE[char]) {
-            result.push(ROMAJI_TABLE[char]);
+            result.push({
+                options: ROMAJI_TABLE[char],
+                current: ROMAJI_TABLE[char][0]
+            });
         }
+        i++;
     }
     
     return result;
-}
-
-// 拗音組み合わせローマ字取得
-function getComboRomaji(char, smallChar) {
-    const combinations = {
-        'き': { 'ゃ': ['kya'], 'ゅ': ['kyu'], 'ょ': ['kyo'] },
-        'し': { 'ゃ': ['sya', 'sha'], 'ゅ': ['syu', 'shu'], 'ょ': ['syo', 'sho'] },
-        'ち': { 'ゃ': ['tya', 'cha'], 'ゅ': ['tyu', 'chu'], 'ょ': ['tyo', 'cho'] },
-        'に': { 'ゃ': ['nya'], 'ゅ': ['nyu'], 'ょ': ['nyo'] },
-        'ひ': { 'ゃ': ['hya'], 'ゅ': ['hyu'], 'ょ': ['hyo'] },
-        'み': { 'ゃ': ['mya'], 'ゅ': ['myu'], 'ょ': ['myo'] },
-        'り': { 'ゃ': ['rya'], 'ゅ': ['ryu'], 'ょ': ['ryo'] },
-        'ぎ': { 'ゃ': ['gya'], 'ゅ': ['gyu'], 'ょ': ['gyo'] },
-        'じ': { 'ゃ': ['zya', 'ja'], 'ゅ': ['zyu', 'ju'], 'ょ': ['zyo', 'jo'] },
-        'び': { 'ゃ': ['bya'], 'ゅ': ['byu'], 'ょ': ['byo'] },
-        'ぴ': { 'ゃ': ['pya'], 'ゅ': ['pyu'], 'ょ': ['pyo'] },
-        'ふ': { 'ぁ': ['fa'], 'ぃ': ['fi'], 'ぇ': ['fe'], 'ぉ': ['fo'] },
-        'う': { 'ぃ': ['wi'], 'ぇ': ['we'] },
-        'て': { 'ぃ': ['thi'], 'ゅ': ['thu'] },
-        'で': { 'ぃ': ['dhi'], 'ゅ': ['dhu'] }
-    };
-    
-    if (combinations[char] && combinations[char][smallChar]) {
-        return combinations[char][smallChar];
-    }
-    
-    return null;
 }
 
 // 単語表示
@@ -535,25 +528,28 @@ function displayWord() {
     
     if (!japaneseWordEl || !romajiWordEl) return;
     
-    japaneseWordEl.textContent = gameState.currentWord.join('');
+    japaneseWordEl.textContent = gameState.displayWord || gameState.currentWord.join('');
     
-    // ローマ字表示（現在の入力位置を強調）
     let romajiHTML = '';
-    let charIndex = 0;
     
     for (let i = 0; i < gameState.currentRomaji.length; i++) {
-        const options = gameState.currentRomaji[i];
-        const displayRomaji = options[0]; // 最初のオプションを表示
+        const charObj = gameState.currentRomaji[i];
+        const romaji = charObj.current;
         
-        for (let j = 0; j < displayRomaji.length; j++) {
-            if (charIndex < gameState.currentPosition) {
-                romajiHTML += `<span class="correct">${displayRomaji[j]}</span>`;
-            } else if (charIndex === gameState.currentPosition) {
-                romajiHTML += `<span class="current">${displayRomaji[j]}</span>`;
+        for (let j = 0; j < romaji.length; j++) {
+            if (i < gameState.currentCharIndex) {
+                romajiHTML += `<span class="correct">${romaji[j]}</span>`;
+            } else if (i === gameState.currentCharIndex) {
+                if (j < gameState.currentCharPosition) {
+                    romajiHTML += `<span class="correct">${romaji[j]}</span>`;
+                } else if (j === gameState.currentCharPosition) {
+                    romajiHTML += `<span class="current">${romaji[j]}</span>`;
+                } else {
+                    romajiHTML += `<span class="remaining">${romaji[j]}</span>`;
+                }
             } else {
-                romajiHTML += `<span class="remaining">${displayRomaji[j]}</span>`;
+                romajiHTML += `<span class="remaining">${romaji[j]}</span>`;
             }
-            charIndex++;
         }
     }
     
@@ -564,79 +560,63 @@ function displayWord() {
 function handleInput(e) {
     const input = e.target.value.toLowerCase();
     
-    if (input.length === 0) return;
-    
-    // 現在の文字の全ローマ字候補を取得
-    let currentCharOptions = [];
-    let currentCharStart = 0;
-    let charsSoFar = 0;
-    
-    for (let i = 0; i < gameState.currentRomaji.length; i++) {
-        const romajiOptions = gameState.currentRomaji[i];
-        const romajiLength = romajiOptions[0].length;
-        
-        if (gameState.currentPosition >= charsSoFar && gameState.currentPosition < charsSoFar + romajiLength) {
-            currentCharOptions = romajiOptions;
-            currentCharStart = charsSoFar;
-            break;
-        }
-        
-        charsSoFar += romajiLength;
-    }
-    
-    if (currentCharOptions.length === 0) {
+    if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) {
         return;
     }
     
-    // 入力が正しいか確認
-    const inputFromStart = input.substring(0, input.length);
-    const expectedStart = gameState.currentPosition - currentCharStart;
+    const currentChar = gameState.currentRomaji[gameState.currentCharIndex];
+    const currentRomaji = currentChar.current;
+    const expectedPart = currentRomaji.substring(gameState.currentCharPosition);
     
     let matched = false;
     
-    for (let option of currentCharOptions) {
-        const expectedPart = option.substring(expectedStart, expectedStart + inputFromStart.length);
+    // 現在選択中のローマ字パターンでマッチするか
+    if (expectedPart.startsWith(input)) {
+        matched = true;
+        gameState.currentCharPosition += input.length;
+        gameState.correctCount += input.length;
+        gameState.totalKeystrokes += input.length;
+        gameState.score += 5 * input.length;
         
-        if (inputFromStart === expectedPart) {
-            matched = true;
-            gameState.currentPosition++;
-            gameState.correctCount++;
-            gameState.totalKeystrokes++;
-            gameState.score += 5;
-            
-            // スコア更新
-            const scoreEl = document.getElementById('score');
-            if (scoreEl) scoreEl.textContent = gameState.score;
-            
-            // ゲージ更新
-            updateGauges();
-            
-            // 単語完成チェック
-            let totalLength = 0;
-            for (let romaji of gameState.currentRomaji) {
-                totalLength += romaji[0].length;
+        if (gameState.currentCharPosition >= currentRomaji.length) {
+            gameState.currentCharIndex++;
+            gameState.currentCharPosition = 0;
+        }
+    } else {
+        // 別のパターンを試す
+        for (let option of currentChar.options) {
+            const optionExpected = option.substring(gameState.currentCharPosition);
+            if (optionExpected.startsWith(input)) {
+                matched = true;
+                currentChar.current = option;
+                gameState.currentCharPosition += input.length;
+                gameState.correctCount += input.length;
+                gameState.totalKeystrokes += input.length;
+                gameState.score += 5 * input.length;
+                
+                if (gameState.currentCharPosition >= option.length) {
+                    gameState.currentCharIndex++;
+                    gameState.currentCharPosition = 0;
+                }
+                break;
             }
-            
-            if (gameState.currentPosition >= totalLength) {
-                // 次の単語へ
-                e.target.value = '';
-                loadNextWord();
-            } else {
-                e.target.value = '';
-                displayWord();
-            }
-            
-            // 段位モードのノルマチェック
-            if (currentMode === 'rank' && gameState.correctCount >= currentRank.requirement) {
-                endGame();
-            }
-            
-            break;
         }
     }
     
-    if (!matched) {
-        // ミス
+    if (matched) {
+        e.target.value = '';
+        
+        const scoreEl = document.getElementById('score');
+        if (scoreEl) scoreEl.textContent = gameState.score;
+        
+        updateGauges();
+        
+        if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
+            loadNextWord();
+        } else {
+            displayWord();
+        }
+    } else {
         gameState.missCount++;
         gameState.totalKeystrokes++;
         gameState.score = Math.max(0, gameState.score - 3);
@@ -645,10 +625,8 @@ function handleInput(e) {
         if (scoreEl) scoreEl.textContent = gameState.score;
         e.target.value = '';
         
-        // ゲージ更新
         updateGauges();
         
-        // 段位モードのミス判定
         if (currentMode === 'rank' && currentRank.missLimit !== null) {
             if (gameState.missCount >= currentRank.missLimit) {
                 endGame();
@@ -660,7 +638,6 @@ function handleInput(e) {
 // ゲージ更新
 function updateGauges() {
     if (currentMode === 'rank') {
-        // 正打鍵ゲージ
         const correctPercent = Math.min(100, (gameState.correctCount / currentRank.requirement) * 100);
         const correctGauge = document.getElementById('correct-gauge');
         const correctGaugeText = document.getElementById('correct-gauge-text');
@@ -670,7 +647,6 @@ function updateGauges() {
             correctGaugeText.textContent = `${gameState.correctCount} / ${currentRank.requirement}`;
         }
         
-        // ミスゲージ
         if (currentRank.missLimit !== null) {
             const remainingMiss = currentRank.missLimit - gameState.missCount;
             const missPercent = Math.max(0, (remainingMiss / currentRank.missLimit) * 100);
@@ -695,7 +671,6 @@ function endGame() {
     const elapsedTime = (Date.now() - startTime) / 1000;
     const kps = elapsedTime > 0 ? (gameState.totalKeystrokes / elapsedTime).toFixed(2) : 0;
     
-    // リザルト表示
     const finalScore = document.getElementById('final-score');
     const finalCorrect = document.getElementById('final-correct');
     const finalKps = document.getElementById('final-kps');
@@ -706,7 +681,6 @@ function endGame() {
     if (finalKps) finalKps.textContent = kps;
     if (finalMiss) finalMiss.textContent = gameState.missCount;
     
-    // 合格判定
     let passed = false;
     const resultAnimation = document.getElementById('result-animation');
     const resultContent = document.getElementById('result-content');
@@ -718,23 +692,18 @@ function endGame() {
         passed = metRequirement && withinMissLimit;
         
         if (passed) {
-            // 合格
             if (resultAnimation) resultAnimation.innerHTML = '<div class="pass-animation">合　格</div>';
             if (resultContent) resultContent.classList.remove('fail');
             
-            // 最高スコア保存
             saveHighScore();
             
-            // 段位解放チェック
             const rankIndex = RANKS.findIndex(r => r.id === currentRank.id);
             unlockNextRank(rankIndex);
         } else {
-            // 不合格
             if (resultAnimation) resultAnimation.innerHTML = '<div class="fail-animation">不合格</div>';
             if (resultContent) resultContent.classList.add('fail');
         }
     } else {
-        // 通常モード
         if (resultAnimation) resultAnimation.innerHTML = '';
         if (resultContent) resultContent.classList.remove('fail');
         saveHighScore();
