@@ -133,26 +133,51 @@ function updateTimer(){
   document.getElementById("timer").textContent=`残り ${t.toFixed(1)} 秒`;
   if(t<=0) endGame();
   if(mode==="rank"){
-    document.getElementById("gaugeCorrect").style.width=Math.min(100,correctCount/currentRank.need*100)+"%";
-    if(currentRank.miss!==Infinity)
-      document.getElementById("gaugeMiss").style.width=Math.min(100,missCount/currentRank.miss*100)+"%";
+    const gaugeCorrectEl = document.getElementById("gaugeCorrect");
+    const gaugeMissEl = document.getElementById("gaugeMiss");
+    if(gaugeCorrectEl){
+      gaugeCorrectEl.style.width=Math.min(100,correctCount/currentRank.need*100)+"%";
+    }
+    if(gaugeMissEl && currentRank.miss!==Infinity){
+      gaugeMissEl.style.width=Math.min(100,missCount/currentRank.miss*100)+"%";
+    }
   }
 }
 
 /* =========================
    入力処理
 ========================= */
+let isGameActive = false;
+
 document.addEventListener("keydown", e=>{
-  if(currentWord && e.key.length===1){
+  // ゲーム中のみ入力を受け付ける
+  if(!document.getElementById("game").classList.contains("hidden")){
+    isGameActive = true;
+  } else {
+    isGameActive = false;
+  }
+
+  if(isGameActive && currentWord && e.key.length===1 && /^[a-z]$/i.test(e.key)){
     inputBuffer += e.key.toLowerCase();
-    if(romajiPatterns.some(p=>p.startsWith(inputBuffer))){
+    
+    // 正しい入力かチェック
+    const isValid = romajiPatterns.some(p=>p.startsWith(inputBuffer));
+    
+    if(isValid){
       document.getElementById("input").textContent=inputBuffer;
-      correctCount++;
-      if(romajiPatterns.includes(inputBuffer)) nextWord();
-    }else{
+      // 完全一致したら次の単語へ
+      if(romajiPatterns.includes(inputBuffer)){
+        correctCount++;
+        nextWord();
+      }
+    } else {
+      // ミス
       missCount++;
       inputBuffer=inputBuffer.slice(0,-1);
-      if(mode==="rank"&&missCount>=currentRank.miss) endGame(false);
+      // 段位モードでミス制限を超えたら終了
+      if(mode==="rank" && currentRank.miss!==Infinity && missCount>=currentRank.miss){
+        endGame();
+      }
     }
   }
 });
@@ -160,25 +185,30 @@ document.addEventListener("keydown", e=>{
 /* =========================
    終了処理
 ========================= */
-function endGame(forceFail=true){
+function endGame(){
   clearInterval(timerId);
   currentWord=null;
+  isGameActive = false;
+  
   document.getElementById("game").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
   const score = correctCount*5 - missCount*3;
-  let pass=true;
+  let pass = true;
+  
   if(mode==="rank"){
-    if(correctCount<currentRank.need) pass=false;
-    if(missCount>=currentRank.miss) pass=false;
+    // 正打数が基準に達していない場合は不合格
+    if(correctCount < currentRank.need) pass = false;
+    // ミス数が制限を超えている場合は不合格
+    if(currentRank.miss !== Infinity && missCount >= currentRank.miss) pass = false;
   }
 
   if(mode==="rank" && pass){
     unlockNextRank();
-    saveResult(currentRank.name,score);
+    saveResult(currentRank.name, score);
     document.getElementById("result").textContent="合　格";
-  }else{
-    document.getElementById("result").textContent=mode==="rank"?"不合格":`SCORE ${score}`;
+  } else {
+    document.getElementById("result").textContent = mode==="rank" ? "不合格" : `SCORE ${score}`;
   }
 
   updateRankUI();
@@ -197,9 +227,27 @@ function updateRankHighlight(){
 document.addEventListener("keydown", e=>{
   const rankSelectEl=document.getElementById("rankSelect");
   if(!rankSelectEl.classList.contains("hidden")){
-    if(e.key==="ArrowRight"){ selectedRankIndex=Math.min(rankElements.length-1,selectedRankIndex+1); updateRankHighlight(); }
-    else if(e.key==="ArrowLeft"){ selectedRankIndex=Math.max(0,selectedRankIndex-1); updateRankHighlight(); }
-    else if(e.key==="Enter"){ startGame(RANKS[selectedRankIndex]); rankSelectEl.style.transition="opacity 0.5s"; rankSelectEl.style.opacity=0; setTimeout(()=>rankSelectEl.classList.add("hidden"),500); }
+    if(e.key==="ArrowRight"){
+      const unlocked = loadUnlockedRank();
+      selectedRankIndex = Math.min(unlocked, selectedRankIndex+1);
+      updateRankHighlight();
+    }
+    else if(e.key==="ArrowLeft"){
+      selectedRankIndex = Math.max(0, selectedRankIndex-1);
+      updateRankHighlight();
+    }
+    else if(e.key==="Enter"){
+      const unlocked = loadUnlockedRank();
+      if(selectedRankIndex <= unlocked){
+        startGame(RANKS[selectedRankIndex]);
+        rankSelectEl.style.transition="opacity 0.5s";
+        rankSelectEl.style.opacity=0;
+        setTimeout(()=>{
+          rankSelectEl.classList.add("hidden");
+          rankSelectEl.style.opacity=1;
+        }, 500);
+      }
+    }
   }
 });
 
