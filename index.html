@@ -2,41 +2,22 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>タイピング</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <title>タイピングゲーム</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-
-<!-- 段位選択 -->
-<div id="rankSelect">
-  <div id="rankList"></div>
-  <div class="hint">← → で選択 / Enter で決定</div>
-</div>
-
-<!-- ゲーム画面 -->
-<div id="game" class="hidden">
-  <div id="status">
-    <div class="gauge">
-      <div id="gaugeCorrect"></div>
-    </div>
-    <div class="gauge">
-      <div id="gaugeMiss"></div>
-    </div>
+  <div id="rankSelect"></div>
+  <div id="game">
+    <div id="word"></div>
+    <div id="input"></div>
+    <div id="timer"></div>
+    <div id="gaugeCorrect"></div>
+    <div id="gaugeMiss"></div>
   </div>
+  <div id="result"></div>
 
-  <div id="word"></div>
-  <div id="input"></div>
-  <div id="timer">60</div>
-</div>
-
-<!-- リザルト -->
-<div id="result" class="hidden"></div>
-
-<!-- 段位解放演出 -->
-<div id="unlock" class="hidden"></div>
-
-<script src="./romaji.js"></script>
-<script src="./main.js"></script>
+  <script src="./romaji.js" defer></script>
+  <script src="./main.js" defer></script>
 </body>
 </html>
