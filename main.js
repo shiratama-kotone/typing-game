@@ -60,11 +60,38 @@ function saveResult(rank, score){
 }
 
 /* =========================
+   段位解放
+========================= */
+
+function loadUnlockedRank(){
+  return parseInt(localStorage.getItem("unlockedRank") || "0");
+}
+
+function unlockNextRank(){
+  let u = loadUnlockedRank();
+  if(u < RANKS.length - 1){
+    localStorage.setItem("unlockedRank", u + 1);
+  }
+}
+
+function updateRankUI(){
+  const unlocked = loadUnlockedRank();
+  const rankElements = document.querySelectorAll(".rank");
+  rankElements.forEach((el, i) => {
+    if(i <= unlocked){
+      el.style.filter = "brightness(100%)";
+    } else {
+      el.style.filter = "brightness(30%)";
+    }
+  });
+}
+
+/* =========================
    単語ロード
 ========================= */
 
 async function loadWords(){
-  const res = await fetch("words.json");
+  const res = await fetch("./words.json");
   words = await res.json();
 }
 
@@ -74,9 +101,8 @@ async function loadWords(){
 
 function nextWord(){
   currentWord = words[Math.floor(Math.random()*words.length)];
-  romajiPatterns = kanaToRomajiPatterns(currentWord.kana);
+  romajiPatterns = kanaToRomajiPatterns(currentWord.kana); // romaji.js関数
   inputBuffer = "";
-
   document.getElementById("word").textContent = currentWord.word;
   document.getElementById("input").textContent = "";
 }
@@ -110,11 +136,9 @@ function startGame(selectedRank=null){
 function updateTimer(){
   const t = Math.max(0, timeLimit - (Date.now()-startTime)/1000);
   document.getElementById("timer").textContent = `残り ${t.toFixed(1)} 秒`;
-
   if(t<=0){
     endGame();
   }
-
   updateGauge();
 }
 
@@ -126,10 +150,8 @@ function updateGauge(){
   if(mode==="rank"){
     const need = currentRank.need;
     const missMax = currentRank.miss;
-
     document.getElementById("gaugeCorrect").style.width =
       Math.min(100, correctCount/need*100) + "%";
-
     if(missMax!==Infinity){
       document.getElementById("gaugeMiss").style.width =
         Math.min(100, missCount/missMax*100) + "%";
@@ -142,24 +164,20 @@ function updateGauge(){
 ========================= */
 
 document.addEventListener("keydown", e=>{
-  if(!currentWord) return;
-  if(e.key.length!==1) return;
-
-  inputBuffer += e.key.toLowerCase();
-
-  if(isCorrectInput(inputBuffer, romajiPatterns)){
-    document.getElementById("input").textContent = inputBuffer;
-    correctCount++;
-
-    if(isCompleteInput(inputBuffer, romajiPatterns)){
-      nextWord();
-    }
-  }else{
-    missCount++;
-    inputBuffer = inputBuffer.slice(0,-1);
-
-    if(mode==="rank" && missCount>=currentRank.miss){
-      endGame(false);
+  if(currentWord && e.key.length===1){
+    inputBuffer += e.key.toLowerCase();
+    if(isCorrectInput(inputBuffer, romajiPatterns)){
+      document.getElementById("input").textContent = inputBuffer;
+      correctCount++;
+      if(isCompleteInput(inputBuffer, romajiPatterns)){
+        nextWord();
+      }
+    }else{
+      missCount++;
+      inputBuffer = inputBuffer.slice(0,-1);
+      if(mode==="rank" && missCount>=currentRank.miss){
+        endGame(false);
+      }
     }
   }
 });
@@ -171,29 +189,62 @@ document.addEventListener("keydown", e=>{
 function endGame(forceFail=true){
   clearInterval(timerId);
   currentWord = null;
-
   document.getElementById("game").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
   const score = correctCount*5 - missCount*3;
-
   let pass = true;
   if(mode==="rank"){
     if(correctCount < currentRank.need) pass = false;
     if(missCount >= currentRank.miss) pass = false;
   }
 
-  if(mode==="rank"){
-    if(pass){
-      saveResult(currentRank.name, score);
-      document.getElementById("result").textContent = "合　格";
-    }else{
-      document.getElementById("result").textContent = "不合格";
-    }
+  if(mode==="rank" && pass){
+    unlockNextRank();
+    saveResult(currentRank.name, score);
+    document.getElementById("result").textContent = "合　格";
   }else{
-    document.getElementById("result").textContent = `SCORE ${score}`;
+    document.getElementById("result").textContent =
+      mode==="rank" ? "不合格" : `SCORE ${score}`;
   }
+
+  updateRankUI();
 }
+
+/* =========================
+   段位選択キー操作
+========================= */
+
+let selectedRankIndex = 0;
+const rankElements = document.querySelectorAll(".rank");
+
+function updateRankHighlight() {
+  rankElements.forEach((el, i) => {
+    if (i === selectedRankIndex) {
+      el.classList.add("selected");
+    } else {
+      el.classList.remove("selected");
+    }
+  });
+}
+
+document.addEventListener("keydown", e => {
+  const rankSelectEl = document.getElementById("rankSelect");
+  if (!rankSelectEl.classList.contains("hidden")) {
+    if (e.key === "ArrowRight") {
+      selectedRankIndex = Math.min(rankElements.length-1, selectedRankIndex+1);
+      updateRankHighlight();
+    } else if (e.key === "ArrowLeft") {
+      selectedRankIndex = Math.max(0, selectedRankIndex-1);
+      updateRankHighlight();
+    } else if (e.key === "Enter") {
+      startGame(RANKS[selectedRankIndex]);
+      rankSelectEl.style.transition = "opacity 0.5s";
+      rankSelectEl.style.opacity = 0;
+      setTimeout(()=>rankSelectEl.classList.add("hidden"),500);
+    }
+  }
+});
 
 /* =========================
    初期化
@@ -201,4 +252,6 @@ function endGame(forceFail=true){
 
 window.onload = async ()=>{
   await loadWords();
+  updateRankUI();
+  updateRankHighlight();
 };
