@@ -76,7 +76,7 @@ body {
 }
 
 h2 {
-    color: #fff;
+    color: #003366;
     font-size: 2.5rem;
     margin-bottom: 30px;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
@@ -233,7 +233,7 @@ h2 {
 }
 
 .romaji-word .current {
-    color: #fff;
+    color: #003366;
     text-decoration: underline;
     font-weight: bold;
 }
@@ -335,7 +335,7 @@ h2 {
 }
 
 .result-details {
-    color: #fff;
+    color: #003366;
     font-size: 1.3rem;
     margin: 20px 0;
 }
