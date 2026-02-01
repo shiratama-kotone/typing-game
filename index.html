@@ -1,24 +1,103 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>タイピングゲーム</title>
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイピングゲーム</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="rankSelect"></div>
-  <div id="game">
-    <div id="word"></div>
-    <div id="input"></div>
-    <div id="timer"></div>
-    <div id="gaugeCorrect"></div>
-    <div id="gaugeMiss"></div>
-  </div>
-  <div id="result"></div>
+    <!-- タイトル画面 -->
+    <div id="title-screen" class="screen active">
+        <h1 class="game-title">タイピングゲーム</h1>
+        <div class="menu">
+            <button class="menu-button" onclick="showModeSelect()">スタート</button>
+        </div>
+    </div>
 
-  <!-- romaji.js を先に読み込む（main.js はそれを利用する） -->
-  <script src="./romaji.js" defer></script>
-  <script src="./main.js" defer></script>
+    <!-- モード選択画面 -->
+    <div id="mode-select-screen" class="screen">
+        <h2>モード選択</h2>
+        <div class="menu">
+            <button class="menu-button" onclick="startNormalMode()">通常タイピング</button>
+            <button class="menu-button" onclick="showRankSelect()">段位測定</button>
+            <button class="menu-button" onclick="showTitleScreen()">戻る</button>
+        </div>
+    </div>
+
+    <!-- 段位選択画面 -->
+    <div id="rank-select-screen" class="screen">
+        <h2>段位選択</h2>
+        <div id="rank-carousel" class="rank-carousel"></div>
+        <div class="rank-controls">
+            <p>← → キーで選択、Enterで決定</p>
+            <button class="menu-button" onclick="showModeSelect()">戻る</button>
+        </div>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game-screen" class="screen">
+        <!-- ゲージ表示 -->
+        <div id="gauges" class="gauges">
+            <div class="gauge-container">
+                <div class="gauge-label">正打鍵数</div>
+                <div class="gauge-bar">
+                    <div id="correct-gauge" class="gauge-fill correct-fill"></div>
+                    <div id="correct-gauge-text" class="gauge-text">0 / 0</div>
+                </div>
+            </div>
+            <div class="gauge-container">
+                <div class="gauge-label">残りミス数</div>
+                <div class="gauge-bar">
+                    <div id="miss-gauge" class="gauge-fill miss-fill"></div>
+                    <div id="miss-gauge-text" class="gauge-text">∞</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- スコア表示 -->
+        <div id="score-display" class="score-display">
+            <div>スコア: <span id="score">0</span></div>
+            <div id="time-display">残り時間: <span id="time">60</span>秒</div>
+        </div>
+
+        <!-- 単語表示 -->
+        <div id="word-display" class="word-display">
+            <div id="japanese-word" class="japanese-word"></div>
+            <div id="romaji-word" class="romaji-word"></div>
+        </div>
+
+        <!-- 入力フィールド -->
+        <input type="text" id="input-field" class="input-field" autocomplete="off" autofocus>
+    </div>
+
+    <!-- リザルト画面 -->
+    <div id="result-screen" class="screen">
+        <div id="result-content" class="result-content">
+            <div id="result-animation"></div>
+            <h2 id="result-title">結果</h2>
+            <div id="result-details" class="result-details">
+                <p>スコア: <span id="final-score">0</span></p>
+                <p>正打鍵数: <span id="final-correct">0</span></p>
+                <p>平均キータイプ数: <span id="final-kps">0.0</span> 回/秒</p>
+                <p>ミスタイプ数: <span id="final-miss">0</span></p>
+                <p id="high-score-text"></p>
+            </div>
+            <button class="menu-button" onclick="backToMenu()">メニューへ</button>
+        </div>
+    </div>
+
+    <!-- 段位解放演出 -->
+    <div id="rank-unlock-overlay" class="rank-unlock-overlay">
+        <div class="rank-unlock-animation">
+            <div class="unlock-bars">
+                <div class="unlock-bar unlock-bar-left"></div>
+                <div class="unlock-bar unlock-bar-right"></div>
+            </div>
+            <div id="unlock-text" class="unlock-text"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
