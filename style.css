@@ -1,0 +1,146 @@
+body{
+  margin:0;
+  background:#111;
+  color:#fff;
+  font-family:"Noto Sans JP",sans-serif;
+  overflow:hidden;
+}
+
+button{
+  font-size:20px;
+  padding:12px 24px;
+}
+
+#mode{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:40px;
+}
+
+/* ===== 段位選択 ===== */
+.rank-list{
+  display:flex;
+  gap:20px;
+  height:100vh;
+  align-items:center;
+  justify-content:center;
+}
+
+.rank{
+  width:90px;
+  height:220px;
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  border:3px solid #fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:28px;
+  transition:.2s;
+}
+.rank.selected{ transform:scale(1.2); }
+.rank.locked{ filter:brightness(30%); }
+
+/* ===== ゲーム ===== */
+#timer{
+  font-size:48px;
+  text-align:center;
+  margin-top:20px;
+}
+#word{
+  font-size:48px;
+  text-align:center;
+  margin-top:30px;
+}
+#roma{
+  font-size:22px;
+  text-align:center;
+  opacity:.7;
+}
+
+#gauges{
+  width:80%;
+  margin:40px auto;
+}
+.gauge{
+  height:20px;
+  background:#333;
+  margin-bottom:10px;
+}
+.gauge div{
+  height:100%;
+  width:0%;
+  background:#4eaec4;
+}
+.gauge.miss div{ background:#d6361c; }
+
+/* ===== 合格 ===== */
+#pass{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.pass-text span{
+  font-size:120px;
+  color:gold;
+  display:inline-block;
+  animation:pass .6s forwards;
+}
+.pass-text span:nth-child(2){ animation-delay:.2s; }
+@keyframes pass{
+  from{ transform:scale(2); opacity:0; }
+  to{ transform:scale(1); opacity:1; }
+}
+
+/* ===== 不合格 ===== */
+#fail{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.7);
+  display:none;
+}
+#fail-text{
+  position:absolute;
+  top:-200px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:88px;
+  transition:
+    top .8s cubic-bezier(.2,.9,.3,1),
+    transform .4s ease;
+  transform-origin:left center;
+}
+
+/* ===== 段位解放 ===== */
+#unlock{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+#unlock-bar{
+  width:80%;
+  height:6px;
+  background:#fff;
+  opacity:0;
+  animation:fadein .5s forwards;
+}
+#unlock-text{
+  margin-top:20px;
+  font-size:48px;
+  letter-spacing:0;
+  animation:spread 5s forwards;
+}
+@keyframes fadein{
+  to{ opacity:1; }
+}
+@keyframes spread{
+  to{ letter-spacing:20px; }
+}
