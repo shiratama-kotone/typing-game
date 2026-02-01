@@ -1,146 +1,152 @@
-body{
-  margin:0;
-  background:#111;
-  color:#fff;
-  font-family:"Noto Sans JP",sans-serif;
-  overflow:hidden;
+* {
+  box-sizing: border-box;
+  font-family: "Noto Sans JP", sans-serif;
 }
 
-button{
-  font-size:20px;
-  padding:12px 24px;
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
 }
 
-#mode{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:40px;
+/* 共通 */
+.hidden {
+  display: none;
 }
 
-/* ===== 段位選択 ===== */
-.rank-list{
-  display:flex;
-  gap:20px;
-  height:100vh;
-  align-items:center;
-  justify-content:center;
+/* =====================
+   段位選択
+===================== */
+#rankSelect {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.rank{
-  width:90px;
-  height:220px;
-  writing-mode:vertical-rl;
-  text-orientation:upright;
-  border:3px solid #fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:28px;
-  transition:.2s;
-}
-.rank.selected{ transform:scale(1.2); }
-.rank.locked{ filter:brightness(30%); }
-
-/* ===== ゲーム ===== */
-#timer{
-  font-size:48px;
-  text-align:center;
-  margin-top:20px;
-}
-#word{
-  font-size:48px;
-  text-align:center;
-  margin-top:30px;
-}
-#roma{
-  font-size:22px;
-  text-align:center;
-  opacity:.7;
+#rankList {
+  display: flex;
+  gap: 20px;
 }
 
-#gauges{
-  width:80%;
-  margin:40px auto;
-}
-.gauge{
-  height:20px;
-  background:#333;
-  margin-bottom:10px;
-}
-.gauge div{
-  height:100%;
-  width:0%;
-  background:#4eaec4;
-}
-.gauge.miss div{ background:#d6361c; }
-
-/* ===== 合格 ===== */
-#pass{
-  position:fixed;
-  inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-.pass-text span{
-  font-size:120px;
-  color:gold;
-  display:inline-block;
-  animation:pass .6s forwards;
-}
-.pass-text span:nth-child(2){ animation-delay:.2s; }
-@keyframes pass{
-  from{ transform:scale(2); opacity:0; }
-  to{ transform:scale(1); opacity:1; }
+.rank {
+  writing-mode: vertical-rl;
+  font-size: 28px;
+  padding: 20px;
+  border: 2px solid #555;
+  opacity: 0.4;
+  transition: 0.2s;
 }
 
-/* ===== 不合格 ===== */
-#fail{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.7);
-  display:none;
-}
-#fail-text{
-  position:absolute;
-  top:-200px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:88px;
-  transition:
-    top .8s cubic-bezier(.2,.9,.3,1),
-    transform .4s ease;
-  transform-origin:left center;
+.rank.active {
+  opacity: 1;
+  border-color: #fff;
+  transform: scale(1.1);
 }
 
-/* ===== 段位解放 ===== */
-#unlock{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
+.hint {
+  margin-top: 30px;
+  font-size: 14px;
+  opacity: 0.7;
 }
-#unlock-bar{
-  width:80%;
-  height:6px;
-  background:#fff;
-  opacity:0;
-  animation:fadein .5s forwards;
+
+/* =====================
+   ゲーム画面
+===================== */
+#game {
+  height: 100vh;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-#unlock-text{
-  margin-top:20px;
-  font-size:48px;
-  letter-spacing:0;
-  animation:spread 5s forwards;
+
+#status {
+  width: 100%;
+  display: flex;
+  gap: 10px;
 }
-@keyframes fadein{
-  to{ opacity:1; }
+
+.gauge {
+  flex: 1;
+  height: 12px;
+  background: #222;
+  position: relative;
 }
-@keyframes spread{
-  to{ letter-spacing:20px; }
+
+#gaugeCorrect {
+  height: 100%;
+  width: 0%;
+  background: #4caf50;
+  transition: width 0.1s;
+}
+
+#gaugeMiss {
+  height: 100%;
+  width: 0%;
+  background: #f44336;
+  transition: width 0.1s;
+}
+
+#word {
+  margin-top: 80px;
+  font-size: 48px;
+}
+
+#input {
+  margin-top: 20px;
+  font-size: 28px;
+  color: #0ff;
+  min-height: 40px;
+}
+
+#timer {
+  margin-top: auto;
+  font-size: 24px;
+  opacity: 0.8;
+}
+
+/* =====================
+   リザルト
+===================== */
+#result {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+  animation: fadeIn 0.6s ease;
+}
+
+/* =====================
+   段位解放演出
+===================== */
+#unlock {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: gold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 48px;
+  animation: unlockAnim 1.2s ease;
+}
+
+@keyframes unlockAnim {
+  0% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
