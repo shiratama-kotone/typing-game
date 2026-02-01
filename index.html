@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ガチ段位タイピング</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- モード選択 -->
+<div id="mode">
+  <button id="normalBtn">通常タイピング</button>
+  <button id="rankBtn">段位測定</button>
+</div>
+
+<!-- 段位選択 -->
+<div id="rank-select" hidden>
+  <div class="rank-list"></div>
+</div>
+
+<!-- ゲーム -->
+<div id="game" hidden>
+  <div id="timer">60</div>
+  <div id="word"></div>
+  <div id="roma"></div>
+
+  <div id="gauges">
+    <div class="gauge">
+      <div id="type-gauge"></div>
+    </div>
+    <div class="gauge miss">
+      <div id="miss-gauge"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 合格 -->
+<div id="pass" hidden>
+  <div class="pass-text">
+    <span>合</span><span>格</span>
+  </div>
+</div>
+
+<!-- 不合格 -->
+<div id="fail">
+  <div id="fail-text">不合格</div>
+</div>
+
+<!-- 段位解放 -->
+<div id="unlock" hidden>
+  <div id="unlock-bar"></div>
+  <div id="unlock-text"></div>
+</div>
+
+<script src="romaTable.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
