@@ -120,7 +120,7 @@ h2 {
 }
 
 .rank-controls {
-    color: #fff;
+    color: #003366;
     font-size: 1.2rem;
 }
 
@@ -239,7 +239,7 @@ h2 {
 }
 
 .romaji-word .remaining {
-    color: rgba(255, 255, 255, 0.5);
+    color: #003366;
 }
 
 .input-field {
@@ -432,7 +432,7 @@ h2 {
     z-index: 2;
     font-size: 4rem;
     font-weight: bold;
-    color: #fff;
+    color: #003366;
     text-align: center;
     text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
                  0 0 60px rgba(255, 215, 0, 0.6);
