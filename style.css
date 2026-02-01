@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #e0f7fa;
     min-height: 100vh;
     display: flex;
     justify-content: center;
