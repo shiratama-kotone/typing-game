@@ -19,7 +19,35 @@ let gameState = {
     wordList: [],
     wordIndex: 0,
     timeLeft: 60,
-    totalKeystrokes: 0
+    totalKeystrokes: 0,
+    noMissStreak: 0  // ノーミス連続カウント
+};
+
+// 音声ファイル
+const SOUNDS = {
+    typing: new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%82%BF%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0-%E3%83%91%E3%83%B3%E3%82%BF%E3%82%B0%E3%83%A9%E3%83%95%E5%8D%982.mp3'),
+    miss: new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%83%9F%E3%82%B9.mp3'),
+    oneUp: new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/mario-1up_eSTTTOB.mp3')
+};
+
+// BGMプレイリスト
+const BGM_PLAYLIST = [
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/8%E7%95%AA%E5%87%BA%E5%8F%A3%E3%80%90%E9%9D%9E%E5%85%AC%E5%BC%8F%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%82%BD%E3%83%B3%E3%82%B0%E3%80%91Full%20ver%20%E9%8F%A1%E9%9F%B3%E3%83%AA%E3%83%B3-EO%E3%82%A8%E3%82%AA-%208%E7%95%AA%E5%87%BA%E5%8F%A3.mp3.m4a', name: '8番出口' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/DECO27%20-%20%E3%83%86%E3%83%AC%E3%83%91%E3%82%B7%20feat%20%E5%88%9D%E9%9F%B3%E3%83%9F%E3%82%AF_31032025%20(2).mp3', name: 'テレパシ' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%80%90%E6%9D%B1%E6%96%B9MV%E3%80%91Help%20me,%20ERINNNNNN%E3%80%90%E3%83%93%E3%83%BC%E3%83%88%E3%81%BE%E3%82%8A%E3%81%8A%E3%80%91.mp3.m4a', name: 'Help me, ERINNNNNN' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%82%82%E3%81%BA%E3%82%82%E3%81%BA%20-%20Long%20Ver..mp3', name: 'もぺもぺ - Long Ver.' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%82%A4%E3%82%AC%E3%82%AF%20-%20%E9%87%8D%E9%9F%B3%E3%83%86%E3%83%88.mp3.m4a', name: 'イガク' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%83%94%E3%83%8E%E3%82%AD%E3%82%AA%E3%83%94%E3%83%BC%20-%20T%E6%B0%8F%E3%81%AE%E8%A9%B1%E3%82%92%E4%BF%A1%E3%81%98%E3%82%8B%E3%81%AA%20feat%20%E5%88%9D%E9%9F%B3%E3%83%9F%E3%82%AF%E3%83%BB%E9%87%8D%E9%9F%B3%E3%83%86%E3%83%88%20%20Don%E2%80%99t%20Believe%20in%20T.mp3.m4a', name: 'T氏の話を信じるな' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E6%80%AA%E7%8D%A3%E3%81%AB%E3%81%AA%E3%82%8A%E3%81%9F%E3%81%84.mp3', name: '怪獣になりたい' },
+    { url: 'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E6%9F%8A%E3%83%9E%E3%82%B0%E3%83%8D%E3%82%BF%E3%82%A4%E3%83%88%20-%20%E3%83%9E%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%BB%E3%83%9E%E3%82%AD%E3%82%B7%E3%83%9E%E3%82%A4%E3%82%B6%E3%83%BC%20%20%E5%8F%AF%E4%B8%8D.mp3', name: 'マーシャル・マキシマイザー' }
+];
+
+// 音楽プレイヤー状態
+let musicPlayer = {
+    audio: null,
+    playlist: [],
+    currentIndex: 0,
+    isPlaying: false
 };
 
 // 段位定義
@@ -84,11 +112,119 @@ const COMBO_ROMAJI = {
     'でぃ': ['dhi'], 'でゅ': ['dhu']
 };
 
+// 音楽プレイヤー初期化
+function initMusicPlayer() {
+    // プレイリストをランダムにシャッフル
+    musicPlayer.playlist = shuffleArray([...BGM_PLAYLIST]);
+    musicPlayer.audio = new Audio();
+    musicPlayer.audio.volume = 0.3;
+    
+    // 曲が終わったら次の曲へ
+    musicPlayer.audio.addEventListener('ended', () => {
+        playNextTrack();
+    });
+}
+
+// 音楽再生
+function playMusic() {
+    if (!musicPlayer.audio) return;
+    
+    if (musicPlayer.playlist.length === 0) {
+        musicPlayer.playlist = shuffleArray([...BGM_PLAYLIST]);
+        musicPlayer.currentIndex = 0;
+    }
+    
+    const track = musicPlayer.playlist[musicPlayer.currentIndex];
+    musicPlayer.audio.src = track.url;
+    musicPlayer.audio.play();
+    musicPlayer.isPlaying = true;
+    
+    updateMusicControls();
+}
+
+// 音楽停止
+function pauseMusic() {
+    if (!musicPlayer.audio) return;
+    musicPlayer.audio.pause();
+    musicPlayer.isPlaying = false;
+    updateMusicControls();
+}
+
+// 次の曲
+function playNextTrack() {
+    musicPlayer.currentIndex = (musicPlayer.currentIndex + 1) % musicPlayer.playlist.length;
+    if (musicPlayer.currentIndex === 0) {
+        musicPlayer.playlist = shuffleArray([...BGM_PLAYLIST]);
+    }
+    if (musicPlayer.isPlaying) {
+        playMusic();
+    }
+}
+
+// 前の曲
+function playPreviousTrack() {
+    musicPlayer.currentIndex = (musicPlayer.currentIndex - 1 + musicPlayer.playlist.length) % musicPlayer.playlist.length;
+    if (musicPlayer.isPlaying) {
+        playMusic();
+    }
+}
+
+// 再生/停止トグル
+function toggleMusic() {
+    if (musicPlayer.isPlaying) {
+        pauseMusic();
+    } else {
+        playMusic();
+    }
+}
+
+// 音楽コントロール更新
+function updateMusicControls() {
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    if (playPauseBtn) {
+        playPauseBtn.textContent = musicPlayer.isPlaying ? '⏸' : '▶';
+    }
+}
+
+// タイプ音再生
+function playTypingSound() {
+    const sound = SOUNDS.typing.cloneNode();
+    sound.volume = 0.2;
+    sound.play().catch(() => {});
+}
+
+// ミス音再生
+function playMissSound() {
+    const sound = SOUNDS.miss.cloneNode();
+    sound.volume = 0.3;
+    sound.play().catch(() => {});
+}
+
+// 1-UP音再生
+function playOneUpSound() {
+    const sound = SOUNDS.oneUp.cloneNode();
+    sound.volume = 0.4;
+    sound.play().catch(() => {});
+}
+
+// ノーミスゲージ更新
+function updateNoMissGauge() {
+    const gauge = document.getElementById('nomiss-gauge');
+    const text = document.getElementById('nomiss-gauge-text');
+    
+    if (gauge && text) {
+        const percent = (gameState.noMissStreak % 100) / 100 * 100;
+        gauge.style.width = percent + '%';
+        text.textContent = `${gameState.noMissStreak % 100} / 100`;
+    }
+}
+
 // 初期化
 window.addEventListener('DOMContentLoaded', async () => {
     console.log('ページ読み込み完了');
     await loadWords();
     setupEventListeners();
+    initMusicPlayer();
 });
 
 // 単語データ読み込み
@@ -331,7 +467,8 @@ function initGame() {
         wordList: [],
         wordIndex: 0,
         timeLeft: 60,
-        totalKeystrokes: 0
+        totalKeystrokes: 0,
+        noMissStreak: 0
     };
     
     if (!wordsData) {
@@ -354,6 +491,9 @@ function initGame() {
     
     if (scoreEl) scoreEl.textContent = '0';
     if (inputField) inputField.value = '';
+    
+    // ノーミスゲージ初期化
+    updateNoMissGauge();
     
     if (currentMode === 'rank') {
         const gauges = document.getElementById('gauges');
@@ -577,6 +717,18 @@ function handleInput(e) {
         gameState.correctCount += input.length;
         gameState.totalKeystrokes += input.length;
         gameState.score += 5 * input.length;
+        gameState.noMissStreak += input.length;
+        
+        // タイプ音再生
+        playTypingSound();
+        
+        // 100タイプごとに1-UP
+        if (gameState.noMissStreak >= 100 && gameState.noMissStreak % 100 === 0) {
+            playOneUpSound();
+            gameState.timeLeft += 10;
+            const timeEl = document.getElementById('time');
+            if (timeEl) timeEl.textContent = gameState.timeLeft;
+        }
         
         if (gameState.currentCharPosition >= currentRomaji.length) {
             gameState.currentCharIndex++;
@@ -593,6 +745,18 @@ function handleInput(e) {
                 gameState.correctCount += input.length;
                 gameState.totalKeystrokes += input.length;
                 gameState.score += 5 * input.length;
+                gameState.noMissStreak += input.length;
+                
+                // タイプ音再生
+                playTypingSound();
+                
+                // 100タイプごとに1-UP
+                if (gameState.noMissStreak >= 100 && gameState.noMissStreak % 100 === 0) {
+                    playOneUpSound();
+                    gameState.timeLeft += 10;
+                    const timeEl = document.getElementById('time');
+                    if (timeEl) timeEl.textContent = gameState.timeLeft;
+                }
                 
                 if (gameState.currentCharPosition >= option.length) {
                     gameState.currentCharIndex++;
@@ -610,6 +774,7 @@ function handleInput(e) {
         if (scoreEl) scoreEl.textContent = gameState.score;
         
         updateGauges();
+        updateNoMissGauge();
         
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             loadNextWord();
@@ -617,15 +782,21 @@ function handleInput(e) {
             displayWord();
         }
     } else {
+        // ミス処理
         gameState.missCount++;
         gameState.totalKeystrokes++;
         gameState.score = Math.max(0, gameState.score - 3);
+        gameState.noMissStreak = 0;  // ノーミスカウントリセット
+        
+        // ミス音再生
+        playMissSound();
         
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = gameState.score;
         e.target.value = '';
         
         updateGauges();
+        updateNoMissGauge();
         
         if (currentMode === 'rank' && currentRank.missLimit !== null) {
             if (gameState.missCount >= currentRank.missLimit) {
