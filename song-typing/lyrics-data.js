@@ -4,8 +4,8 @@
 const SONGS = [
     {
         id: 'netsuijo',
-        title: '熱異常 - セカイVer.',
-        youtubeId: 'gKlWQbONt4U',
+        title: '熱異常',
+        youtubeId: 'b2NTglk9tvI',
         lyrics: [
             { time: 15.5, text: 'ねえ', kana: ['ね','え'] },
             { time: 16.5, text: 'いつから', kana: ['い','つ','か','ら'] },
