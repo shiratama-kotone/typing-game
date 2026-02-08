@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歌詞データ作成ツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .setup-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus, .input-group textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-small {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.active {
+            display: block;
+        }
+
+        .video-section {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #youtube-player {
+            width: 100%;
+            height: 500px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .time-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 100px;
+        }
+
+        .lyrics-input-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lyrics-input-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 100px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .lyrics-input-row input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .output-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #output-textarea {
+            width: 100%;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .lyrics-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .lyrics-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lyrics-item-time {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 60px;
+        }
+
+        .lyrics-item-text {
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 歌詞データ作成ツール</h1>
+
+        <!-- セットアップセクション -->
+        <div id="setup-section" class="setup-section">
+            <div class="input-group">
+                <label>曲ID（英数字）</label>
+                <input type="text" id="song-id" placeholder="例: telepathy">
+                <p class="hint">半角英数字とアンダースコアのみ</p>
+            </div>
+
+            <div class="input-group">
+                <label>曲名</label>
+                <input type="text" id="song-title" placeholder="例: テレパシー">
+            </div>
+
+            <div class="input-group">
+                <label>YouTube動画ID</label>
+                <input type="text" id="youtube-id" placeholder="例: dQw4w9WgXcQ">
+                <p class="hint">YouTubeのURLの「v=」の後ろの部分</p>
+            </div>
+
+            <button class="btn" onclick="startCreating()">作成開始</button>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div id="main-content" class="main-content">
+            <!-- YouTube動画 -->
+            <div class="video-section">
+                <div id="youtube-player"></div>
+            </div>
+
+            <!-- コントロール -->
+            <div class="controls">
+                <div class="time-display" id="current-time">0.0秒</div>
+                <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
+                <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
+                <button class="btn btn-small" onclick="rewind()">⏪ 5秒戻る</button>
+            </div>
+
+            <!-- 歌詞入力 -->
+            <div class="lyrics-input-section">
+                <h3>歌詞を追加</h3>
+                <div class="lyrics-input-row">
+                    <button class="btn btn-small" onclick="captureTime()">⏱ 時間取得</button>
+                    <input type="text" id="lyrics-text" placeholder="歌詞（漢字・カタカナOK）">
+                    <input type="text" id="lyrics-kana" placeholder="読み（ひらがなのみ）">
+                    <button class="btn btn-small" onclick="addLyric()">追加</button>
+                </div>
+                <p class="hint">
+                    ⏱時間取得ボタンで現在の再生時間を取得 → 歌詞を入力 → 読みを入力 → 追加
+                </p>
+            </div>
+
+            <!-- 追加済み歌詞リスト -->
+            <div class="lyrics-list" id="lyrics-list"></div>
+
+            <!-- 出力 -->
+            <div class="output-section">
+                <h3>生成されたコード</h3>
+                <button class="btn btn-small" onclick="generateOutput()">コード生成</button>
+                <button class="btn btn-small" onclick="copyOutput()">📋 コピー</button>
+                <div class="success-message" id="copy-success">コピーしました！</div>
+                <textarea id="output-textarea" readonly></textarea>
+                <p class="hint">
+                    このコードをlyrics-data.jsのSONGS配列にコピペしてください
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player = null;
+        let currentTime = 0;
+        let capturedTime = 0;
+        let lyricsData = [];
+        let songId = '';
+        let songTitle = '';
+        let youtubeId = '';
+        let updateInterval = null;
+
+        // YouTube API準備完了
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube API準備完了');
+        }
+
+        // 作成開始
+        function startCreating() {
+            songId = document.getElementById('song-id').value.trim();
+            songTitle = document.getElementById('song-title').value.trim();
+            youtubeId = document.getElementById('youtube-id').value.trim();
+
+            if (!songId || !songTitle || !youtubeId) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+
+            // YouTube Player作成
+            player = new YT.Player('youtube-player', {
+                height: '500',
+                width: '100%',
+                videoId: youtubeId,
+                playerVars: {
+                    autoplay: 0
+                },
+                events: {
+                    onReady: onPlayerReady
+                }
+            });
+
+            document.getElementById('setup-section').style.display = 'none';
+            document.getElementById('main-content').classList.add('active');
+        }
+
+        // プレイヤー準備完了
+        function onPlayerReady(event) {
+            console.log('プレイヤー準備完了');
+            startTimeUpdate();
+        }
+
+        // 時間更新
+        function startTimeUpdate() {
+            updateInterval = setInterval(() => {
+                if (player && player.getCurrentTime) {
+                    currentTime = player.getCurrentTime();
+                    document.getElementById('current-time').textContent = currentTime.toFixed(1) + '秒';
+                }
+            }, 100);
+        }
+
+        // 動画操作
+        function pauseVideo() {
+            if (player) player.pauseVideo();
+        }
+
+        function playVideo() {
+            if (player) player.playVideo();
+        }
+
+        function rewind() {
+            if (player) {
+                const newTime = Math.max(0, currentTime - 5);
+                player.seekTo(newTime);
+            }
+        }
+
+        // 時間取得
+        function captureTime() {
+            capturedTime = currentTime;
+            alert(`時間を取得しました: ${capturedTime.toFixed(1)}秒`);
+        }
+
+        // 歌詞追加
+        function addLyric() {
+            const text = document.getElementById('lyrics-text').value.trim();
+            const kana = document.getElementById('lyrics-kana').value.trim();
+
+            if (!text || !kana) {
+                alert('歌詞と読みを入力してください');
+                return;
+            }
+
+            // ひらがなチェック
+            if (!/^[ぁ-ん]+$/.test(kana)) {
+                alert('読みはひらがなのみで入力してください');
+                return;
+            }
+
+            // kanaを1文字ずつ配列に
+            const kanaArray = kana.split('');
+
+            lyricsData.push({
+                time: capturedTime,
+                text: text,
+                kana: kanaArray
+            });
+
+            // ソート
+            lyricsData.sort((a, b) => a.time - b.time);
+
+            // リスト更新
+            updateLyricsList();
+
+            // 入力欄クリア
+            document.getElementById('lyrics-text').value = '';
+            document.getElementById('lyrics-kana').value = '';
+            capturedTime = 0;
+        }
+
+        // 歌詞リスト更新
+        function updateLyricsList() {
+            const listEl = document.getElementById('lyrics-list');
+            listEl.innerHTML = '<h3>追加済み歌詞（' + lyricsData.length + '行）</h3>';
+
+            lyricsData.forEach((lyric, index) => {
+                const item = document.createElement('div');
+                item.className = 'lyrics-item';
+                item.innerHTML = `
+                    <span class="lyrics-item-time">${lyric.time.toFixed(1)}秒</span>
+                    <span class="lyrics-item-text">${lyric.text} (${lyric.kana.join('')})</span>
+                    <button class="btn-delete" onclick="deleteLyric(${index})">削除</button>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // 歌詞削除
+        function deleteLyric(index) {
+            if (confirm('この歌詞を削除しますか？')) {
+                lyricsData.splice(index, 1);
+                updateLyricsList();
+            }
+        }
+
+        // コード生成
+        function generateOutput() {
+            if (lyricsData.length === 0) {
+                alert('歌詞を1つ以上追加してください');
+                return;
+            }
+
+            let output = `{\n`;
+            output += `    id: '${songId}',\n`;
+            output += `    title: '${songTitle}',\n`;
+            output += `    youtubeId: '${youtubeId}',\n`;
+            output += `    lyrics: [\n`;
+
+            lyricsData.forEach((lyric, index) => {
+                const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
+                output += `        { time: ${lyric.time.toFixed(1)}, text: '${lyric.text}', kana: [${kanaStr}] }`;
+                if (index < lyricsData.length - 1) {
+                    output += ',';
+                }
+                output += '\n';
+            });
+
+            output += `    ]\n`;
+            output += `}`;
+
+            document.getElementById('output-textarea').value = output;
+        }
+
+        // コピー
+        function copyOutput() {
+            const textarea = document.getElementById('output-textarea');
+            if (!textarea.value) {
+                alert('まずコード生成ボタンを押してください');
+                return;
+            }
+
+            textarea.select();
+            document.execCommand('copy');
+
+            const successMsg = document.getElementById('copy-success');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
