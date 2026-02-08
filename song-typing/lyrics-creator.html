@@ -220,12 +220,17 @@
             padding: 15px;
             border-radius: 5px;
             margin-top: 10px;
+            margin-bottom: 10px;
             display: none;
         }
 
         .success-message.show {
             display: block;
             animation: fadeIn 0.3s ease;
+        }
+
+        #import-success {
+            background: #2196F3;
         }
 
         @keyframes fadeIn {
@@ -294,13 +299,18 @@
 
             <!-- 出力 -->
             <div class="output-section">
-                <h3>生成されたコード</h3>
-                <button class="btn btn-small" onclick="generateOutput()">コード生成</button>
-                <button class="btn btn-small" onclick="copyOutput()">📋 コピー</button>
+                <h3>生成されたコード / インポート</h3>
+                <div style="margin-bottom: 10px;">
+                    <button class="btn btn-small" onclick="generateOutput()">コード生成</button>
+                    <button class="btn btn-small" onclick="copyOutput()">📋 コピー</button>
+                    <button class="btn btn-small" onclick="importCode()" style="background: #4CAF50;">📥 インポート</button>
+                </div>
                 <div class="success-message" id="copy-success">コピーしました！</div>
-                <textarea id="output-textarea" readonly></textarea>
+                <div class="success-message" id="import-success">インポートしました！</div>
+                <textarea id="output-textarea"></textarea>
                 <p class="hint">
-                    このコードをlyrics-data.jsのSONGS配列にコピペしてください
+                    【生成】このコードをlyrics-data.jsのSONGS配列にコピペ<br>
+                    【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
                 </p>
             </div>
         </div>
@@ -399,9 +409,9 @@
                 return;
             }
 
-            // ひらがなチェック
-            if (!/^[ぁ-ん]+$/.test(kana)) {
-                alert('読みはひらがなのみで入力してください');
+            // ひらがなチェック（長音記号も許可）
+            if (!/^[ぁ-んー]+$/.test(kana)) {
+                alert('読みはひらがなと長音記号（ー）のみで入力してください');
                 return;
             }
 
@@ -495,6 +505,57 @@
             setTimeout(() => {
                 successMsg.classList.remove('show');
             }, 2000);
+        }
+
+        // インポート機能
+        function importCode() {
+            const textarea = document.getElementById('output-textarea');
+            const code = textarea.value.trim();
+
+            if (!code) {
+                alert('コードを貼り付けてください');
+                return;
+            }
+
+            try {
+                // コードをJavaScriptオブジェクトとして評価
+                const songData = eval(`(${code})`);
+
+                // バリデーション
+                if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
+                    throw new Error('不正なフォーマットです');
+                }
+
+                // データをインポート
+                songId = songData.id;
+                songTitle = songData.title;
+                youtubeId = songData.youtubeId;
+                lyricsData = songData.lyrics.map(lyric => ({
+                    time: lyric.time,
+                    text: lyric.text,
+                    kana: lyric.kana
+                }));
+
+                // YouTube動画を更新
+                if (player) {
+                    player.loadVideoById(youtubeId);
+                }
+
+                // リスト更新
+                updateLyricsList();
+
+                // 成功メッセージ
+                const successMsg = document.getElementById('import-success');
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 2000);
+
+                alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行`);
+
+            } catch (error) {
+                alert('インポートに失敗しました。\nコードの形式を確認してください。\n\nエラー: ' + error.message);
+            }
         }
     </script>
 </body>
