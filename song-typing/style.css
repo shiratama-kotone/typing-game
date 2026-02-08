@@ -1,0 +1,350 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    max-width: 1200px;
+    padding: 20px;
+    text-align: center;
+}
+
+.screen.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* タイトル画面 */
+.game-title {
+    font-size: 3.5rem;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    margin-bottom: 50px;
+    animation: titlePulse 2s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-button {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border: none;
+    padding: 15px 50px;
+    font-size: 1.5rem;
+    color: white;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    font-weight: bold;
+}
+
+.menu-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.menu-button:active {
+    transform: translateY(0);
+}
+
+h2 {
+    color: #fff;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* 曲選択画面 */
+.song-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.song-item {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    padding: 20px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.song-item:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(10px);
+}
+
+.back-btn {
+    margin-top: 20px;
+}
+
+/* YouTube動画 */
+.youtube-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 20px;
+    padding-bottom: 45%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+#youtube-player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.youtube-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: all;
+}
+
+/* 100ノーミスゲージ */
+.combo-gauge-container {
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.combo-label {
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.combo-gauge-bar {
+    position: relative;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 215, 0, 0.5);
+}
+
+.combo-gauge-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+    border-radius: 15px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.combo-gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+/* スコア表示 */
+.score-display {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    color: #fff;
+    font-size: 1.5rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.score-display div {
+    margin: 10px 0;
+}
+
+#score {
+    font-weight: bold;
+    font-size: 2rem;
+    color: #ffd700;
+}
+
+/* 歌詞表示 */
+.lyrics-display {
+    margin: 30px auto;
+    max-width: 800px;
+}
+
+.current-line {
+    margin-bottom: 20px;
+}
+
+.japanese-line {
+    font-size: 2.5rem;
+    color: #fff;
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    min-height: 60px;
+}
+
+.romaji-line {
+    font-size: 1.8rem;
+    color: #ffd700;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    min-height: 45px;
+}
+
+.romaji-line .correct {
+    color: #4CAF50;
+}
+
+.romaji-line .current {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.romaji-line .remaining {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.next-line {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 20px;
+    min-height: 30px;
+}
+
+/* 入力フィールド */
+.input-field {
+    width: 80%;
+    max-width: 600px;
+    padding: 15px;
+    font-size: 1.5rem;
+    border: 3px solid #fff;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    outline: none;
+    margin: 20px auto;
+    display: block;
+}
+
+.input-field:focus {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.input-field:disabled {
+    background: rgba(200, 200, 200, 0.5);
+    cursor: not-allowed;
+}
+
+/* リザルト画面 */
+.result-content {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.result-details {
+    color: #fff;
+    font-size: 1.3rem;
+    margin: 20px 0;
+}
+
+.result-details p {
+    margin: 15px 0;
+}
+
+.result-details span {
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: #ffd700;
+}
+
+.result-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 2.5rem;
+    }
+    
+    .menu-button {
+        font-size: 1.2rem;
+        padding: 12px 40px;
+    }
+    
+    .japanese-line {
+        font-size: 2rem;
+    }
+    
+    .romaji-line {
+        font-size: 1.5rem;
+    }
+    
+    .youtube-container {
+        padding-bottom: 56.25%;
+    }
+}
