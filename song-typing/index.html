@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歌詞タイピングゲーム</title>
+    <link rel="stylesheet" href="lyrics-style.css">
+</head>
+<body>
+    <!-- タイトル画面 -->
+    <div id="title-screen" class="screen active">
+        <h1 class="game-title">歌詞タイピング</h1>
+        <div class="menu">
+            <button class="menu-button" onclick="showSongSelect()">曲を選ぶ</button>
+        </div>
+    </div>
+
+    <!-- 曲選択画面 -->
+    <div id="song-select-screen" class="screen">
+        <h2>曲を選択</h2>
+        <div id="song-list" class="song-list"></div>
+        <button class="menu-button back-btn" onclick="showTitleScreen()">戻る</button>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game-screen" class="screen">
+        <!-- YouTube動画 -->
+        <div id="youtube-container" class="youtube-container">
+            <div id="youtube-player"></div>
+            <div class="youtube-overlay"></div>
+        </div>
+
+        <!-- 100ノーミスゲージ -->
+        <div id="combo-gauge-container" class="combo-gauge-container">
+            <div class="combo-label">100ノーミスボーナス</div>
+            <div class="combo-gauge-bar">
+                <div id="combo-gauge" class="combo-gauge-fill"></div>
+                <div id="combo-gauge-text" class="combo-gauge-text">0 / 100</div>
+            </div>
+        </div>
+
+        <!-- スコア表示 -->
+        <div id="score-display" class="score-display">
+            <div>スコア: <span id="score">0</span></div>
+            <div>正打: <span id="correct-count">0</span> | ミス: <span id="miss-count">0</span></div>
+        </div>
+
+        <!-- 歌詞表示エリア -->
+        <div id="lyrics-display" class="lyrics-display">
+            <div id="current-line" class="current-line">
+                <div id="japanese-line" class="japanese-line"></div>
+                <div id="romaji-line" class="romaji-line"></div>
+            </div>
+            <div id="next-line" class="next-line"></div>
+        </div>
+
+        <!-- 入力フィールド -->
+        <input type="text" id="input-field" class="input-field" autocomplete="off" disabled>
+    </div>
+
+    <!-- リザルト画面 -->
+    <div id="result-screen" class="screen">
+        <div class="result-content">
+            <h2>結果</h2>
+            <div class="result-details">
+                <p>スコア: <span id="final-score">0</span></p>
+                <p>正打鍵数: <span id="final-correct">0</span></p>
+                <p>ミスタイプ数: <span id="final-miss">0</span></p>
+                <p>打てなかった行数: <span id="final-missed-lines">0</span></p>
+                <p>平均キータイプ数: <span id="final-kps">0.0</span> 回/秒</p>
+            </div>
+            <div class="result-buttons">
+                <button class="menu-button" onclick="replaySong()">もう一度</button>
+                <button class="menu-button" onclick="showSongSelect()">曲選択へ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="lyrics-data.js"></script>
+    <script src="lyrics-script.js"></script>
+</body>
+</html>
