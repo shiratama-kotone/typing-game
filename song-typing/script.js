@@ -40,7 +40,7 @@ const ROMAJI_TABLE = {
     'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'],
     'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
     'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
-    'わ': ['wa'], 'を': ['wo'], 'ん': ['n', 'nn'],
+    'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n'],
     'ー': ['-']
 };
 
@@ -155,7 +155,10 @@ function startGame() {
             disablekb: 1,
             fs: 0,
             modestbranding: 1,
-            rel: 0
+            rel: 0,
+            iv_load_policy: 3,  // アノテーション非表示
+            cc_load_policy: 0,  // 字幕デフォルトOFF
+            playsinline: 1      // インライン再生
         },
         events: {
             onReady: onPlayerReady,
@@ -306,15 +309,11 @@ function convertToRomaji(hiraganaArray) {
         // 「ん」の処理
         if (hiraganaArray[i] === 'ん') {
             if (i === hiraganaArray.length - 1) {
+                // 最後の「ん」はnn固定
                 result.push({ options: ['nn'], current: 'nn' });
             } else {
-                const nextChar = hiraganaArray[i + 1];
-                const nextRomaji = ROMAJI_TABLE[nextChar];
-                if (nextRomaji && nextRomaji[0] && !'aiueoyn'.includes(nextRomaji[0][0])) {
-                    result.push({ options: ['nn', 'n'], current: 'nn' });
-                } else {
-                    result.push({ options: ['nn'], current: 'nn' });
-                }
+                // 途中の「ん」はn表示、nnでも打てる
+                result.push({ options: ['n', 'nn'], current: 'n' });
             }
             i++;
             continue;
