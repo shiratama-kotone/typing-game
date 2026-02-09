@@ -142,7 +142,7 @@ const SONGS = [
         { time: 99.4, text: 'Today is the 31st',kana: ['t','o','d','a','y','i','s','t','h','e','3','1','s','t'] },
         { time: 100.8, text: 'CANDY CANDY COOKIE COOKIE',kana: ['c','a','n','d','y','c','a','n','d','y','c','o','o','k','i','e','c','o','o','k','i','e'] },
         { time: 102.4, text: 'CHOCOLATE',kana: ['c','h','o','c','o','l','a','t','e'] },
-        { time: 103.8, text: 'PARTY PARTY PARTY PARTY',kana: ['p','a','r','t','y','p','a','r','t','y','p','a','r','t','y','p','a','r','t','y']
+        { time: 103.8, text: 'PARTY PARTY PARTY PARTY',kana: ['p','a','r','t','y','p','a','r','t','y','p','a','r','t','y','p','a','r','t','y']　},
         { time: 105.4, text: '無責任なのは', kana: ['む','せ','き','に','ん','な','の','は'] },
         { time: 106.8, text: 'PUMPKIN PUMPKIN PUMPKIN PUMPKIN', kana: ['p','u','m','p','k','i','n','p','u','m','p','k','i','n','p','u','m','p','k','i','n','p','u','m','p','k','i','n'] },
         { time: 108.5, text: 'ボクじゃないわ', kana: ['ぼ','く','じ','ゃ','な','い','わ'] },
