@@ -91,6 +91,11 @@
             font-size: 0.9rem;
         }
 
+        .btn-tiny {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
         .main-content {
             display: none;
         }
@@ -113,20 +118,29 @@
         }
 
         .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
             background: #f5f5f5;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
         }
 
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .controls-row:last-child {
+            margin-bottom: 0;
+        }
+
         .time-display {
             font-size: 1.5rem;
             font-weight: bold;
             color: #667eea;
-            min-width: 100px;
+            min-width: 120px;
         }
 
         .lyrics-input-section {
@@ -138,7 +152,7 @@
 
         .lyrics-input-row {
             display: grid;
-            grid-template-columns: 100px 1fr 1fr 100px;
+            grid-template-columns: 1fr 1fr 100px;
             gap: 10px;
             margin-bottom: 10px;
             align-items: center;
@@ -186,7 +200,7 @@
         .lyrics-item-time {
             font-weight: bold;
             color: #667eea;
-            min-width: 60px;
+            min-width: 80px;
         }
 
         .lyrics-item-text {
@@ -237,6 +251,18 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        .control-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .control-label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -274,23 +300,43 @@
 
             <!-- コントロール -->
             <div class="controls">
-                <div class="time-display" id="current-time">0.0秒</div>
-                <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
-                <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
-                <button class="btn btn-small" onclick="rewind()">⏪ 5秒戻る</button>
+                <div class="controls-row">
+                    <div class="time-display" id="current-time">0.00秒</div>
+                    <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
+                    <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
+                </div>
+                
+                <div class="controls-row">
+                    <span class="control-label">微調整:</span>
+                    <div class="control-group">
+                        <button class="btn btn-tiny" onclick="seekBy(-0.01)">◀ 0.01秒</button>
+                        <button class="btn btn-tiny" onclick="seekBy(0.01)">0.01秒 ▶</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-tiny" onclick="seekBy(-0.1)">◀ 0.1秒</button>
+                        <button class="btn btn-tiny" onclick="seekBy(0.1)">0.1秒 ▶</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-tiny" onclick="seekBy(-1)">◀ 1秒</button>
+                        <button class="btn btn-tiny" onclick="seekBy(1)">1秒 ▶</button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-tiny" onclick="seekBy(-5)">◀ 5秒</button>
+                        <button class="btn btn-tiny" onclick="seekBy(5)">5秒 ▶</button>
+                    </div>
+                </div>
             </div>
 
             <!-- 歌詞入力 -->
             <div class="lyrics-input-section">
                 <h3>歌詞を追加</h3>
                 <div class="lyrics-input-row">
-                    <button class="btn btn-small" onclick="captureTime()">⏱ 時間取得</button>
                     <input type="text" id="lyrics-text" placeholder="歌詞（漢字・カタカナOK）">
                     <input type="text" id="lyrics-kana" placeholder="読み（ひらがなのみ）">
                     <button class="btn btn-small" onclick="addLyric()">追加</button>
                 </div>
                 <p class="hint">
-                    ⏱時間取得ボタンで現在の再生時間を取得 → 歌詞を入力 → 読みを入力 → 追加
+                    歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加
                 </p>
             </div>
 
@@ -321,7 +367,6 @@
     <script>
         let player = null;
         let currentTime = 0;
-        let capturedTime = 0;
         let lyricsData = [];
         let songId = '';
         let songTitle = '';
@@ -372,7 +417,7 @@
             updateInterval = setInterval(() => {
                 if (player && player.getCurrentTime) {
                     currentTime = player.getCurrentTime();
-                    document.getElementById('current-time').textContent = currentTime.toFixed(1) + '秒';
+                    document.getElementById('current-time').textContent = currentTime.toFixed(2) + '秒';
                 }
             }, 100);
         }
@@ -386,20 +431,15 @@
             if (player) player.playVideo();
         }
 
-        function rewind() {
+        // 時間調整
+        function seekBy(seconds) {
             if (player) {
-                const newTime = Math.max(0, currentTime - 5);
-                player.seekTo(newTime);
+                const newTime = Math.max(0, currentTime + seconds);
+                player.seekTo(newTime, true);
             }
         }
 
-        // 時間取得
-        function captureTime() {
-            capturedTime = currentTime;
-            alert(`時間を取得しました: ${capturedTime.toFixed(1)}秒`);
-        }
-
-        // 歌詞追加
+        // 歌詞追加（自動で時間取得）
         function addLyric() {
             const text = document.getElementById('lyrics-text').value.trim();
             const kana = document.getElementById('lyrics-kana').value.trim();
@@ -418,8 +458,9 @@
             // kanaを1文字ずつ配列に
             const kanaArray = kana.split('');
 
+            // 現在の時間を自動取得
             lyricsData.push({
-                time: capturedTime,
+                time: currentTime,
                 text: text,
                 kana: kanaArray
             });
@@ -433,7 +474,6 @@
             // 入力欄クリア
             document.getElementById('lyrics-text').value = '';
             document.getElementById('lyrics-kana').value = '';
-            capturedTime = 0;
         }
 
         // 歌詞リスト更新
@@ -445,7 +485,7 @@
                 const item = document.createElement('div');
                 item.className = 'lyrics-item';
                 item.innerHTML = `
-                    <span class="lyrics-item-time">${lyric.time.toFixed(1)}秒</span>
+                    <span class="lyrics-item-time">${lyric.time.toFixed(2)}秒</span>
                     <span class="lyrics-item-text">${lyric.text} (${lyric.kana.join('')})</span>
                     <button class="btn-delete" onclick="deleteLyric(${index})">削除</button>
                 `;
@@ -476,7 +516,7 @@
 
             lyricsData.forEach((lyric, index) => {
                 const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
-                output += `        { time: ${lyric.time.toFixed(1)}, text: '${lyric.text}', kana: [${kanaStr}] }`;
+                output += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}] }`;
                 if (index < lyricsData.length - 1) {
                     output += ',';
                 }
