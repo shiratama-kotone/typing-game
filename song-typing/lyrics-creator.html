@@ -41,6 +41,30 @@
             margin-bottom: 30px;
         }
 
+        .setup-divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .setup-divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background: #ccc;
+        }
+
+        .setup-divider span {
+            background: #f5f5f5;
+            padding: 0 15px;
+            position: relative;
+            color: #666;
+            font-weight: bold;
+        }
+
         .input-group {
             margin-bottom: 15px;
         }
@@ -58,6 +82,12 @@
             border: 2px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
+        }
+
+        .input-group textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
         }
 
         .input-group input:focus, .input-group textarea:focus {
@@ -94,6 +124,10 @@
         .btn-tiny {
             padding: 6px 12px;
             font-size: 0.85rem;
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
 
         .main-content {
@@ -271,6 +305,7 @@
 
         <!-- セットアップセクション -->
         <div id="setup-section" class="setup-section">
+            <h3>新規作成</h3>
             <div class="input-group">
                 <label>曲ID（英数字）</label>
                 <input type="text" id="song-id" placeholder="例: telepathy">
@@ -289,6 +324,19 @@
             </div>
 
             <button class="btn" onclick="startCreating()">作成開始</button>
+
+            <div class="setup-divider">
+                <span>または</span>
+            </div>
+
+            <h3>既存データをインポート</h3>
+            <div class="input-group">
+                <label>歌詞データコード</label>
+                <textarea id="import-textarea" placeholder="生成されたコードをここに貼り付けてください"></textarea>
+                <p class="hint">既存の歌詞データを編集する場合はこちら</p>
+            </div>
+
+            <button class="btn btn-import" onclick="startWithImport()">インポートして開始</button>
         </div>
 
         <!-- メインコンテンツ -->
@@ -389,6 +437,49 @@
                 return;
             }
 
+            // 歌詞データを初期化
+            lyricsData = [];
+
+            createPlayer();
+        }
+
+        // インポートして開始
+        function startWithImport() {
+            const code = document.getElementById('import-textarea').value.trim();
+
+            if (!code) {
+                alert('インポートするコードを入力してください');
+                return;
+            }
+
+            try {
+                // コードをJavaScriptオブジェクトとして評価
+                const songData = eval(`(${code})`);
+
+                // バリデーション
+                if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
+                    throw new Error('不正なフォーマットです');
+                }
+
+                // データをインポート
+                songId = songData.id;
+                songTitle = songData.title;
+                youtubeId = songData.youtubeId;
+                lyricsData = songData.lyrics.map(lyric => ({
+                    time: lyric.time,
+                    text: lyric.text,
+                    kana: lyric.kana
+                }));
+
+                createPlayer();
+
+            } catch (error) {
+                alert('インポートに失敗しました。\nコードの形式を確認してください。\n\nエラー: ' + error.message);
+            }
+        }
+
+        // プレイヤー作成
+        function createPlayer() {
             // YouTube Player作成
             player = new YT.Player('youtube-player', {
                 height: '500',
@@ -410,6 +501,10 @@
         function onPlayerReady(event) {
             console.log('プレイヤー準備完了');
             startTimeUpdate();
+            // インポートした歌詞があればリスト表示
+            if (lyricsData.length > 0) {
+                updateLyricsList();
+            }
         }
 
         // 時間更新
