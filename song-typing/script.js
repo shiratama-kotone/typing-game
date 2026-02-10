@@ -266,12 +266,12 @@ function loadLyric(lyric) {
         japaneseLineEl.textContent = lyric.text;
     }
     
-    // 次の歌詞を表示
-    if (nextLineEl && currentLyricIndex < currentSong.lyrics.length) {
-        nextLineEl.textContent = `次: ${currentSong.lyrics[currentLyricIndex].text}`;
-    } else if (nextLineEl) {
-        nextLineEl.textContent = '';
-    }
+   // 次の歌詞を表示
+if (nextLineEl && currentLyricIndex + 1 < currentSong.lyrics.length) {
+    nextLineEl.textContent = `次は ${currentSong.lyrics[currentLyricIndex + 1].text}`;
+} else if (nextLineEl) {
+    nextLineEl.textContent = '';
+}
     
     displayRomaji();
     
