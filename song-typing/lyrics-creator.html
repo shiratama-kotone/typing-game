@@ -130,6 +130,14 @@
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
 
+        .btn-preview {
+            background: linear-gradient(135deg, #FF6B6B 0%, #ee5a24 100%);
+        }
+
+        .btn-preview.active {
+            background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+        }
+
         .main-content {
             display: none;
         }
@@ -297,6 +305,112 @@
             color: #333;
             margin-right: 5px;
         }
+
+        /* ===== プレビューオーバーレイ ===== */
+        .preview-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        .preview-overlay.active {
+            display: flex;
+        }
+
+        .preview-video-wrapper {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(102, 126, 234, 0.4);
+            margin-bottom: 30px;
+        }
+
+        #preview-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .preview-lyrics-area {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .preview-current-lyric {
+            font-size: 2.4rem;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 0.05em;
+            min-height: 3rem;
+            margin-bottom: 16px;
+            text-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+            transition: opacity 0.2s ease;
+        }
+
+        .preview-romaji {
+            font-size: 1.4rem;
+            color: #aac4ff;
+            letter-spacing: 0.12em;
+            min-height: 2rem;
+            margin-bottom: 24px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .preview-next-lyric {
+            font-size: 1.1rem;
+            color: #888;
+            min-height: 1.5rem;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .preview-time {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .preview-close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            z-index: 1001;
+        }
+
+        .preview-close-btn:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+        .preview-no-lyrics {
+            color: #555;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -308,18 +422,18 @@
             <h3>新規作成</h3>
             <div class="input-group">
                 <label>曲ID（英数字）</label>
-                <input type="text" id="song-id" placeholder="例: telepathy">
+                <input type="text" id="song-id" placeholder="例: bakenohana">
                 <p class="hint">半角英数字とアンダースコアのみ</p>
             </div>
 
             <div class="input-group">
                 <label>曲名</label>
-                <input type="text" id="song-title" placeholder="例: テレパシー">
+                <input type="text" id="song-title" placeholder="例: 化けの花">
             </div>
 
             <div class="input-group">
                 <label>YouTube動画ID</label>
-                <input type="text" id="youtube-id" placeholder="例: dQw4w9WgXcQ">
+                <input type="text" id="youtube-id" placeholder="例: jaSJ4t2ITW8">
                 <p class="hint">YouTubeのURLの「v=」の後ろの部分</p>
             </div>
 
@@ -333,7 +447,7 @@
             <div class="input-group">
                 <label>歌詞データコード</label>
                 <textarea id="import-textarea" placeholder="生成されたコードをここに貼り付けてください"></textarea>
-                <p class="hint">既存の歌詞データを編集する場合はこちら</p>
+                <p class="hint">既存の歌詞データを編集する場合はこっち</p>
             </div>
 
             <button class="btn btn-import" onclick="startWithImport()">インポートして開始</button>
@@ -352,6 +466,7 @@
                     <div class="time-display" id="current-time">0.00秒</div>
                     <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
                     <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
+                    <button class="btn btn-small btn-preview" id="preview-btn" onclick="openPreview()">👁 プレビュー</button>
                 </div>
                 
                 <div class="controls-row">
@@ -380,7 +495,7 @@
                 <h3>歌詞を追加</h3>
                 <div class="lyrics-input-row">
                     <input type="text" id="lyrics-text" placeholder="歌詞（漢字・カタカナOK）">
-                    <input type="text" id="lyrics-kana" placeholder="読み（ひらがなのみ）">
+                    <input type="text" id="lyrics-kana" placeholder="読み（平仮名、半角小文字英数字）">
                     <button class="btn btn-small" onclick="addLyric()">追加</button>
                 </div>
                 <p class="hint">
@@ -410,16 +525,101 @@
         </div>
     </div>
 
+    <!-- プレビューオーバーレイ -->
+    <div class="preview-overlay" id="preview-overlay">
+        <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
+        <div class="preview-video-wrapper">
+            <div id="preview-player"></div>
+        </div>
+        <div class="preview-lyrics-area">
+            <div class="preview-current-lyric" id="preview-current-lyric">
+                <span class="preview-no-lyrics">▶ 再生すると歌詞が表示されます</span>
+            </div>
+            <div class="preview-romaji" id="preview-romaji"></div>
+            <div class="preview-next-lyric" id="preview-next-lyric"></div>
+        </div>
+        <div class="preview-controls">
+            <div class="preview-time" id="preview-time">0.00秒</div>
+            <button class="btn btn-small" onclick="previewPause()">⏸ 一時停止</button>
+            <button class="btn btn-small" onclick="previewPlay()">▶ 再生</button>
+            <div class="control-group">
+                <button class="btn btn-tiny" onclick="previewSeekBy(-5)">◀ 5秒</button>
+                <button class="btn btn-tiny" onclick="previewSeekBy(5)">5秒 ▶</button>
+            </div>
+        </div>
+    </div>
+
     <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let player = null;
+        let previewPlayer = null;
         let currentTime = 0;
+        let previewCurrentTime = 0;
         let lyricsData = [];
         let songId = '';
         let songTitle = '';
         let youtubeId = '';
         let updateInterval = null;
+        let previewUpdateInterval = null;
+        let previewLyricIndex = 0;
+
+        // ローマ字変換テーブル
+        const ROMAJI_TABLE = {
+            'あ':'a','い':'i','う':'u','え':'e','お':'o',
+            'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+            'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+            'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+            'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+            'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+            'だ':'da','ぢ':'di','づ':'du','で':'de','ど':'do',
+            'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+            'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+            'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+            'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+            'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+            'や':'ya','ゆ':'yu','よ':'yo',
+            'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+            'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
+        };
+
+        const COMBO_ROMAJI = {
+            'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
+            'しゃ':'sha','しゅ':'shu','しょ':'sho',
+            'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
+            'にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+            'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
+            'みゃ':'mya','みゅ':'myu','みょ':'myo',
+            'りゃ':'rya','りゅ':'ryu','りょ':'ryo',
+            'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+            'じゃ':'ja','じゅ':'ju','じょ':'jo',
+            'びゃ':'bya','びゅ':'byu','びょ':'byo',
+            'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+            'ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo'
+        };
+
+        function kanaToRomaji(kanaArr) {
+            let result = '';
+            let i = 0;
+            while (i < kanaArr.length) {
+                if (i + 1 < kanaArr.length) {
+                    const combo = kanaArr[i] + kanaArr[i + 1];
+                    if (COMBO_ROMAJI[combo]) {
+                        result += COMBO_ROMAJI[combo];
+                        i += 2;
+                        continue;
+                    }
+                }
+                if (kanaArr[i] === 'っ' && i + 1 < kanaArr.length) {
+                    const next = ROMAJI_TABLE[kanaArr[i + 1]];
+                    if (next) { result += next[0]; i++; continue; }
+                }
+                const r = ROMAJI_TABLE[kanaArr[i]];
+                result += r ? r : kanaArr[i];
+                i++;
+            }
+            return result;
+        }
 
         // YouTube API準備完了
         function onYouTubeIframeAPIReady() {
@@ -437,9 +637,7 @@
                 return;
             }
 
-            // 歌詞データを初期化
             lyricsData = [];
-
             createPlayer();
         }
 
@@ -453,15 +651,12 @@
             }
 
             try {
-                // コードをJavaScriptオブジェクトとして評価
                 const songData = eval(`(${code})`);
 
-                // バリデーション
                 if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
                     throw new Error('不正なフォーマットです');
                 }
 
-                // データをインポート
                 songId = songData.id;
                 songTitle = songData.title;
                 youtubeId = songData.youtubeId;
@@ -480,14 +675,11 @@
 
         // プレイヤー作成
         function createPlayer() {
-            // YouTube Player作成
             player = new YT.Player('youtube-player', {
                 height: '500',
                 width: '100%',
                 videoId: youtubeId,
-                playerVars: {
-                    autoplay: 0
-                },
+                playerVars: { autoplay: 0 },
                 events: {
                     onReady: onPlayerReady
                 }
@@ -499,12 +691,8 @@
 
         // プレイヤー準備完了
         function onPlayerReady(event) {
-            console.log('プレイヤー準備完了');
             startTimeUpdate();
-            // インポートした歌詞があればリスト表示
-            if (lyricsData.length > 0) {
-                updateLyricsList();
-            }
+            if (lyricsData.length > 0) updateLyricsList();
         }
 
         // 時間更新
@@ -518,15 +706,9 @@
         }
 
         // 動画操作
-        function pauseVideo() {
-            if (player) player.pauseVideo();
-        }
+        function pauseVideo() { if (player) player.pauseVideo(); }
+        function playVideo()  { if (player) player.playVideo(); }
 
-        function playVideo() {
-            if (player) player.playVideo();
-        }
-
-        // 時間調整
         function seekBy(seconds) {
             if (player) {
                 const newTime = Math.max(0, currentTime + seconds);
@@ -534,7 +716,118 @@
             }
         }
 
-        // 歌詞追加（自動で時間取得）
+        // ===== プレビュー機能 =====
+        function openPreview() {
+            if (lyricsData.length === 0) {
+                alert('歌詞が1つもありません。先に歌詞を追加してください。');
+                return;
+            }
+
+            // メイン動画を一時停止
+            if (player) player.pauseVideo();
+
+            previewLyricIndex = 0;
+            document.getElementById('preview-overlay').classList.add('active');
+
+            // プレビュープレイヤー作成
+            previewPlayer = new YT.Player('preview-player', {
+                height: '100%',
+                width: '100%',
+                videoId: youtubeId,
+                playerVars: {
+                    autoplay: 1,
+                    controls: 0,
+                    disablekb: 1,
+                    fs: 0,
+                    modestbranding: 1,
+                    rel: 0
+                },
+                events: {
+                    onReady: onPreviewPlayerReady
+                }
+            });
+        }
+
+        function onPreviewPlayerReady(event) {
+            event.target.playVideo();
+
+            // 歌詞初期化
+            document.getElementById('preview-current-lyric').textContent = '';
+            document.getElementById('preview-romaji').textContent = '';
+            document.getElementById('preview-next-lyric').textContent = '';
+
+            previewUpdateInterval = setInterval(() => {
+                if (!previewPlayer || !previewPlayer.getCurrentTime) return;
+
+                previewCurrentTime = previewPlayer.getCurrentTime();
+                document.getElementById('preview-time').textContent = previewCurrentTime.toFixed(2) + '秒';
+
+                updatePreviewLyrics(previewCurrentTime);
+            }, 50);
+        }
+
+        function updatePreviewLyrics(t) {
+            // 現在時刻に合う歌詞インデックスを探す
+            let idx = -1;
+            for (let i = 0; i < lyricsData.length; i++) {
+                if (t >= lyricsData[i].time) {
+                    idx = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (idx === -1) {
+                // まだ歌詞前
+                document.getElementById('preview-current-lyric').innerHTML =
+                    '<span style="color:#555;font-size:1rem;">▶ 歌詞を待っています...</span>';
+                document.getElementById('preview-romaji').textContent = '';
+                document.getElementById('preview-next-lyric').textContent =
+                    lyricsData.length > 0 ? '次: ' + lyricsData[0].text : '';
+                return;
+            }
+
+            const lyric = lyricsData[idx];
+            document.getElementById('preview-current-lyric').textContent = lyric.text;
+            document.getElementById('preview-romaji').textContent = kanaToRomaji(lyric.kana);
+
+            const nextLyric = lyricsData[idx + 1];
+            document.getElementById('preview-next-lyric').textContent =
+                nextLyric ? '次: ' + nextLyric.text : '';
+        }
+
+        function closePreview() {
+            // インターバル停止
+            if (previewUpdateInterval) {
+                clearInterval(previewUpdateInterval);
+                previewUpdateInterval = null;
+            }
+
+            // プレビュープレイヤー破棄
+            if (previewPlayer) {
+                previewPlayer.destroy();
+                previewPlayer = null;
+                // destroyするとDOMごと消えるので再作成
+                const wrapper = document.querySelector('.preview-video-wrapper');
+                const newDiv = document.createElement('div');
+                newDiv.id = 'preview-player';
+                wrapper.appendChild(newDiv);
+            }
+
+            document.getElementById('preview-overlay').classList.remove('active');
+        }
+
+        function previewPause() { if (previewPlayer) previewPlayer.pauseVideo(); }
+        function previewPlay()  { if (previewPlayer) previewPlayer.playVideo(); }
+
+        function previewSeekBy(seconds) {
+            if (previewPlayer) {
+                const newTime = Math.max(0, previewCurrentTime + seconds);
+                previewPlayer.seekTo(newTime, true);
+            }
+        }
+
+        // ===== 編集機能 =====
         function addLyric() {
             const text = document.getElementById('lyrics-text').value.trim();
             const kana = document.getElementById('lyrics-kana').value.trim();
@@ -544,34 +837,26 @@
                 return;
             }
 
-            // ひらがなチェック（長音記号・小文字英数字も許可）
             if (!/^[ぁ-んーa-z0-9 ]+$/.test(kana)) {
                 alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください');
                 return;
             }
 
-            // kanaを1文字ずつ配列に
             const kanaArray = kana.split('');
 
-            // 現在の時間を自動取得
             lyricsData.push({
                 time: currentTime,
                 text: text,
                 kana: kanaArray
             });
 
-            // ソート
             lyricsData.sort((a, b) => a.time - b.time);
-
-            // リスト更新
             updateLyricsList();
 
-            // 入力欄クリア
             document.getElementById('lyrics-text').value = '';
             document.getElementById('lyrics-kana').value = '';
         }
 
-        // 歌詞リスト更新
         function updateLyricsList() {
             const listEl = document.getElementById('lyrics-list');
             listEl.innerHTML = '<h3>追加済み歌詞（' + lyricsData.length + '行）</h3>';
@@ -588,7 +873,6 @@
             });
         }
 
-        // 歌詞削除
         function deleteLyric(index) {
             if (confirm('この歌詞を削除しますか？')) {
                 lyricsData.splice(index, 1);
@@ -596,7 +880,6 @@
             }
         }
 
-        // コード生成
         function generateOutput() {
             if (lyricsData.length === 0) {
                 alert('歌詞を1つ以上追加してください');
@@ -612,37 +895,27 @@
             lyricsData.forEach((lyric, index) => {
                 const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
                 output += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}] }`;
-                if (index < lyricsData.length - 1) {
-                    output += ',';
-                }
+                if (index < lyricsData.length - 1) output += ',';
                 output += '\n';
             });
 
-            output += `    ]\n`;
-            output += `}`;
-
+            output += `    ]\n}`;
             document.getElementById('output-textarea').value = output;
         }
 
-        // コピー
         function copyOutput() {
             const textarea = document.getElementById('output-textarea');
             if (!textarea.value) {
                 alert('まずコード生成ボタンを押してください');
                 return;
             }
-
             textarea.select();
             document.execCommand('copy');
-
             const successMsg = document.getElementById('copy-success');
             successMsg.classList.add('show');
-            setTimeout(() => {
-                successMsg.classList.remove('show');
-            }, 2000);
+            setTimeout(() => successMsg.classList.remove('show'), 2000);
         }
 
-        // インポート機能
         function importCode() {
             const textarea = document.getElementById('output-textarea');
             const code = textarea.value.trim();
@@ -653,15 +926,12 @@
             }
 
             try {
-                // コードをJavaScriptオブジェクトとして評価
                 const songData = eval(`(${code})`);
 
-                // バリデーション
                 if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
                     throw new Error('不正なフォーマットです');
                 }
 
-                // データをインポート
                 songId = songData.id;
                 songTitle = songData.title;
                 youtubeId = songData.youtubeId;
@@ -671,20 +941,12 @@
                     kana: lyric.kana
                 }));
 
-                // YouTube動画を更新
-                if (player) {
-                    player.loadVideoById(youtubeId);
-                }
-
-                // リスト更新
+                if (player) player.loadVideoById(youtubeId);
                 updateLyricsList();
 
-                // 成功メッセージ
                 const successMsg = document.getElementById('import-success');
                 successMsg.classList.add('show');
-                setTimeout(() => {
-                    successMsg.classList.remove('show');
-                }, 2000);
+                setTimeout(() => successMsg.classList.remove('show'), 2000);
 
                 alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行`);
 
