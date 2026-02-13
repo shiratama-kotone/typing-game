@@ -20,14 +20,15 @@ let gameState = {
     currentCharIndex: 0,
     currentCharPosition: 0,
     totalKeystrokes: 0,
-    comboCount: 0,
+    lineTypedChars: 0,
+    lineNorma: 0,
     completedCurrentLine: false
 };
 
 // ローマ字変換テーブル
 const ROMAJI_TABLE = {
     'あ': ['a'], 'い': ['i'], 'う': ['u'], 'え': ['e'], 'お': ['o'],
-    'ぁ':['la', 'xa'], 'ぃ':['li', 'xi'], 'ぅ':['lu', 'xu'], 'ぇ':['le', 'xe'], 'ぉ':['lo', 'xo'],
+    'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu'], 'ぇ':['le','xe'], 'ぉ':['lo','xo'],
     'か': ['ka'], 'き': ['ki'], 'く': ['ku'], 'け': ['ke'], 'こ': ['ko'],
     'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
     'さ': ['sa'], 'し': ['si', 'shi'], 'す': ['su'], 'せ': ['se'], 'そ': ['so'],
@@ -43,16 +44,13 @@ const ROMAJI_TABLE = {
     'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
     'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n'],
     'ー': ['-'],
-    // 英小文字
     'a': ['a'], 'b': ['b'], 'c': ['c'], 'd': ['d'], 'e': ['e'],
     'f': ['f'], 'g': ['g'], 'h': ['h'], 'i': ['i'], 'j': ['j'],
     'k': ['k'], 'l': ['l'], 'm': ['m'], 'n': ['n'], 'o': ['o'],
     'p': ['p'], 'q': ['q'], 'r': ['r'], 's': ['s'], 't': ['t'],
     'u': ['u'], 'v': ['v'], 'w': ['w'], 'x': ['x'], 'y': ['y'], 'z': ['z'],
-    // 数字
     '0': ['0'], '1': ['1'], '2': ['2'], '3': ['3'], '4': ['4'],
     '5': ['5'], '6': ['6'], '7': ['7'], '8': ['8'], '9': ['9'],
-    // スペース
     ' ': [' ']
 };
 
@@ -74,6 +72,31 @@ const COMBO_ROMAJI = {
     'てぃ': ['thi'], 'でぃ': ['dhi']
 };
 
+// 虹色CSS + italic CSS を注入
+(function injectStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes rainbow {
+            0%   { color: #ff0000; }
+            15%  { color: #ff7700; }
+            30%  { color: #ffff00; }
+            45%  { color: #00cc00; }
+            60%  { color: #0099ff; }
+            75%  { color: #8800cc; }
+            90%  { color: #ff00aa; }
+            100% { color: #ff0000; }
+        }
+        .rainbow-text {
+            animation: rainbow 1.5s linear infinite;
+            font-weight: bold;
+        }
+        #final-score, #final-rank {
+            font-style: italic;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 // 初期化
 window.addEventListener('DOMContentLoaded', () => {
     setupAudio();
@@ -81,7 +104,6 @@ window.addEventListener('DOMContentLoaded', () => {
     createSongList();
 });
 
-// YouTube IFrame API準備完了時
 function onYouTubeIframeAPIReady() {
     console.log('YouTube API準備完了');
 }
@@ -90,10 +112,8 @@ function onYouTubeIframeAPIReady() {
 function setupAudio() {
     typingSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%82%BF%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0-%E3%83%91%E3%83%B3%E3%82%BF%E3%82%B0%E3%83%A9%E3%83%95%E5%8D%982.mp3');
     typingSound.volume = 0.2;
-    
     missSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%83%9F%E3%82%B9.mp3');
     missSound.volume = 0.3;
-    
     bonusSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/mario-1up_eSTTTOB.mp3');
     bonusSound.volume = 0.4;
 }
@@ -110,9 +130,7 @@ function setupEventListeners() {
 function createSongList() {
     const songList = document.getElementById('song-list');
     if (!songList) return;
-    
     songList.innerHTML = '';
-    
     SONGS.forEach(song => {
         const songItem = document.createElement('div');
         songItem.className = 'song-item';
@@ -133,13 +151,8 @@ function switchScreen(screenId) {
     }
 }
 
-function showTitleScreen() {
-    switchScreen('title-screen');
-}
-
-function showSongSelect() {
-    switchScreen('song-select-screen');
-}
+function showTitleScreen() { switchScreen('title-screen'); }
+function showSongSelect()   { switchScreen('song-select-screen'); }
 
 // 曲選択
 function selectSong(song) {
@@ -151,12 +164,11 @@ function selectSong(song) {
 function startGame() {
     switchScreen('game-screen');
     initGame();
-    
-    // YouTube Player作成
+
     if (player) {
         player.destroy();
     }
-    
+
     player = new YT.Player('youtube-player', {
         height: '100%',
         width: '100%',
@@ -179,14 +191,12 @@ function startGame() {
     });
 }
 
-// プレイヤー準備完了
 function onPlayerReady(event) {
     console.log('プレイヤー準備完了');
     event.target.playVideo();
     startTracking();
 }
 
-// プレイヤー状態変更
 function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
         endGame();
@@ -204,24 +214,25 @@ function initGame() {
         currentCharIndex: 0,
         currentCharPosition: 0,
         totalKeystrokes: 0,
-        comboCount: 0,
+        lineTypedChars: 0,
+        lineNorma: 0,
         completedCurrentLine: false
     };
-    
+
     currentLyricIndex = 0;
     startTime = Date.now();
 
-    // 歌詞表示をリセット
+    // 表示リセット
     const japaneseLineEl = document.getElementById('japanese-line');
-    const nextLineEl = document.getElementById('next-line');
-    const romajiLineEl = document.getElementById('romaji-line');
+    const nextLineEl     = document.getElementById('next-line');
+    const romajiLineEl   = document.getElementById('romaji-line');
     if (japaneseLineEl) japaneseLineEl.textContent = '';
-    if (nextLineEl) nextLineEl.textContent = '';
-    if (romajiLineEl) romajiLineEl.innerHTML = '';
-    
+    if (nextLineEl)     nextLineEl.textContent = '';
+    if (romajiLineEl)   romajiLineEl.innerHTML = '';
+
     updateScore();
-    updateComboGauge();
-    
+    updateNormaGauge();
+
     const inputField = document.getElementById('input-field');
     if (inputField) {
         inputField.value = '';
@@ -233,7 +244,6 @@ function initGame() {
 function startTracking() {
     updateInterval = setInterval(() => {
         if (!player) return;
-        
         const currentTime = player.getCurrentTime();
         checkLyricTiming(currentTime);
     }, 100);
@@ -242,18 +252,14 @@ function startTracking() {
 // 歌詞タイミングチェック
 function checkLyricTiming(currentTime) {
     if (!currentSong || !currentSong.lyrics) return;
-    
+
     if (currentLyricIndex < currentSong.lyrics.length) {
         const currentLyric = currentSong.lyrics[currentLyricIndex];
-        
         if (currentTime >= currentLyric.time) {
-            // 前の行が未完了なら -10点
+            // 前行未完了でもペナルティなし、カウントのみ
             if (currentLyricIndex > 0 && !gameState.completedCurrentLine) {
                 gameState.missedLines++;
-                gameState.score = Math.max(0, gameState.score - 10);
-                updateScore();
             }
-            
             loadLyric(currentLyric);
             currentLyricIndex++;
             gameState.completedCurrentLine = false;
@@ -263,27 +269,28 @@ function checkLyricTiming(currentTime) {
 
 // 歌詞読み込み
 function loadLyric(lyric) {
-    gameState.currentRomaji = convertToRomaji(lyric.kana);
-    gameState.currentCharIndex = 0;
+    gameState.currentRomaji       = convertToRomaji(lyric.kana);
+    gameState.currentCharIndex    = 0;
     gameState.currentCharPosition = 0;
-    
+
+    // ノルマ計算（現在行の全打鍵数の40%）
+    const totalChars = gameState.currentRomaji.reduce((sum, c) => sum + c.current.length, 0);
+    gameState.lineNorma      = Math.ceil(totalChars * 0.4);
+    gameState.lineTypedChars = 0;
+
     const japaneseLineEl = document.getElementById('japanese-line');
-    const nextLineEl = document.getElementById('next-line');
-    
-    if (japaneseLineEl) {
-        japaneseLineEl.textContent = lyric.text;
-    }
-    
-    // 次の歌詞を表示
+    const nextLineEl     = document.getElementById('next-line');
+    if (japaneseLineEl) japaneseLineEl.textContent = lyric.text;
+
     if (nextLineEl && currentLyricIndex + 1 < currentSong.lyrics.length) {
         nextLineEl.textContent = `次は ${currentSong.lyrics[currentLyricIndex + 1].text}`;
     } else if (nextLineEl) {
         nextLineEl.textContent = '';
     }
-    
+
     displayRomaji();
-    
-    // 入力フィールド有効化
+    updateNormaGauge();
+
     const inputField = document.getElementById('input-field');
     if (inputField) {
         inputField.disabled = false;
@@ -295,58 +302,37 @@ function loadLyric(lyric) {
 function convertToRomaji(hiraganaArray) {
     const result = [];
     let i = 0;
-    
     while (i < hiraganaArray.length) {
-        // 促音チェック
         if (hiraganaArray[i] === 'っ' && i + 1 < hiraganaArray.length) {
-            const nextChar = hiraganaArray[i + 1];
+            const nextChar   = hiraganaArray[i + 1];
             const nextRomaji = ROMAJI_TABLE[nextChar];
             if (nextRomaji && nextRomaji[0]) {
-                const consonant = nextRomaji[0][0];
-                result.push({
-                    options: [consonant, 'xtu', 'ltu'],
-                    current: consonant
-                });
+                result.push({ options: [nextRomaji[0][0], 'xtu', 'ltu'], current: nextRomaji[0][0] });
                 i++;
                 continue;
             }
         }
-        
-        // 2文字組み合わせチェック
         if (i + 1 < hiraganaArray.length) {
             const combo = hiraganaArray[i] + hiraganaArray[i + 1];
             if (COMBO_ROMAJI[combo]) {
-                result.push({
-                    options: COMBO_ROMAJI[combo],
-                    current: COMBO_ROMAJI[combo][0]
-                });
+                result.push({ options: COMBO_ROMAJI[combo], current: COMBO_ROMAJI[combo][0] });
                 i += 2;
                 continue;
             }
         }
-        
-        // 「ん」の処理
         if (hiraganaArray[i] === 'ん') {
-            if (i === hiraganaArray.length - 1) {
-                result.push({ options: ['nn'], current: 'nn' });
-            } else {
-                result.push({ options: ['n', 'nn'], current: 'n' });
-            }
+            result.push(i === hiraganaArray.length - 1
+                ? { options: ['nn'], current: 'nn' }
+                : { options: ['n', 'nn'], current: 'n' });
             i++;
             continue;
         }
-        
-        // 通常の文字
         const char = hiraganaArray[i];
         if (ROMAJI_TABLE[char]) {
-            result.push({
-                options: ROMAJI_TABLE[char],
-                current: ROMAJI_TABLE[char][0]
-            });
+            result.push({ options: ROMAJI_TABLE[char], current: ROMAJI_TABLE[char][0] });
         }
         i++;
     }
-    
     return result;
 }
 
@@ -354,105 +340,72 @@ function convertToRomaji(hiraganaArray) {
 function displayRomaji() {
     const romajiLineEl = document.getElementById('romaji-line');
     if (!romajiLineEl) return;
-    
     let romajiHTML = '';
-    
     for (let i = 0; i < gameState.currentRomaji.length; i++) {
         const charObj = gameState.currentRomaji[i];
-        const romaji = charObj.current;
-        
+        const romaji  = charObj.current;
         for (let j = 0; j < romaji.length; j++) {
             if (i < gameState.currentCharIndex) {
                 romajiHTML += `<span class="correct">${romaji[j]}</span>`;
             } else if (i === gameState.currentCharIndex) {
-                if (j < gameState.currentCharPosition) {
+                if (j < gameState.currentCharPosition)
                     romajiHTML += `<span class="correct">${romaji[j]}</span>`;
-                } else if (j === gameState.currentCharPosition) {
+                else if (j === gameState.currentCharPosition)
                     romajiHTML += `<span class="current">${romaji[j]}</span>`;
-                } else {
+                else
                     romajiHTML += `<span class="remaining">${romaji[j]}</span>`;
-                }
             } else {
                 romajiHTML += `<span class="remaining">${romaji[j]}</span>`;
             }
         }
     }
-    
     romajiLineEl.innerHTML = romajiHTML;
 }
 
 // 入力処理
 function handleInput(e) {
     const input = e.target.value.toLowerCase();
-    
-    if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) {
-        return;
-    }
-    
-    const currentChar = gameState.currentRomaji[gameState.currentCharIndex];
-    const currentRomaji = currentChar.current;
-    const expectedPart = currentRomaji.substring(gameState.currentCharPosition);
-    
+    if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) return;
+
+    const scorePerKey = (currentSong && currentSong.scorePerKey) ? currentSong.scorePerKey : 10;
+
+    const currentChar   = gameState.currentRomaji[gameState.currentCharIndex];
+    const expectedPart  = currentChar.current.substring(gameState.currentCharPosition);
+
     let matched = false;
-    
-    if (expectedPart.startsWith(input)) {
-        matched = true;
-        gameState.currentCharPosition += input.length;
-        gameState.correctCount += input.length;
-        gameState.totalKeystrokes += input.length;
-        gameState.score += 5 * input.length;
-        gameState.comboCount += input.length;
-        
+
+    const applyMatch = (len, option) => {
+        if (option) currentChar.current = option;
+        gameState.currentCharPosition += len;
+        gameState.correctCount        += len;
+        gameState.totalKeystrokes     += len;
+        gameState.score               += scorePerKey * len;
+        gameState.lineTypedChars      += len;
         playTypingSound();
-        
-        // 100ノーミスボーナス +100点
-        if (gameState.comboCount >= 100) {
-            playBonusSound();
-            gameState.score += 100;
-            gameState.comboCount = 0;
-        }
-        
-        if (gameState.currentCharPosition >= currentRomaji.length) {
+        if (gameState.currentCharPosition >= currentChar.current.length) {
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
         }
+    };
+
+    if (expectedPart.startsWith(input)) {
+        matched = true;
+        applyMatch(input.length, null);
     } else {
-        // 別のパターンを試す
         for (let option of currentChar.options) {
             const optionExpected = option.substring(gameState.currentCharPosition);
             if (optionExpected.startsWith(input)) {
                 matched = true;
-                currentChar.current = option;
-                gameState.currentCharPosition += input.length;
-                gameState.correctCount += input.length;
-                gameState.totalKeystrokes += input.length;
-                gameState.score += 5 * input.length;
-                gameState.comboCount += input.length;
-                
-                playTypingSound();
-                
-                // 100ノーミスボーナス +100点
-                if (gameState.comboCount >= 100) {
-                    playBonusSound();
-                    gameState.score += 100;
-                    gameState.comboCount = 0;
-                }
-                
-                if (gameState.currentCharPosition >= option.length) {
-                    gameState.currentCharIndex++;
-                    gameState.currentCharPosition = 0;
-                }
+                applyMatch(input.length, option);
                 break;
             }
         }
     }
-    
+
     if (matched) {
         e.target.value = '';
         updateScore();
-        updateComboGauge();
-        
-        // 行完了チェック
+        updateNormaGauge();
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             gameState.completedCurrentLine = true;
             e.target.disabled = true;
@@ -460,61 +413,77 @@ function handleInput(e) {
             displayRomaji();
         }
     } else {
-        // ミス
+        // ミスはカウントのみ・減点なし
         gameState.missCount++;
         gameState.totalKeystrokes++;
-        gameState.score = Math.max(0, gameState.score - 3);
-        gameState.comboCount = 0;
-        
         playMissSound();
-        
         e.target.value = '';
         updateScore();
-        updateComboGauge();
     }
 }
 
 // スコア更新
 function updateScore() {
-    const scoreEl = document.getElementById('score');
+    const scoreEl   = document.getElementById('score');
     const correctEl = document.getElementById('correct-count');
-    const missEl = document.getElementById('miss-count');
-    
-    if (scoreEl) scoreEl.textContent = gameState.score;
+    const missEl    = document.getElementById('miss-count');
+    if (scoreEl)   scoreEl.textContent   = gameState.score;
     if (correctEl) correctEl.textContent = gameState.correctCount;
-    if (missEl) missEl.textContent = gameState.missCount;
+    if (missEl)    missEl.textContent    = gameState.missCount;
 }
 
-// コンボゲージ更新
-function updateComboGauge() {
-    const comboPercent = gameState.comboCount % 100;
-    const comboGauge = document.getElementById('combo-gauge');
-    const comboGaugeText = document.getElementById('combo-gauge-text');
-    
-    if (comboGauge) comboGauge.style.width = comboPercent + '%';
-    if (comboGaugeText) comboGaugeText.textContent = `${gameState.comboCount % 100} / 100`;
+// ノルマゲージ更新
+function updateNormaGauge() {
+    const normaGauge     = document.getElementById('norma-gauge');
+    const normaGaugeText = document.getElementById('norma-gauge-text');
+
+    if (gameState.lineNorma <= 0) {
+        if (normaGauge)     normaGauge.style.width = '0%';
+        if (normaGaugeText) normaGaugeText.textContent = '-';
+        return;
+    }
+
+    const cleared = gameState.lineTypedChars >= gameState.lineNorma;
+    const pct     = Math.min(Math.floor((gameState.lineTypedChars / gameState.lineNorma) * 100), 100);
+
+    if (normaGauge) {
+        normaGauge.style.width      = pct + '%';
+        normaGauge.style.background = cleared ? '#4caf50' : '';
+    }
+    if (normaGaugeText) {
+        normaGaugeText.textContent = cleared
+            ? 'クリア!'
+            : `${gameState.lineTypedChars} / ${gameState.lineNorma}`;
+    }
+}
+
+// ランク判定
+function getRank(score) {
+    if (score >= 1009000) return { label: 'SSS', sup: '+', rainbow: true  };
+    if (score >= 1007500) return { label: 'SSS', sup: '',  rainbow: true  };
+    if (score >= 1005000) return { label: 'SS',  sup: '+', rainbow: false };
+    if (score >= 1000000) return { label: 'SS',  sup: '',  rainbow: false };
+    if (score >= 990000)  return { label: 'S',   sup: '+', rainbow: false };
+    if (score >= 975000)  return { label: 'S',   sup: '',  rainbow: false };
+    if (score >= 950000)  return { label: 'AAA', sup: '',  rainbow: false };
+    if (score >= 925000)  return { label: 'AA',  sup: '',  rainbow: false };
+    if (score >= 900000)  return { label: 'A',   sup: '',  rainbow: false };
+    if (score >= 800000)  return { label: 'BBB', sup: '',  rainbow: false };
+    if (score >= 700000)  return { label: 'BB',  sup: '',  rainbow: false };
+    if (score >= 600000)  return { label: 'B',   sup: '',  rainbow: false };
+    if (score >= 500000)  return { label: 'C',   sup: '',  rainbow: false };
+    return                       { label: 'D',   sup: '',  rainbow: false };
 }
 
 // サウンド再生
 function playTypingSound() {
-    if (typingSound) {
-        typingSound.currentTime = 0;
-        typingSound.play().catch(e => {});
-    }
+    if (typingSound) { typingSound.currentTime = 0; typingSound.play().catch(() => {}); }
 }
-
 function playMissSound() {
-    if (missSound) {
-        missSound.currentTime = 0;
-        missSound.play().catch(e => {});
-    }
+    if (missSound) { missSound.currentTime = 0; missSound.play().catch(() => {}); }
 }
-
 function playBonusSound() {
-    if (bonusSound) {
-        bonusSound.currentTime = 0;
-        bonusSound.play().catch(e => {});
-    }
+    if (bonusSound) { bonusSound.currentTime = 0; bonusSound.play().catch(() => {}); }
 }
 
 // ゲーム終了
@@ -523,29 +492,32 @@ function endGame() {
         clearInterval(updateInterval);
         updateInterval = null;
     }
-    
-    // 最後の行が未完了なら -10点
-    if (!gameState.completedCurrentLine && currentLyricIndex > 0) {
-        gameState.missedLines++;
-        gameState.score = Math.max(0, gameState.score - 10);
-    }
-    
+
     const elapsedTime = (Date.now() - startTime) / 1000;
     const kps = elapsedTime > 0 ? (gameState.totalKeystrokes / elapsedTime).toFixed(2) : 0;
-    
-    // リザルト表示
-    const finalScore = document.getElementById('final-score');
-    const finalCorrect = document.getElementById('final-correct');
-    const finalMiss = document.getElementById('final-miss');
+
+    const rank = getRank(gameState.score);
+
+    // ランクHTML（虹色 or 通常、上付き+）
+    let rankInner = '';
+    const cls = rank.rainbow ? ' class="rainbow-text"' : '';
+    rankInner += `<span${cls}>${rank.label}</span>`;
+    if (rank.sup) rankInner += `<sup${cls}>${rank.sup}</sup>`;
+
+    const finalScore       = document.getElementById('final-score');
+    const finalRank        = document.getElementById('final-rank');
+    const finalCorrect     = document.getElementById('final-correct');
+    const finalMiss        = document.getElementById('final-miss');
     const finalMissedLines = document.getElementById('final-missed-lines');
-    const finalKps = document.getElementById('final-kps');
-    
-    if (finalScore) finalScore.textContent = gameState.score;
-    if (finalCorrect) finalCorrect.textContent = gameState.correctCount;
-    if (finalMiss) finalMiss.textContent = gameState.missCount;
+    const finalKps         = document.getElementById('final-kps');
+
+    if (finalScore)       finalScore.textContent       = gameState.score;
+    if (finalRank)        finalRank.innerHTML           = rankInner;
+    if (finalCorrect)     finalCorrect.textContent     = gameState.correctCount;
+    if (finalMiss)        finalMiss.textContent        = gameState.missCount;
     if (finalMissedLines) finalMissedLines.textContent = gameState.missedLines;
-    if (finalKps) finalKps.textContent = kps;
-    
+    if (finalKps)         finalKps.textContent         = kps;
+
     switchScreen('result-screen');
 }
 
