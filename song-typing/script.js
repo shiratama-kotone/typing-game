@@ -168,9 +168,9 @@ function startGame() {
             fs: 0,
             modestbranding: 1,
             rel: 0,
-            iv_load_policy: 3,  // アノテーション非表示
-            cc_load_policy: 0,  // 字幕デフォルトOFF
-            playsinline: 1      // インライン再生
+            iv_load_policy: 3,
+            cc_load_policy: 0,
+            playsinline: 1
         },
         events: {
             onReady: onPlayerReady,
@@ -210,6 +210,14 @@ function initGame() {
     
     currentLyricIndex = 0;
     startTime = Date.now();
+
+    // 歌詞表示をリセット
+    const japaneseLineEl = document.getElementById('japanese-line');
+    const nextLineEl = document.getElementById('next-line');
+    const romajiLineEl = document.getElementById('romaji-line');
+    if (japaneseLineEl) japaneseLineEl.textContent = '';
+    if (nextLineEl) nextLineEl.textContent = '';
+    if (romajiLineEl) romajiLineEl.innerHTML = '';
     
     updateScore();
     updateComboGauge();
@@ -235,15 +243,14 @@ function startTracking() {
 function checkLyricTiming(currentTime) {
     if (!currentSong || !currentSong.lyrics) return;
     
-    // 次の歌詞のタイミングをチェック
     if (currentLyricIndex < currentSong.lyrics.length) {
         const currentLyric = currentSong.lyrics[currentLyricIndex];
         
         if (currentTime >= currentLyric.time) {
-            // 前の行が未完了なら減点
+            // 前の行が未完了なら -10点
             if (currentLyricIndex > 0 && !gameState.completedCurrentLine) {
                 gameState.missedLines++;
-                gameState.score = Math.max(0, gameState.score - 100);
+                gameState.score = Math.max(0, gameState.score - 10);
                 updateScore();
             }
             
@@ -267,12 +274,12 @@ function loadLyric(lyric) {
         japaneseLineEl.textContent = lyric.text;
     }
     
-   // 次の歌詞を表示
-if (nextLineEl && currentLyricIndex + 1 < currentSong.lyrics.length) {
-    nextLineEl.textContent = `次は ${currentSong.lyrics[currentLyricIndex + 1].text}`;
-} else if (nextLineEl) {
-    nextLineEl.textContent = '';
-}
+    // 次の歌詞を表示
+    if (nextLineEl && currentLyricIndex + 1 < currentSong.lyrics.length) {
+        nextLineEl.textContent = `次は ${currentSong.lyrics[currentLyricIndex + 1].text}`;
+    } else if (nextLineEl) {
+        nextLineEl.textContent = '';
+    }
     
     displayRomaji();
     
@@ -321,10 +328,8 @@ function convertToRomaji(hiraganaArray) {
         // 「ん」の処理
         if (hiraganaArray[i] === 'ん') {
             if (i === hiraganaArray.length - 1) {
-                // 最後の「ん」はnn固定
                 result.push({ options: ['nn'], current: 'nn' });
             } else {
-                // 途中の「ん」はn表示、nnでも打てる
                 result.push({ options: ['n', 'nn'], current: 'n' });
             }
             i++;
@@ -400,9 +405,10 @@ function handleInput(e) {
         
         playTypingSound();
         
-        // 100ノーミスボーナス
+        // 100ノーミスボーナス +100点
         if (gameState.comboCount >= 100) {
             playBonusSound();
+            gameState.score += 100;
             gameState.comboCount = 0;
         }
         
@@ -425,8 +431,10 @@ function handleInput(e) {
                 
                 playTypingSound();
                 
+                // 100ノーミスボーナス +100点
                 if (gameState.comboCount >= 100) {
                     playBonusSound();
+                    gameState.score += 100;
                     gameState.comboCount = 0;
                 }
                 
@@ -516,10 +524,10 @@ function endGame() {
         updateInterval = null;
     }
     
-    // 最後の行が未完了なら減点
+    // 最後の行が未完了なら -10点
     if (!gameState.completedCurrentLine && currentLyricIndex > 0) {
         gameState.missedLines++;
-        gameState.score = Math.max(0, gameState.score - 100);
+        gameState.score = Math.max(0, gameState.score - 10);
     }
     
     const elapsedTime = (Date.now() - startTime) / 1000;
