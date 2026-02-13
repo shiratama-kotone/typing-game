@@ -5,955 +5,407 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>歌詞データ作成ツール</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            min-height: 100vh; padding: 20px;
         }
-
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 1400px; margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px; padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
-        h1 {
-            color: #667eea;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-        }
-
-        .setup-section {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-
-        .setup-divider {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-        }
-
-        .setup-divider::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 50%;
-            height: 1px;
-            background: #ccc;
-        }
-
-        .setup-divider span {
-            background: #f5f5f5;
-            padding: 0 15px;
-            position: relative;
-            color: #666;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
+        h1 { color: #667eea; text-align: center; margin-bottom: 30px; font-size: 2.5rem; }
+        h3 { margin-bottom: 12px; color: #333; }
+        .setup-section { background: #f5f5f5; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .setup-divider { text-align: center; margin: 20px 0; position: relative; }
+        .setup-divider::before { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:#ccc; }
+        .setup-divider span { background:#f5f5f5; padding:0 15px; position:relative; color:#666; font-weight:bold; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display:block; font-weight:bold; margin-bottom:5px; color:#333; }
         .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
+            width:100%; padding:10px; border:2px solid #ddd; border-radius:5px; font-size:1rem;
         }
-
-        .input-group textarea {
-            min-height: 150px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
+        .input-group textarea { min-height:150px; font-family:'Courier New',monospace; font-size:0.9rem; }
+        .input-group input:focus, .input-group textarea:focus { border-color:#667eea; outline:none; }
+        .input-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+        .score-hint {
+            background:#e8f4fd; border:1px solid #90caf9;
+            border-radius:6px; padding:10px 14px;
+            font-size:0.85rem; color:#1565c0; margin-top:6px;
         }
-
-        .input-group input:focus, .input-group textarea:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
+        .score-hint b { color:#0d47a1; }
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
+            color:white; border:none; padding:12px 30px;
+            border-radius:50px; font-size:1.1rem;
+            cursor:pointer; transition:all 0.3s ease; font-weight:bold;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-small {
-            padding: 8px 20px;
-            font-size: 0.9rem;
-        }
-
-        .btn-tiny {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-        }
-
-        .btn-import {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        }
-
-        .btn-preview {
-            background: linear-gradient(135deg, #FF6B6B 0%, #ee5a24 100%);
-        }
-
-        .btn-preview.active {
-            background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
-        }
-
-        .main-content {
-            display: none;
-        }
-
-        .main-content.active {
-            display: block;
-        }
-
-        .video-section {
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        #youtube-player {
-            width: 100%;
-            height: 500px;
-        }
-
-        .controls {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .controls-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .controls-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .time-display {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #667eea;
-            min-width: 120px;
-        }
-
-        .lyrics-input-section {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .lyrics-input-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 100px;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .lyrics-input-row input {
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        .output-section {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        #output-textarea {
-            width: 100%;
-            min-height: 300px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .lyrics-list {
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .lyrics-item {
-            background: white;
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .lyrics-item-time {
-            font-weight: bold;
-            color: #667eea;
-            min-width: 80px;
-        }
-
-        .lyrics-item-text {
-            flex: 1;
-            margin: 0 10px;
-        }
-
-        .btn-delete {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .btn-delete:hover {
-            background: #d32f2f;
-        }
-
-        .hint {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .success-message {
-            background: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            display: none;
-        }
-
-        .success-message.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        #import-success {
-            background: #2196F3;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .control-group {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-
-        .control-label {
-            font-weight: bold;
-            color: #333;
-            margin-right: 5px;
-        }
-
-        /* ===== プレビューオーバーレイ ===== */
-        .preview-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.92);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-        }
-
-        .preview-overlay.active {
-            display: flex;
-        }
-
-        .preview-video-wrapper {
-            width: 100%;
-            max-width: 900px;
-            aspect-ratio: 16 / 9;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 0 60px rgba(102, 126, 234, 0.4);
-            margin-bottom: 30px;
-        }
-
-        #preview-player {
-            width: 100%;
-            height: 100%;
-        }
-
-        .preview-lyrics-area {
-            width: 100%;
-            max-width: 900px;
-            text-align: center;
-            padding: 0 20px;
-        }
-
-        .preview-current-lyric {
-            font-size: 2.4rem;
-            font-weight: bold;
-            color: #fff;
-            letter-spacing: 0.05em;
-            min-height: 3rem;
-            margin-bottom: 16px;
-            text-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
-            transition: opacity 0.2s ease;
-        }
-
-        .preview-romaji {
-            font-size: 1.4rem;
-            color: #aac4ff;
-            letter-spacing: 0.12em;
-            min-height: 2rem;
-            margin-bottom: 24px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .preview-next-lyric {
-            font-size: 1.1rem;
-            color: #888;
-            min-height: 1.5rem;
-        }
-
-        .preview-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-top: 30px;
-        }
-
-        .preview-time {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #667eea;
-            min-width: 100px;
-            text-align: center;
-        }
-
-        .preview-close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            padding: 10px 22px;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-            z-index: 1001;
-        }
-
-        .preview-close-btn:hover {
-            background: rgba(255,255,255,0.28);
-        }
-
-        .preview-no-lyrics {
-            color: #555;
-            font-size: 1.2rem;
-        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.3); }
+        .btn:active { transform:translateY(0); }
+        .btn-small { padding:8px 20px; font-size:0.9rem; }
+        .btn-tiny  { padding:6px 12px;  font-size:0.85rem; }
+        .btn-import { background:linear-gradient(135deg,#4CAF50,#45a049); }
+        .main-content { display:none; }
+        .main-content.active { display:block; }
+        .video-section { background:#000; border-radius:10px; overflow:hidden; margin-bottom:20px; }
+        #youtube-player { width:100%; height:500px; }
+        .controls { background:#f5f5f5; padding:20px; border-radius:10px; margin-bottom:20px; }
+        .controls-row { display:flex; gap:10px; align-items:center; margin-bottom:15px; flex-wrap:wrap; }
+        .controls-row:last-child { margin-bottom:0; }
+        .time-display { font-size:1.5rem; font-weight:bold; color:#667eea; min-width:120px; }
+        .control-group { display:flex; gap:5px; align-items:center; }
+        .control-label { font-weight:bold; color:#333; margin-right:5px; }
+        .lyrics-input-section { background:#f5f5f5; padding:20px; border-radius:10px; margin-bottom:20px; }
+        .lyrics-input-row { display:grid; grid-template-columns:1fr 1fr 100px; gap:10px; margin-bottom:10px; align-items:center; }
+        .lyrics-input-row input { padding:10px; border:2px solid #ddd; border-radius:5px; font-size:1rem; }
+        .output-section { background:#f5f5f5; padding:20px; border-radius:10px; }
+        #output-textarea { width:100%; min-height:300px; font-family:'Courier New',monospace; font-size:0.9rem; padding:15px; border:2px solid #ddd; border-radius:5px; }
+        .lyrics-list { margin-top:20px; max-height:300px; overflow-y:auto; }
+        .lyrics-item { background:white; padding:10px; margin-bottom:5px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; }
+        .lyrics-item-time { font-weight:bold; color:#667eea; min-width:80px; }
+        .lyrics-item-text { flex:1; margin:0 10px; }
+        .btn-delete { background:#f44336; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-size:0.8rem; }
+        .btn-delete:hover { background:#d32f2f; }
+        .hint { color:#666; font-size:0.9rem; margin-top:5px; }
+        .success-message { background:#4CAF50; color:white; padding:15px; border-radius:5px; margin-top:10px; margin-bottom:10px; display:none; }
+        .success-message.show { display:block; animation:fadeIn 0.3s ease; }
+        #import-success { background:#2196F3; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .preview-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
+        .preview-overlay.active { display:flex; }
+        .preview-video-wrapper { width:100%; max-width:900px; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 0 60px rgba(102,126,234,0.4); margin-bottom:30px; }
+        #preview-player { width:100%; height:100%; }
+        .preview-lyrics-area { width:100%; max-width:900px; text-align:center; padding:0 20px; }
+        .preview-current-lyric { font-size:2.4rem; font-weight:bold; color:#fff; letter-spacing:0.05em; min-height:3rem; margin-bottom:16px; text-shadow:0 0 20px rgba(102,126,234,0.8); }
+        .preview-romaji { font-size:1.4rem; color:#aac4ff; letter-spacing:0.12em; min-height:2rem; margin-bottom:24px; font-family:'Courier New',monospace; }
+        .preview-next-lyric { font-size:1.1rem; color:#888; min-height:1.5rem; }
+        .preview-controls { display:flex; gap:12px; align-items:center; margin-top:30px; }
+        .preview-time { font-size:1.2rem; font-weight:bold; color:#667eea; min-width:100px; text-align:center; }
+        .preview-close-btn { position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.3); padding:10px 22px; border-radius:50px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s; z-index:1001; }
+        .preview-close-btn:hover { background:rgba(255,255,255,0.28); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎵 歌詞データ作成ツール</h1>
+<div class="container">
+    <h1>🎵 歌詞データ作成ツール</h1>
 
-        <!-- セットアップセクション -->
-        <div id="setup-section" class="setup-section">
-            <h3>新規作成</h3>
+    <div id="setup-section" class="setup-section">
+        <h3>新規作成</h3>
+        <div class="input-row-2">
             <div class="input-group">
                 <label>曲ID（英数字）</label>
-                <input type="text" id="song-id" placeholder="例: bakenohana">
+                <input type="text" id="song-id" placeholder="例: telepathy">
                 <p class="hint">半角英数字とアンダースコアのみ</p>
             </div>
-
             <div class="input-group">
                 <label>曲名</label>
-                <input type="text" id="song-title" placeholder="例: 化けの花">
-            </div>
-
-            <div class="input-group">
-                <label>YouTube動画ID</label>
-                <input type="text" id="youtube-id" placeholder="例: jaSJ4t2ITW8">
-                <p class="hint">YouTubeのURLの「v=」の後ろの部分</p>
-            </div>
-
-            <button class="btn" onclick="startCreating()">作成開始</button>
-
-            <div class="setup-divider">
-                <span>または</span>
-            </div>
-
-            <h3>既存データをインポート</h3>
-            <div class="input-group">
-                <label>歌詞データコード</label>
-                <textarea id="import-textarea" placeholder="生成されたコードをここに貼り付けてください"></textarea>
-                <p class="hint">既存の歌詞データを編集する場合はこっち</p>
-            </div>
-
-            <button class="btn btn-import" onclick="startWithImport()">インポートして開始</button>
-        </div>
-
-        <!-- メインコンテンツ -->
-        <div id="main-content" class="main-content">
-            <!-- YouTube動画 -->
-            <div class="video-section">
-                <div id="youtube-player"></div>
-            </div>
-
-            <!-- コントロール -->
-            <div class="controls">
-                <div class="controls-row">
-                    <div class="time-display" id="current-time">0.00秒</div>
-                    <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
-                    <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
-                    <button class="btn btn-small btn-preview" id="preview-btn" onclick="openPreview()">👁 プレビュー</button>
-                </div>
-                
-                <div class="controls-row">
-                    <span class="control-label">微調整:</span>
-                    <div class="control-group">
-                        <button class="btn btn-tiny" onclick="seekBy(-0.01)">◀ 0.01秒</button>
-                        <button class="btn btn-tiny" onclick="seekBy(0.01)">0.01秒 ▶</button>
-                    </div>
-                    <div class="control-group">
-                        <button class="btn btn-tiny" onclick="seekBy(-0.1)">◀ 0.1秒</button>
-                        <button class="btn btn-tiny" onclick="seekBy(0.1)">0.1秒 ▶</button>
-                    </div>
-                    <div class="control-group">
-                        <button class="btn btn-tiny" onclick="seekBy(-1)">◀ 1秒</button>
-                        <button class="btn btn-tiny" onclick="seekBy(1)">1秒 ▶</button>
-                    </div>
-                    <div class="control-group">
-                        <button class="btn btn-tiny" onclick="seekBy(-5)">◀ 5秒</button>
-                        <button class="btn btn-tiny" onclick="seekBy(5)">5秒 ▶</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 歌詞入力 -->
-            <div class="lyrics-input-section">
-                <h3>歌詞を追加</h3>
-                <div class="lyrics-input-row">
-                    <input type="text" id="lyrics-text" placeholder="歌詞（漢字・カタカナOK）">
-                    <input type="text" id="lyrics-kana" placeholder="読み（平仮名、半角小文字英数字）">
-                    <button class="btn btn-small" onclick="addLyric()">追加</button>
-                </div>
-                <p class="hint">
-                    歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加
-                </p>
-            </div>
-
-            <!-- 追加済み歌詞リスト -->
-            <div class="lyrics-list" id="lyrics-list"></div>
-
-            <!-- 出力 -->
-            <div class="output-section">
-                <h3>生成されたコード / インポート</h3>
-                <div style="margin-bottom: 10px;">
-                    <button class="btn btn-small" onclick="generateOutput()">コード生成</button>
-                    <button class="btn btn-small" onclick="copyOutput()">📋 コピー</button>
-                    <button class="btn btn-small" onclick="importCode()" style="background: #4CAF50;">📥 インポート</button>
-                </div>
-                <div class="success-message" id="copy-success">コピーしました！</div>
-                <div class="success-message" id="import-success">インポートしました！</div>
-                <textarea id="output-textarea"></textarea>
-                <p class="hint">
-                    【生成】このコードをlyrics-data.jsのSONGS配列にコピペ<br>
-                    【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
-                </p>
+                <input type="text" id="song-title" placeholder="例: テレパシー">
             </div>
         </div>
+        <div class="input-group">
+            <label>YouTube動画ID</label>
+            <input type="text" id="youtube-id" placeholder="例: dQw4w9WgXcQ">
+            <p class="hint">YouTubeのURLの「v=」の後ろの部分</p>
+        </div>
+        <div class="input-group">
+            <label>1打あたりのスコア</label>
+            <input type="number" id="score-per-key" value="10" min="1" step="1">
+            <div class="score-hint">
+                💡 <b>目安：</b> 曲の想定打鍵数 × scorePerKey ≈ 満点スコア<br>
+                例）打鍵数 <b>1000</b> の曲でSSS狙い（<b>1,007,500</b>）にしたいなら → <b>1007</b> に設定
+            </div>
+        </div>
+        <button class="btn" onclick="startCreating()">作成開始</button>
+
+        <div class="setup-divider"><span>または</span></div>
+
+        <h3>既存データをインポート</h3>
+        <div class="input-group">
+            <label>歌詞データコード</label>
+            <textarea id="import-textarea" placeholder="生成されたコードをここに貼り付けてください"></textarea>
+            <p class="hint">既存の歌詞データを編集する場合はこちら</p>
+        </div>
+        <button class="btn btn-import" onclick="startWithImport()">インポートして開始</button>
     </div>
 
-    <!-- プレビューオーバーレイ -->
-    <div class="preview-overlay" id="preview-overlay">
-        <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
-        <div class="preview-video-wrapper">
-            <div id="preview-player"></div>
-        </div>
-        <div class="preview-lyrics-area">
-            <div class="preview-current-lyric" id="preview-current-lyric">
-                <span class="preview-no-lyrics">▶ 再生すると歌詞が表示されます</span>
+    <div id="main-content" class="main-content">
+        <div class="video-section"><div id="youtube-player"></div></div>
+        <div class="controls">
+            <div class="controls-row">
+                <div class="time-display" id="current-time">0.00秒</div>
+                <button class="btn btn-small" onclick="pauseVideo()">⏸ 一時停止</button>
+                <button class="btn btn-small" onclick="playVideo()">▶ 再生</button>
+                <button class="btn btn-small" style="background:linear-gradient(135deg,#FF6B6B,#ee5a24)" onclick="openPreview()">👁 プレビュー</button>
             </div>
-            <div class="preview-romaji" id="preview-romaji"></div>
-            <div class="preview-next-lyric" id="preview-next-lyric"></div>
-        </div>
-        <div class="preview-controls">
-            <div class="preview-time" id="preview-time">0.00秒</div>
-            <button class="btn btn-small" onclick="previewPause()">⏸ 一時停止</button>
-            <button class="btn btn-small" onclick="previewPlay()">▶ 再生</button>
-            <div class="control-group">
-                <button class="btn btn-tiny" onclick="previewSeekBy(-5)">◀ 5秒</button>
-                <button class="btn btn-tiny" onclick="previewSeekBy(5)">5秒 ▶</button>
+            <div class="controls-row">
+                <span class="control-label">微調整:</span>
+                <div class="control-group">
+                    <button class="btn btn-tiny" onclick="seekBy(-0.01)">◀ 0.01秒</button>
+                    <button class="btn btn-tiny" onclick="seekBy(0.01)">0.01秒 ▶</button>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-tiny" onclick="seekBy(-0.1)">◀ 0.1秒</button>
+                    <button class="btn btn-tiny" onclick="seekBy(0.1)">0.1秒 ▶</button>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-tiny" onclick="seekBy(-1)">◀ 1秒</button>
+                    <button class="btn btn-tiny" onclick="seekBy(1)">1秒 ▶</button>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-tiny" onclick="seekBy(-5)">◀ 5秒</button>
+                    <button class="btn btn-tiny" onclick="seekBy(5)">5秒 ▶</button>
+                </div>
             </div>
+        </div>
+        <div class="lyrics-input-section">
+            <h3>歌詞を追加</h3>
+            <div class="lyrics-input-row">
+                <input type="text" id="lyrics-text" placeholder="歌詞（漢字・カタカナOK）">
+                <input type="text" id="lyrics-kana" placeholder="読み（ひらがなのみ）">
+                <button class="btn btn-small" onclick="addLyric()">追加</button>
+            </div>
+            <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加</p>
+        </div>
+        <div class="lyrics-list" id="lyrics-list"></div>
+        <div class="output-section">
+            <h3>生成されたコード / インポート</h3>
+            <div style="margin-bottom:10px;">
+                <button class="btn btn-small" onclick="generateOutput()">コード生成</button>
+                <button class="btn btn-small" onclick="copyOutput()">📋 コピー</button>
+                <button class="btn btn-small btn-import" onclick="importCode()">📥 インポート</button>
+            </div>
+            <div class="success-message" id="copy-success">コピーしました！</div>
+            <div class="success-message" id="import-success">インポートしました！</div>
+            <textarea id="output-textarea"></textarea>
+            <p class="hint">
+                【生成】このコードをlyrics-data.jsのSONGS配列にコピペ<br>
+                【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
+            </p>
         </div>
     </div>
+</div>
 
-    <!-- YouTube IFrame API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script>
-        let player = null;
-        let previewPlayer = null;
-        let currentTime = 0;
-        let previewCurrentTime = 0;
-        let lyricsData = [];
-        let songId = '';
-        let songTitle = '';
-        let youtubeId = '';
-        let updateInterval = null;
-        let previewUpdateInterval = null;
-        let previewLyricIndex = 0;
+<div class="preview-overlay" id="preview-overlay">
+    <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
+    <div class="preview-video-wrapper"><div id="preview-player"></div></div>
+    <div class="preview-lyrics-area">
+        <div class="preview-current-lyric" id="preview-current-lyric">
+            <span style="color:#555;font-size:1rem;">▶ 再生すると歌詞が表示されます</span>
+        </div>
+        <div class="preview-romaji" id="preview-romaji"></div>
+        <div class="preview-next-lyric" id="preview-next-lyric"></div>
+    </div>
+    <div class="preview-controls">
+        <div class="preview-time" id="preview-time">0.00秒</div>
+        <button class="btn btn-small" onclick="previewPause()">⏸ 一時停止</button>
+        <button class="btn btn-small" onclick="previewPlay()">▶ 再生</button>
+        <div class="control-group">
+            <button class="btn btn-tiny" onclick="previewSeekBy(-5)">◀ 5秒</button>
+            <button class="btn btn-tiny" onclick="previewSeekBy(5)">5秒 ▶</button>
+        </div>
+    </div>
+</div>
 
-        // ローマ字変換テーブル
-        const ROMAJI_TABLE = {
-            'あ':'a','い':'i','う':'u','え':'e','お':'o',
-            'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
-            'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
-            'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
-            'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
-            'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
-            'だ':'da','ぢ':'di','づ':'du','で':'de','ど':'do',
-            'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
-            'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
-            'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
-            'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
-            'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
-            'や':'ya','ゆ':'yu','よ':'yo',
-            'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-            'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
-        };
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    let player = null, previewPlayer = null;
+    let currentTime = 0, previewCurrentTime = 0;
+    let lyricsData = [], songId = '', songTitle = '', youtubeId = '', scorePerKey = 10;
+    let updateInterval = null, previewUpdateInterval = null;
 
-        const COMBO_ROMAJI = {
-            'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
-            'しゃ':'sha','しゅ':'shu','しょ':'sho',
-            'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
-            'にゃ':'nya','にゅ':'nyu','にょ':'nyo',
-            'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
-            'みゃ':'mya','みゅ':'myu','みょ':'myo',
-            'りゃ':'rya','りゅ':'ryu','りょ':'ryo',
-            'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
-            'じゃ':'ja','じゅ':'ju','じょ':'jo',
-            'びゃ':'bya','びゅ':'byu','びょ':'byo',
-            'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
-            'ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo'
-        };
+    const ROMAJI_P = {
+        'あ':'a','い':'i','う':'u','え':'e','お':'o',
+        'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+        'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+        'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+        'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+        'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+        'だ':'da','ぢ':'di','づ':'du','で':'de','ど':'do',
+        'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+        'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+        'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+        'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+        'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+        'や':'ya','ゆ':'yu','よ':'yo',
+        'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+        'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
+    };
+    const COMBO_P = {
+        'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+        'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+        'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+        'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+        'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+        'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo','ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo'
+    };
 
-        function kanaToRomaji(kanaArr) {
-            let result = '';
-            let i = 0;
-            while (i < kanaArr.length) {
-                if (i + 1 < kanaArr.length) {
-                    const combo = kanaArr[i] + kanaArr[i + 1];
-                    if (COMBO_ROMAJI[combo]) {
-                        result += COMBO_ROMAJI[combo];
-                        i += 2;
-                        continue;
-                    }
-                }
-                if (kanaArr[i] === 'っ' && i + 1 < kanaArr.length) {
-                    const next = ROMAJI_TABLE[kanaArr[i + 1]];
-                    if (next) { result += next[0]; i++; continue; }
-                }
-                const r = ROMAJI_TABLE[kanaArr[i]];
-                result += r ? r : kanaArr[i];
-                i++;
-            }
-            return result;
+    function kanaToRomaji(arr) {
+        let r = '', i = 0;
+        while (i < arr.length) {
+            if (i+1 < arr.length && COMBO_P[arr[i]+arr[i+1]]) { r += COMBO_P[arr[i]+arr[i+1]]; i+=2; continue; }
+            if (arr[i]==='っ' && i+1<arr.length && ROMAJI_P[arr[i+1]]) { r += ROMAJI_P[arr[i+1]][0]; i++; continue; }
+            r += ROMAJI_P[arr[i]] || arr[i]; i++;
         }
+        return r;
+    }
 
-        // YouTube API準備完了
-        function onYouTubeIframeAPIReady() {
-            console.log('YouTube API準備完了');
-        }
+    function onYouTubeIframeAPIReady() {}
 
-        // 作成開始
-        function startCreating() {
-            songId = document.getElementById('song-id').value.trim();
-            songTitle = document.getElementById('song-title').value.trim();
-            youtubeId = document.getElementById('youtube-id').value.trim();
+    function startCreating() {
+        songId     = document.getElementById('song-id').value.trim();
+        songTitle  = document.getElementById('song-title').value.trim();
+        youtubeId  = document.getElementById('youtube-id').value.trim();
+        scorePerKey = parseInt(document.getElementById('score-per-key').value) || 10;
+        if (!songId || !songTitle || !youtubeId) { alert('全ての項目を入力してください'); return; }
+        lyricsData = [];
+        createPlayer();
+    }
 
-            if (!songId || !songTitle || !youtubeId) {
-                alert('全ての項目を入力してください');
-                return;
-            }
-
-            lyricsData = [];
+    function startWithImport() {
+        const code = document.getElementById('import-textarea').value.trim();
+        if (!code) { alert('インポートするコードを入力してください'); return; }
+        try {
+            const d = eval('('+code+')');
+            if (!d.id||!d.title||!d.youtubeId||!d.lyrics) throw new Error('不正なフォーマットです');
+            songId=d.id; songTitle=d.title; youtubeId=d.youtubeId; scorePerKey=d.scorePerKey||10;
+            lyricsData = d.lyrics.map(l=>({time:l.time,text:l.text,kana:l.kana}));
             createPlayer();
-        }
+        } catch(e) { alert('インポートに失敗しました。\n'+e.message); }
+    }
 
-        // インポートして開始
-        function startWithImport() {
-            const code = document.getElementById('import-textarea').value.trim();
+    function createPlayer() {
+        player = new YT.Player('youtube-player', {
+            height:'500',width:'100%',videoId:youtubeId,
+            playerVars:{autoplay:0},
+            events:{onReady:onPlayerReady}
+        });
+        document.getElementById('setup-section').style.display='none';
+        document.getElementById('main-content').classList.add('active');
+    }
 
-            if (!code) {
-                alert('インポートするコードを入力してください');
-                return;
+    function onPlayerReady() {
+        updateInterval = setInterval(()=>{
+            if(player&&player.getCurrentTime){
+                currentTime=player.getCurrentTime();
+                document.getElementById('current-time').textContent=currentTime.toFixed(2)+'秒';
             }
+        },100);
+        if(lyricsData.length>0) updateLyricsList();
+    }
 
-            try {
-                const songData = eval(`(${code})`);
+    function pauseVideo(){if(player)player.pauseVideo();}
+    function playVideo(){if(player)player.playVideo();}
+    function seekBy(s){if(player)player.seekTo(Math.max(0,currentTime+s),true);}
 
-                if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
-                    throw new Error('不正なフォーマットです');
-                }
+    function addLyric(){
+        const text=document.getElementById('lyrics-text').value.trim();
+        const kana=document.getElementById('lyrics-kana').value.trim();
+        if(!text||!kana){alert('歌詞と読みを入力してください');return;}
+        if(!/^[ぁ-んーa-z0-9 ]+$/.test(kana)){alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください');return;}
+        lyricsData.push({time:currentTime,text,kana:kana.split('')});
+        lyricsData.sort((a,b)=>a.time-b.time);
+        updateLyricsList();
+        document.getElementById('lyrics-text').value='';
+        document.getElementById('lyrics-kana').value='';
+    }
 
-                songId = songData.id;
-                songTitle = songData.title;
-                youtubeId = songData.youtubeId;
-                lyricsData = songData.lyrics.map(lyric => ({
-                    time: lyric.time,
-                    text: lyric.text,
-                    kana: lyric.kana
-                }));
+    function updateLyricsList(){
+        const el=document.getElementById('lyrics-list');
+        el.innerHTML='<h3>追加済み歌詞（'+lyricsData.length+'行）</h3>';
+        lyricsData.forEach((l,i)=>{
+            const d=document.createElement('div');
+            d.className='lyrics-item';
+            d.innerHTML=`<span class="lyrics-item-time">${l.time.toFixed(2)}秒</span><span class="lyrics-item-text">${l.text} (${l.kana.join('')})</span><button class="btn-delete" onclick="deleteLyric(${i})">削除</button>`;
+            el.appendChild(d);
+        });
+    }
 
-                createPlayer();
+    function deleteLyric(i){if(confirm('この歌詞を削除しますか？')){lyricsData.splice(i,1);updateLyricsList();}}
 
-            } catch (error) {
-                alert('インポートに失敗しました。\nコードの形式を確認してください。\n\nエラー: ' + error.message);
-            }
-        }
+    function generateOutput(){
+        if(lyricsData.length===0){alert('歌詞を1つ以上追加してください');return;}
+        let o=`{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n    scorePerKey: ${scorePerKey},\n    lyrics: [\n`;
+        lyricsData.forEach((l,i)=>{
+            const ks=l.kana.map(k=>`'${k}'`).join(',');
+            o+=`        { time: ${l.time.toFixed(2)}, text: '${l.text}', kana: [${ks}] }`;
+            if(i<lyricsData.length-1)o+=',';
+            o+='\n';
+        });
+        o+=`    ]\n}`;
+        document.getElementById('output-textarea').value=o;
+    }
 
-        // プレイヤー作成
-        function createPlayer() {
-            player = new YT.Player('youtube-player', {
-                height: '500',
-                width: '100%',
-                videoId: youtubeId,
-                playerVars: { autoplay: 0 },
-                events: {
-                    onReady: onPlayerReady
-                }
-            });
+    function copyOutput(){
+        const ta=document.getElementById('output-textarea');
+        if(!ta.value){alert('まずコード生成ボタンを押してください');return;}
+        ta.select();document.execCommand('copy');
+        const m=document.getElementById('copy-success');
+        m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);
+    }
 
-            document.getElementById('setup-section').style.display = 'none';
-            document.getElementById('main-content').classList.add('active');
-        }
-
-        // プレイヤー準備完了
-        function onPlayerReady(event) {
-            startTimeUpdate();
-            if (lyricsData.length > 0) updateLyricsList();
-        }
-
-        // 時間更新
-        function startTimeUpdate() {
-            updateInterval = setInterval(() => {
-                if (player && player.getCurrentTime) {
-                    currentTime = player.getCurrentTime();
-                    document.getElementById('current-time').textContent = currentTime.toFixed(2) + '秒';
-                }
-            }, 100);
-        }
-
-        // 動画操作
-        function pauseVideo() { if (player) player.pauseVideo(); }
-        function playVideo()  { if (player) player.playVideo(); }
-
-        function seekBy(seconds) {
-            if (player) {
-                const newTime = Math.max(0, currentTime + seconds);
-                player.seekTo(newTime, true);
-            }
-        }
-
-        // ===== プレビュー機能 =====
-        function openPreview() {
-            if (lyricsData.length === 0) {
-                alert('歌詞が1つもありません。先に歌詞を追加してください。');
-                return;
-            }
-
-            // メイン動画を一時停止
-            if (player) player.pauseVideo();
-
-            previewLyricIndex = 0;
-            document.getElementById('preview-overlay').classList.add('active');
-
-            // プレビュープレイヤー作成
-            previewPlayer = new YT.Player('preview-player', {
-                height: '100%',
-                width: '100%',
-                videoId: youtubeId,
-                playerVars: {
-                    autoplay: 1,
-                    controls: 0,
-                    disablekb: 1,
-                    fs: 0,
-                    modestbranding: 1,
-                    rel: 0
-                },
-                events: {
-                    onReady: onPreviewPlayerReady
-                }
-            });
-        }
-
-        function onPreviewPlayerReady(event) {
-            event.target.playVideo();
-
-            // 歌詞初期化
-            document.getElementById('preview-current-lyric').textContent = '';
-            document.getElementById('preview-romaji').textContent = '';
-            document.getElementById('preview-next-lyric').textContent = '';
-
-            previewUpdateInterval = setInterval(() => {
-                if (!previewPlayer || !previewPlayer.getCurrentTime) return;
-
-                previewCurrentTime = previewPlayer.getCurrentTime();
-                document.getElementById('preview-time').textContent = previewCurrentTime.toFixed(2) + '秒';
-
-                updatePreviewLyrics(previewCurrentTime);
-            }, 50);
-        }
-
-        function updatePreviewLyrics(t) {
-            // 現在時刻に合う歌詞インデックスを探す
-            let idx = -1;
-            for (let i = 0; i < lyricsData.length; i++) {
-                if (t >= lyricsData[i].time) {
-                    idx = i;
-                } else {
-                    break;
-                }
-            }
-
-            if (idx === -1) {
-                // まだ歌詞前
-                document.getElementById('preview-current-lyric').innerHTML =
-                    '<span style="color:#555;font-size:1rem;">▶ 歌詞を待っています...</span>';
-                document.getElementById('preview-romaji').textContent = '';
-                document.getElementById('preview-next-lyric').textContent =
-                    lyricsData.length > 0 ? '次: ' + lyricsData[0].text : '';
-                return;
-            }
-
-            const lyric = lyricsData[idx];
-            document.getElementById('preview-current-lyric').textContent = lyric.text;
-            document.getElementById('preview-romaji').textContent = kanaToRomaji(lyric.kana);
-
-            const nextLyric = lyricsData[idx + 1];
-            document.getElementById('preview-next-lyric').textContent =
-                nextLyric ? '次: ' + nextLyric.text : '';
-        }
-
-        function closePreview() {
-            // インターバル停止
-            if (previewUpdateInterval) {
-                clearInterval(previewUpdateInterval);
-                previewUpdateInterval = null;
-            }
-
-            // プレビュープレイヤー破棄
-            if (previewPlayer) {
-                previewPlayer.destroy();
-                previewPlayer = null;
-                // destroyするとDOMごと消えるので再作成
-                const wrapper = document.querySelector('.preview-video-wrapper');
-                const newDiv = document.createElement('div');
-                newDiv.id = 'preview-player';
-                wrapper.appendChild(newDiv);
-            }
-
-            document.getElementById('preview-overlay').classList.remove('active');
-        }
-
-        function previewPause() { if (previewPlayer) previewPlayer.pauseVideo(); }
-        function previewPlay()  { if (previewPlayer) previewPlayer.playVideo(); }
-
-        function previewSeekBy(seconds) {
-            if (previewPlayer) {
-                const newTime = Math.max(0, previewCurrentTime + seconds);
-                previewPlayer.seekTo(newTime, true);
-            }
-        }
-
-        // ===== 編集機能 =====
-        function addLyric() {
-            const text = document.getElementById('lyrics-text').value.trim();
-            const kana = document.getElementById('lyrics-kana').value.trim();
-
-            if (!text || !kana) {
-                alert('歌詞と読みを入力してください');
-                return;
-            }
-
-            if (!/^[ぁ-んーa-z0-9 ]+$/.test(kana)) {
-                alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください');
-                return;
-            }
-
-            const kanaArray = kana.split('');
-
-            lyricsData.push({
-                time: currentTime,
-                text: text,
-                kana: kanaArray
-            });
-
-            lyricsData.sort((a, b) => a.time - b.time);
+    function importCode(){
+        const code=document.getElementById('output-textarea').value.trim();
+        if(!code){alert('コードを貼り付けてください');return;}
+        try{
+            const d=eval('('+code+')');
+            if(!d.id||!d.title||!d.youtubeId||!d.lyrics)throw new Error('不正なフォーマットです');
+            songId=d.id;songTitle=d.title;youtubeId=d.youtubeId;scorePerKey=d.scorePerKey||10;
+            lyricsData=d.lyrics.map(l=>({time:l.time,text:l.text,kana:l.kana}));
+            if(player)player.loadVideoById(youtubeId);
             updateLyricsList();
+            const m=document.getElementById('import-success');
+            m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);
+            alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行\n1打スコア: ${scorePerKey}`);
+        }catch(e){alert('インポートに失敗しました。\n'+e.message);}
+    }
 
-            document.getElementById('lyrics-text').value = '';
-            document.getElementById('lyrics-kana').value = '';
+    function openPreview(){
+        if(lyricsData.length===0){alert('歌詞が1つもありません。');return;}
+        if(player)player.pauseVideo();
+        document.getElementById('preview-overlay').classList.add('active');
+        previewPlayer=new YT.Player('preview-player',{
+            height:'100%',width:'100%',videoId:youtubeId,
+            playerVars:{autoplay:1,controls:0,disablekb:1,fs:0,modestbranding:1,rel:0},
+            events:{onReady:e=>{
+                e.target.playVideo();
+                document.getElementById('preview-current-lyric').textContent='';
+                previewUpdateInterval=setInterval(()=>{
+                    if(!previewPlayer||!previewPlayer.getCurrentTime)return;
+                    previewCurrentTime=previewPlayer.getCurrentTime();
+                    document.getElementById('preview-time').textContent=previewCurrentTime.toFixed(2)+'秒';
+                    let idx=-1;
+                    for(let i=0;i<lyricsData.length;i++){if(previewCurrentTime>=lyricsData[i].time)idx=i;else break;}
+                    if(idx===-1){
+                        document.getElementById('preview-current-lyric').innerHTML='<span style="color:#555;font-size:1rem;">▶ 歌詞を待っています...</span>';
+                        document.getElementById('preview-romaji').textContent='';
+                        document.getElementById('preview-next-lyric').textContent=lyricsData.length>0?'次: '+lyricsData[0].text:'';
+                    }else{
+                        document.getElementById('preview-current-lyric').textContent=lyricsData[idx].text;
+                        document.getElementById('preview-romaji').textContent=kanaToRomaji(lyricsData[idx].kana);
+                        const nx=lyricsData[idx+1];
+                        document.getElementById('preview-next-lyric').textContent=nx?'次: '+nx.text:'';
+                    }
+                },50);
+            }}
+        });
+    }
+
+    function closePreview(){
+        if(previewUpdateInterval){clearInterval(previewUpdateInterval);previewUpdateInterval=null;}
+        if(previewPlayer){
+            previewPlayer.destroy();previewPlayer=null;
+            const w=document.querySelector('.preview-video-wrapper');
+            const d=document.createElement('div');d.id='preview-player';w.appendChild(d);
         }
+        document.getElementById('preview-overlay').classList.remove('active');
+    }
 
-        function updateLyricsList() {
-            const listEl = document.getElementById('lyrics-list');
-            listEl.innerHTML = '<h3>追加済み歌詞（' + lyricsData.length + '行）</h3>';
-
-            lyricsData.forEach((lyric, index) => {
-                const item = document.createElement('div');
-                item.className = 'lyrics-item';
-                item.innerHTML = `
-                    <span class="lyrics-item-time">${lyric.time.toFixed(2)}秒</span>
-                    <span class="lyrics-item-text">${lyric.text} (${lyric.kana.join('')})</span>
-                    <button class="btn-delete" onclick="deleteLyric(${index})">削除</button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        function deleteLyric(index) {
-            if (confirm('この歌詞を削除しますか？')) {
-                lyricsData.splice(index, 1);
-                updateLyricsList();
-            }
-        }
-
-        function generateOutput() {
-            if (lyricsData.length === 0) {
-                alert('歌詞を1つ以上追加してください');
-                return;
-            }
-
-            let output = `{\n`;
-            output += `    id: '${songId}',\n`;
-            output += `    title: '${songTitle}',\n`;
-            output += `    youtubeId: '${youtubeId}',\n`;
-            output += `    lyrics: [\n`;
-
-            lyricsData.forEach((lyric, index) => {
-                const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
-                output += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}] }`;
-                if (index < lyricsData.length - 1) output += ',';
-                output += '\n';
-            });
-
-            output += `    ]\n}`;
-            document.getElementById('output-textarea').value = output;
-        }
-
-        function copyOutput() {
-            const textarea = document.getElementById('output-textarea');
-            if (!textarea.value) {
-                alert('まずコード生成ボタンを押してください');
-                return;
-            }
-            textarea.select();
-            document.execCommand('copy');
-            const successMsg = document.getElementById('copy-success');
-            successMsg.classList.add('show');
-            setTimeout(() => successMsg.classList.remove('show'), 2000);
-        }
-
-        function importCode() {
-            const textarea = document.getElementById('output-textarea');
-            const code = textarea.value.trim();
-
-            if (!code) {
-                alert('コードを貼り付けてください');
-                return;
-            }
-
-            try {
-                const songData = eval(`(${code})`);
-
-                if (!songData.id || !songData.title || !songData.youtubeId || !songData.lyrics) {
-                    throw new Error('不正なフォーマットです');
-                }
-
-                songId = songData.id;
-                songTitle = songData.title;
-                youtubeId = songData.youtubeId;
-                lyricsData = songData.lyrics.map(lyric => ({
-                    time: lyric.time,
-                    text: lyric.text,
-                    kana: lyric.kana
-                }));
-
-                if (player) player.loadVideoById(youtubeId);
-                updateLyricsList();
-
-                const successMsg = document.getElementById('import-success');
-                successMsg.classList.add('show');
-                setTimeout(() => successMsg.classList.remove('show'), 2000);
-
-                alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行`);
-
-            } catch (error) {
-                alert('インポートに失敗しました。\nコードの形式を確認してください。\n\nエラー: ' + error.message);
-            }
-        }
-    </script>
+    function previewPause(){if(previewPlayer)previewPlayer.pauseVideo();}
+    function previewPlay(){if(previewPlayer)previewPlayer.playVideo();}
+    function previewSeekBy(s){if(previewPlayer)previewPlayer.seekTo(Math.max(0,previewCurrentTime+s),true);}
+</script>
 </body>
 </html>
