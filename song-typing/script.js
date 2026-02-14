@@ -175,7 +175,7 @@ function startGame() {
         height: '100%',
         width: '100%',
         videoId: currentSong.youtubeId,
-        host: 'https://www.youtubeeducation.com',
+        host: 'https://www.youtube.com',
         playerVars: {
             autoplay: 1,
             controls: 0,
