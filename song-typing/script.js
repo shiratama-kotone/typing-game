@@ -289,7 +289,7 @@ function loadLyric(lyric) {
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
     gameState.currentCharIndex    = 0;
     gameState.currentCharPosition = 0;
-    gameState.lineTypedChars      = 0;  // 各行の打鍵数はリセット（参照用のみ）
+    gameState.lineTypedChars      = 0;
 
     const japaneseLineEl = document.getElementById('japanese-line');
     const nextLineEl     = document.getElementById('next-line');
@@ -380,6 +380,7 @@ function handleInput(e) {
     const input = e.target.value.toLowerCase();
     if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) return;
 
+    // ★ scorePerKey はひらがな1文字完了ごとに加算
     const scorePerKey = (currentSong && currentSong.scorePerKey) ? currentSong.scorePerKey : 10;
 
     const currentChar   = gameState.currentRomaji[gameState.currentCharIndex];
@@ -392,11 +393,12 @@ function handleInput(e) {
         gameState.currentCharPosition += len;
         gameState.correctCount        += len;
         gameState.totalKeystrokes     += len;
-        gameState.totalTypedChars     += len;  // 全体の打鍵数に加算
-        gameState.score               += scorePerKey * len;
-        gameState.lineTypedChars      += len;  // 行の参照用
+        gameState.totalTypedChars     += len;
+        gameState.lineTypedChars      += len;
         playTypingSound();
+        // ★ ひらがな1文字が完成したタイミングでスコア加算
         if (gameState.currentCharPosition >= currentChar.current.length) {
+            gameState.score += scorePerKey;
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
         }
@@ -451,7 +453,6 @@ function updateNormaGauge() {
     const normaGauge     = document.getElementById('norma-gauge');
     const normaGaugeText = document.getElementById('norma-gauge-text');
 
-    // 歌詞全体のノルマに基づいて計算
     if (gameState.totalNorma <= 0) {
         if (normaGauge)     normaGauge.style.width = '0%';
         if (normaGaugeText) normaGaugeText.textContent = '-';
