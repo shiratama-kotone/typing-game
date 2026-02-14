@@ -223,7 +223,9 @@ function initGame() {
         totalLyricChars: 0,
         totalNorma: 0,
         totalTypedChars: 0,
-        completedCurrentLine: false
+        completedCurrentLine: false,
+        completedUnits: 0,   // ★ 完了したひらがな単位数
+        totalUnits: 0        // ★ 曲全体のひらがな単位数
     };
 
     currentLyricIndex = 0;
@@ -231,12 +233,15 @@ function initGame() {
 
     if (currentSong && currentSong.lyrics) {
         let totalChars = 0;
+        let totalUnits = 0;
         currentSong.lyrics.forEach(lyric => {
             const romajiArray = convertToRomaji(lyric.kana);
+            totalUnits += romajiArray.length;
             totalChars += romajiArray.reduce((sum, c) => sum + c.current.length, 0);
         });
         gameState.totalLyricChars = totalChars;
         gameState.totalNorma = Math.ceil(totalChars * 0.4);
+        gameState.totalUnits = totalUnits;  // ★ 全単位数をセット
     }
 
     const japaneseLineEl = document.getElementById('japanese-line');
@@ -378,8 +383,6 @@ function handleInput(e) {
     const input = e.target.value.toLowerCase();
     if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) return;
 
-    const scorePerKey = (currentSong && currentSong.scorePerKey) ? currentSong.scorePerKey : 10;
-
     const currentChar  = gameState.currentRomaji[gameState.currentCharIndex];
     const expectedPart = currentChar.current.substring(gameState.currentCharPosition);
 
@@ -393,9 +396,12 @@ function handleInput(e) {
         gameState.totalTypedChars     += len;
         gameState.lineTypedChars      += len;
         playTypingSound();
-        // ★ ひらがな1文字完成ごとにスコア加算
+        // ★ ひらがな1単位完了ごとに比例スコア加算（全完了で1,010,000点）
         if (gameState.currentCharPosition >= currentChar.current.length) {
-            gameState.score += scorePerKey;
+            gameState.completedUnits++;
+            gameState.score = gameState.totalUnits > 0
+                ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits)
+                : 0;
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
         }
