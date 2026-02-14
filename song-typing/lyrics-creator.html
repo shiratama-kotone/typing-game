@@ -177,7 +177,7 @@
                 </div>
                 <div style="display:flex; align-items:flex-end;">
                     <div class="score-hint" style="margin:0;">
-                        💡 <b>目安：</b> 打鍵数 × スコア ≈ 満点スコア
+                        💡 <b>目安：</b> かな文字数 × スコア ≈ 満点スコア
                     </div>
                 </div>
             </div>
@@ -244,7 +244,6 @@
 
     const 単一文字マッピング = {
         'あ':'a','い':'i','う':'u','え':'e','お':'o',
-        'ぁ':'la','ぃ':'li','ぅ':'lu','ぇ':'le','ぉ':'lo',
         'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
         'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
         'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
@@ -258,7 +257,7 @@
         'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
         'や':'ya','ゆ':'yu','よ':'yo',
         'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-        'わ':'wa','を':'wo','ん':'n','っ':'ltu','ー':'-'
+        'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
     };
 
     const 複合文字マッピング = {
@@ -296,8 +295,28 @@
         return ローマ字;
     }
 
-    function 打鍵数を計算(ひらがな配列) {
-        return ひらがなをローマ字に変換(ひらがな配列).length;
+    // ★ game.js の convertToRomaji と同じ単位でかな文字数をカウント
+    //   っ+次文字=1、拗音(きゃ等)=1、通常かな=1
+    function かな文字数を計算(文字配列) {
+        let カウント = 0;
+        let i = 0;
+        while (i < 文字配列.length) {
+            // っ + 次文字 → 1単位（っ自体は消費してカウントしない）
+            if (文字配列[i] === 'っ' && i + 1 < 文字配列.length) {
+                i++;
+                continue;
+            }
+            // 拗音（2文字で1単位）
+            if (i + 1 < 文字配列.length && 複合文字マッピング[文字配列[i] + 文字配列[i + 1]]) {
+                カウント++;
+                i += 2;
+                continue;
+            }
+            // 通常の1文字
+            カウント++;
+            i++;
+        }
+        return カウント;
     }
 
     function onYouTubeIframeAPIReady() {}
@@ -367,12 +386,12 @@
     function 歌詞一覧を更新() {
         const 親要素 = document.getElementById('lyrics-list');
 
-        const 合計打鍵数 = lyricsData.reduce((合計, 歌詞) => 合計 + 打鍵数を計算(歌詞.kana), 0);
+        const 合計かな文字数 = lyricsData.reduce((合計, 歌詞) => 合計 + かな文字数を計算(歌詞.kana), 0);
 
         親要素.innerHTML = `
             <div class="lyrics-list-header">
                 <h3>追加済み歌詞（${lyricsData.length}行）</h3>
-                <span class="total-keystrokes-badge">📍 合計打鍵数: ${合計打鍵数}打</span>
+                <span class="total-keystrokes-badge">📍 合計かな文字数: ${合計かな文字数}文字</span>
             </div>
         `;
 
