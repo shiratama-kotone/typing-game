@@ -185,7 +185,9 @@ function startGame() {
             rel: 0,
             iv_load_policy: 3,
             cc_load_policy: 0,
-            playsinline: 1
+            playsinline: 1,
+            enablejsapi: 1,
+            origin: window.location.origin
         },
         events: {
             onReady: onPlayerReady,
