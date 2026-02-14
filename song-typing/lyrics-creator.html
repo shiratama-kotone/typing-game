@@ -65,9 +65,21 @@
         .output-section { background:#f5f5f5; padding:20px; border-radius:10px; }
         #output-textarea { width:100%; min-height:300px; font-family:'Courier New',monospace; font-size:0.9rem; padding:15px; border:2px solid #ddd; border-radius:5px; }
         .lyrics-list { margin-top:20px; max-height:300px; overflow-y:auto; }
+        /* ★ ヘッダー行のスタイル */
+        .lyrics-list-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:10px;
+        }
+        .lyrics-list-header h3 { margin-bottom:0; }
+        .total-keystrokes-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 6px 16px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: bold;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.35);
+            white-space: nowrap;
+        }
         .lyrics-item { background:white; padding:10px; margin-bottom:5px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; }
         .lyrics-item-content { flex:1; }
-        .lyrics-item-keystroke { font-size:0.85rem; color:#666; margin-bottom:4px; }
         .lyrics-item-time { font-weight:bold; color:#667eea; min-width:80px; }
         .lyrics-item-text { margin:0 10px; }
         .lyrics-item-delete { display:flex; gap:5px; }
@@ -218,9 +230,6 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-    // ============================================
-    // グローバル変数
-    // ============================================
     let player = null;
     let previewPlayer = null;
     let currentTime = 0;
@@ -233,12 +242,9 @@
     let updateInterval = null;
     let previewUpdateInterval = null;
 
-    // ============================================
-    // ローマ字変換マッピング
-    // ============================================
-    // 単一のひらがなをローマ字に変換
     const 単一文字マッピング = {
         'あ':'a','い':'i','う':'u','え':'e','お':'o',
+        'ぁ':'la','ぃ':'li','ぅ':'lu','ぇ':'le','ぉ':'lo',
         'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
         'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
         'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
@@ -252,10 +258,9 @@
         'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
         'や':'ya','ゆ':'yu','よ':'yo',
         'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-        'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
+        'わ':'wa','を':'wo','ん':'n','っ':'ltu','ー':'-'
     };
 
-    // 複合音（きゃ、しゃなど）のマッピング
     const 複合文字マッピング = {
         'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
         'しゃ':'sha','しゅ':'shu','しょ':'sho',
@@ -271,188 +276,111 @@
         'ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo'
     };
 
-    // ============================================
-    // ローマ字変換関数
-    // ============================================
-    // ひらがな配列をローマ字に変換（スペース付き）
     function ひらがなをローマ字に変換(文字配列) {
         let ローマ字 = '';
         let インデックス = 0;
-
         while (インデックス < 文字配列.length) {
-            // 複合音（2文字）をチェック
             if (インデックス + 1 < 文字配列.length && 複合文字マッピング[文字配列[インデックス] + 文字配列[インデックス + 1]]) {
                 ローマ字 += 複合文字マッピング[文字配列[インデックス] + 文字配列[インデックス + 1]];
                 インデックス += 2;
                 continue;
             }
-
-            // 小文字っの処理（つ詰まり）
             if (文字配列[インデックス] === 'っ' && インデックス + 1 < 文字配列.length && 単一文字マッピング[文字配列[インデックス + 1]]) {
                 ローマ字 += 単一文字マッピング[文字配列[インデックス + 1]][0];
                 インデックス++;
                 continue;
             }
-
-            // 単一文字を変換
             ローマ字 += 単一文字マッピング[文字配列[インデックス]] || 文字配列[インデックス];
             インデックス++;
         }
-
         return ローマ字;
     }
 
-    // ============================================
-    // 打鍵数の計算
-    // ============================================
-    // ひらがなをローマ字に変換して、スペースを含めた打鍵数を計算
     function 打鍵数を計算(ひらがな配列) {
-        const ローマ字 = ひらがなをローマ字に変換(ひらがな配列);
-        // ローマ字の長さ = 打鍵数
-        return ローマ字.length;
+        return ひらがなをローマ字に変換(ひらがな配列).length;
     }
 
     function onYouTubeIframeAPIReady() {}
 
-    // ============================================
-    // セットアップ関数
-    // ============================================
     function 初期化を開始() {
         songId = document.getElementById('song-id').value.trim();
         songTitle = document.getElementById('song-title').value.trim();
         youtubeId = document.getElementById('youtube-id').value.trim();
         scorePerKey = parseInt(document.getElementById('score-per-key').value) || 10;
-
-        if (!songId || !songTitle || !youtubeId) {
-            alert('全ての項目を入力してください');
-            return;
-        }
-
+        if (!songId || !songTitle || !youtubeId) { alert('全ての項目を入力してください'); return; }
         lyricsData = [];
         プレイヤーを作成();
     }
 
     function インポートして開始() {
         const コード = document.getElementById('import-textarea').value.trim();
-        if (!コード) {
-            alert('インポートするコードを入力してください');
-            return;
-        }
-
+        if (!コード) { alert('インポートするコードを入力してください'); return; }
         try {
             const データ = eval('(' + コード + ')');
-            if (!データ.id || !データ.title || !データ.youtubeId || !データ.lyrics) {
-                throw new Error('不正なフォーマットです');
-            }
-
-            songId = データ.id;
-            songTitle = データ.title;
-            youtubeId = データ.youtubeId;
+            if (!データ.id || !データ.title || !データ.youtubeId || !データ.lyrics) throw new Error('不正なフォーマットです');
+            songId = データ.id; songTitle = データ.title; youtubeId = データ.youtubeId;
             scorePerKey = データ.scorePerKey || 10;
-            lyricsData = データ.lyrics.map(l => ({
-                time: l.time,
-                text: l.text,
-                kana: l.kana
-            }));
-
+            lyricsData = データ.lyrics.map(l => ({ time: l.time, text: l.text, kana: l.kana }));
             プレイヤーを作成();
-        } catch (エラー) {
-            alert('インポートに失敗しました。\n' + エラー.message);
-        }
+        } catch (エラー) { alert('インポートに失敗しました。\n' + エラー.message); }
     }
 
-    // ============================================
-    // プレイヤー関連
-    // ============================================
     function プレイヤーを作成() {
         player = new YT.Player('youtube-player', {
-            height: '500',
-            width: '100%',
-            videoId: youtubeId,
+            height: '500', width: '100%', videoId: youtubeId,
             playerVars: { autoplay: 0 },
             events: { onReady: プレイヤーが準備完了 }
         });
-
         document.getElementById('setup-section').style.display = 'none';
         document.getElementById('main-content').classList.add('active');
     }
 
     function プレイヤーが準備完了() {
-        // 現在時刻を定期的に更新
         updateInterval = setInterval(() => {
             if (player && player.getCurrentTime) {
                 currentTime = player.getCurrentTime();
                 document.getElementById('current-time').textContent = currentTime.toFixed(2) + '秒';
             }
         }, 100);
-
-        // 既に歌詞がある場合は表示を更新
-        if (lyricsData.length > 0) {
-            歌詞一覧を更新();
-        }
+        if (lyricsData.length > 0) 歌詞一覧を更新();
     }
 
-    function 動画を一時停止() {
-        if (player) player.pauseVideo();
-    }
+    function 動画を一時停止() { if (player) player.pauseVideo(); }
+    function 動画を再生() { if (player) player.playVideo(); }
+    function 時間をシーク(秒数) { if (player) player.seekTo(Math.max(0, currentTime + 秒数), true); }
 
-    function 動画を再生() {
-        if (player) player.playVideo();
-    }
-
-    function 時間をシーク(秒数) {
-        if (player) player.seekTo(Math.max(0, currentTime + 秒数), true);
-    }
-
-    // ============================================
-    // 歌詞入力・管理
-    // ============================================
     function 歌詞を追加() {
         const 歌詞テキスト = document.getElementById('lyrics-text').value.trim();
         const 読みテキスト = document.getElementById('lyrics-kana').value.trim();
-
-        if (!歌詞テキスト || !読みテキスト) {
-            alert('歌詞と読みを入力してください');
-            return;
-        }
-
-        // 読みがひらがなと小文字英数字のみかチェック
+        if (!歌詞テキスト || !読みテキスト) { alert('歌詞と読みを入力してください'); return; }
         if (!/^[ぁ-んーa-z0-9 ]+$/.test(読みテキスト)) {
-            alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください');
-            return;
+            alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください'); return;
         }
-
-        // 歌詞データに追加（スペースも分割せず保持）
-        lyricsData.push({
-            time: currentTime,
-            text: 歌詞テキスト,
-            kana: 読みテキスト.split('')
-        });
-
-        // 時間順でソート
+        lyricsData.push({ time: currentTime, text: 歌詞テキスト, kana: 読みテキスト.split('') });
         lyricsData.sort((a, b) => a.time - b.time);
-
         歌詞一覧を更新();
-
-        // 入力欄をクリア
         document.getElementById('lyrics-text').value = '';
         document.getElementById('lyrics-kana').value = '';
     }
 
+    // ★ 変更点: 一行ごとの打鍵数を廃止し、合計打鍵数をヘッダーにバッジ表示
     function 歌詞一覧を更新() {
         const 親要素 = document.getElementById('lyrics-list');
-        親要素.innerHTML = '<h3>追加済み歌詞（' + lyricsData.length + '行）</h3>';
+
+        const 合計打鍵数 = lyricsData.reduce((合計, 歌詞) => 合計 + 打鍵数を計算(歌詞.kana), 0);
+
+        親要素.innerHTML = `
+            <div class="lyrics-list-header">
+                <h3>追加済み歌詞（${lyricsData.length}行）</h3>
+                <span class="total-keystrokes-badge">📍 合計打鍵数: ${合計打鍵数}打</span>
+            </div>
+        `;
 
         lyricsData.forEach((歌詞, インデックス) => {
             const 要素 = document.createElement('div');
             要素.className = 'lyrics-item';
-
-            // 打鍵数を計算
-            const 打鍵数 = 打鍵数を計算(歌詞.kana);
-
             要素.innerHTML = `
                 <div class="lyrics-item-content">
-                    <div class="lyrics-item-keystroke">📍 打鍵数: ${打鍵数}打</div>
                     <div style="display:flex; align-items:center;">
                         <span class="lyrics-item-time">${歌詞.time.toFixed(2)}秒</span>
                         <span class="lyrics-item-text">${歌詞.text} (${歌詞.kana.join('')})</span>
@@ -462,7 +390,6 @@
                     <button class="btn-delete" onclick="歌詞を削除(${インデックス})">削除</button>
                 </div>
             `;
-
             親要素.appendChild(要素);
         });
     }
@@ -474,44 +401,24 @@
         }
     }
 
-    // ============================================
-    // コード生成・インポート
-    // ============================================
     function コードを生成() {
-        if (lyricsData.length === 0) {
-            alert('歌詞を1つ以上追加してください');
-            return;
-        }
-
+        if (lyricsData.length === 0) { alert('歌詞を1つ以上追加してください'); return; }
         let 出力コード = `{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n    scorePerKey: ${scorePerKey},\n    lyrics: [\n`;
-
         lyricsData.forEach((歌詞, インデックス) => {
-            // kana配列を文字列配列に変換
             const かな文字列配列 = 歌詞.kana.map(k => `'${k}'`).join(',');
             出力コード += `        { time: ${歌詞.time.toFixed(2)}, text: '${歌詞.text}', kana: [${かな文字列配列}] }`;
-
-            if (インデックス < lyricsData.length - 1) {
-                出力コード += ',';
-            }
+            if (インデックス < lyricsData.length - 1) 出力コード += ',';
             出力コード += '\n';
         });
-
         出力コード += `    ]\n}`;
-
         document.getElementById('output-textarea').value = 出力コード;
     }
 
     function コードをコピー() {
         const テキストエリア = document.getElementById('output-textarea');
-        if (!テキストエリア.value) {
-            alert('まずコード生成ボタンを押してください');
-            return;
-        }
-
+        if (!テキストエリア.value) { alert('まずコード生成ボタンを押してください'); return; }
         テキストエリア.select();
         document.execCommand('copy');
-
-        // コピー完了メッセージを表示
         const メッセージ要素 = document.getElementById('copy-success');
         メッセージ要素.classList.add('show');
         setTimeout(() => メッセージ要素.classList.remove('show'), 2000);
@@ -519,106 +426,48 @@
 
     function コードをインポート() {
         const コード = document.getElementById('output-textarea').value.trim();
-        if (!コード) {
-            alert('コードを貼り付けてください');
-            return;
-        }
-
+        if (!コード) { alert('コードを貼り付けてください'); return; }
         try {
             const データ = eval('(' + コード + ')');
-            if (!データ.id || !データ.title || !データ.youtubeId || !データ.lyrics) {
-                throw new Error('不正なフォーマットです');
-            }
-
-            songId = データ.id;
-            songTitle = データ.title;
-            youtubeId = データ.youtubeId;
+            if (!データ.id || !データ.title || !データ.youtubeId || !データ.lyrics) throw new Error('不正なフォーマットです');
+            songId = データ.id; songTitle = データ.title; youtubeId = データ.youtubeId;
             scorePerKey = データ.scorePerKey || 10;
-            lyricsData = データ.lyrics.map(l => ({
-                time: l.time,
-                text: l.text,
-                kana: l.kana
-            }));
-
-            // 動画を切り替え
+            lyricsData = データ.lyrics.map(l => ({ time: l.time, text: l.text, kana: l.kana }));
             if (player) player.loadVideoById(youtubeId);
-
             歌詞一覧を更新();
-
-            // インポート完了メッセージを表示
             const メッセージ要素 = document.getElementById('import-success');
             メッセージ要素.classList.add('show');
             setTimeout(() => メッセージ要素.classList.remove('show'), 2000);
-
             alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行\n1打スコア: ${scorePerKey}`);
-        } catch (エラー) {
-            alert('インポートに失敗しました。\n' + エラー.message);
-        }
+        } catch (エラー) { alert('インポートに失敗しました。\n' + エラー.message); }
     }
 
-    // ============================================
-    // プレビュー機能
-    // ============================================
     function プレビューを開く() {
-        if (lyricsData.length === 0) {
-            alert('歌詞が1つもありません。');
-            return;
-        }
-
-        // メイン動画を一時停止
+        if (lyricsData.length === 0) { alert('歌詞が1つもありません。'); return; }
         if (player) player.pauseVideo();
-
-        // プレビューオーバーレイを表示
         document.getElementById('preview-overlay').classList.add('active');
-
-        // プレビュー用プレイヤーを作成
         previewPlayer = new YT.Player('preview-player', {
-            height: '100%',
-            width: '100%',
-            videoId: youtubeId,
-            playerVars: {
-                autoplay: 1,
-                controls: 0,
-                disablekb: 1,
-                fs: 0,
-                modestbranding: 1,
-                rel: 0
-            },
+            height: '100%', width: '100%', videoId: youtubeId,
+            playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0 },
             events: {
                 onReady: (イベント) => {
-                    // 再生開始
                     イベント.target.playVideo();
                     document.getElementById('preview-current-lyric').textContent = '';
-
-                    // 定期的に歌詞を更新
                     previewUpdateInterval = setInterval(() => {
                         if (!previewPlayer || !previewPlayer.getCurrentTime) return;
-
                         previewCurrentTime = previewPlayer.getCurrentTime();
                         document.getElementById('preview-time').textContent = previewCurrentTime.toFixed(2) + '秒';
-
-                        // 現在の歌詞インデックスを探す
                         let 現在のインデックス = -1;
                         for (let i = 0; i < lyricsData.length; i++) {
-                            if (previewCurrentTime >= lyricsData[i].time) {
-                                現在のインデックス = i;
-                            } else {
-                                break;
-                            }
+                            if (previewCurrentTime >= lyricsData[i].time) { 現在のインデックス = i; } else { break; }
                         }
-
-                        // 歌詞を表示
                         if (現在のインデックス === -1) {
-                            // まだ歌詞の開始時刻に達していない
                             document.getElementById('preview-current-lyric').innerHTML = '<span style="color:#555;font-size:1rem;">▶ 歌詞を待っています...</span>';
                             document.getElementById('preview-romaji').textContent = '';
                             document.getElementById('preview-next-lyric').textContent = lyricsData.length > 0 ? '次: ' + lyricsData[0].text : '';
                         } else {
-                            // 現在の歌詞を表示
                             document.getElementById('preview-current-lyric').textContent = lyricsData[現在のインデックス].text;
                             document.getElementById('preview-romaji').textContent = ひらがなをローマ字に変換(lyricsData[現在のインデックス].kana);
-
-                            // 次の歌詞をプレビュー
                             const 次の歌詞 = lyricsData[現在のインデックス + 1];
                             document.getElementById('preview-next-lyric').textContent = 次の歌詞 ? '次: ' + 次の歌詞.text : '';
                         }
@@ -629,39 +478,21 @@
     }
 
     function プレビューを閉じる() {
-        // 定期更新を停止
-        if (previewUpdateInterval) {
-            clearInterval(previewUpdateInterval);
-            previewUpdateInterval = null;
-        }
-
-        // プレビュープレイヤーをクリーンアップ
+        if (previewUpdateInterval) { clearInterval(previewUpdateInterval); previewUpdateInterval = null; }
         if (previewPlayer) {
             previewPlayer.destroy();
             previewPlayer = null;
-
-            // プレイヤーコンテナを再作成
             const ラッパー = document.querySelector('.preview-video-wrapper');
             const 新しいコンテナ = document.createElement('div');
             新しいコンテナ.id = 'preview-player';
             ラッパー.appendChild(新しいコンテナ);
         }
-
-        // プレビューオーバーレイを非表示
         document.getElementById('preview-overlay').classList.remove('active');
     }
 
-    function プレビューを一時停止() {
-        if (previewPlayer) previewPlayer.pauseVideo();
-    }
-
-    function プレビューを再生() {
-        if (previewPlayer) previewPlayer.playVideo();
-    }
-
-    function プレビューをシーク(秒数) {
-        if (previewPlayer) previewPlayer.seekTo(Math.max(0, previewCurrentTime + 秒数), true);
-    }
+    function プレビューを一時停止() { if (previewPlayer) previewPlayer.pauseVideo(); }
+    function プレビューを再生() { if (previewPlayer) previewPlayer.playVideo(); }
+    function プレビューをシーク(秒数) { if (previewPlayer) previewPlayer.seekTo(Math.max(0, previewCurrentTime + 秒数), true); }
 </script>
 </body>
 </html>
