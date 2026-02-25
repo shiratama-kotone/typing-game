@@ -280,13 +280,13 @@ function startTracking() {
                 gameState.score = Math.floor((currentTime / gameState.totalDuration) * 1010000);
                 updateScore();
                 const japaneseLineEl = document.getElementById('japanese-line');
-                if (japaneseLineEl) japaneseLineEl.textContent = 'インストゥルメンタル';
+                if (japaneseLineEl) japaneseLineEl.textContent = '歌詞無し';
             }
             return;
         }
 
         checkLyricTiming(currentTime);
-    }, 100);
+    }, 10);
 }
 
 // 歌詞タイミングチェック
