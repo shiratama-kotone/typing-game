@@ -1647,6 +1647,24 @@ const SONGS = [
     lyrics: [
         
     ]
+},
+    {
+    id: 'cho_night_of_nights',
+    title: '超ナイト・オブ・ナイツ',
+    youtubeId: 'yA_h7zM0bcU',
+    scorePerKey: 10,
+    lyrics: [
+        
+    ]
+},
+    {
+    id: 'cho_saisyukitikuimouto_flandre_s',
+    title: '彁',
+    youtubeId: '超最終鬼畜妹フランドール・S',
+    scorePerKey: 10,
+    lyrics: [
+        
+    ]
 }
     
     // 新しい曲を追加する時はここにカンマ区切りで追加
