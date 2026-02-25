@@ -1659,8 +1659,8 @@ const SONGS = [
 },
     {
     id: 'cho_saisyukitikuimouto_flandre_s',
-    title: '彁',
-    youtubeId: '超最終鬼畜妹フランドール・S',
+    title: '超最終鬼畜妹フランドール・S',
+    youtubeId: 'OhYxV0CL3r0',
     scorePerKey: 10,
     lyrics: [
         
