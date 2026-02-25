@@ -1638,6 +1638,15 @@ const SONGS = [
         { time: 44.57, text: 'Pen-Pineapple-Apple-Pen!', kana: ['p','e','n',' ','p','i','n','e','a','p','p','l','e',' ','a','p','p','l','e',' ','p','e','n'] },
         { time: 51.79, text: 'Pen-Pineapple-Apple-Pen!', kana: ['p','e','n',' ','p','i','n','e','a','p','p','l','e',' ','a','p','p','l','e',' ','p','e','n'] }
     ]
+},
+    {
+    id: 'ka',
+    title: '彁',
+    youtubeId: 'EsOU0V2kpUI',
+    scorePerKey: 10,
+    lyrics: [
+        
+    ]
 }
     
     // 新しい曲を追加する時はここにカンマ区切りで追加
