@@ -1616,6 +1616,28 @@ const SONGS = [
     lyrics: [
         
     ]
+},
+    {
+    id: 'pen_pineapple_apple_pen',
+    title: 'ペンパイナッポーアッポーペン(PPAP)',
+    youtubeId: '0E00Zuayv9Q',
+    scorePerKey: 10,
+    lyrics: [
+        { time: 17.32, text: 'PPAP', kana: ['p','p','a','p'] },
+        { time: 25.11, text: 'I have a pen', kana: ['i',' ','h','a','v','e',' ','a',' ','p','e','n'] },
+        { time: 27.11, text: 'I have an apple', kana: ['i',' ','h','a','v','e',' ','a','n',' ','a','p','p','l','e'] },
+        { time: 29.62, text: 'uh', kana: ['u','h'] },
+        { time: 30.48, text: 'Apple pen', kana: ['a','p','p','l','e',' ','p','e','n'] },
+        { time: 32.17, text: 'I have a pen', kana: ['i',' ','h','a','v','e',' ','a',' ','p','e','n'] },
+        { time: 34.15, text: 'i have a pineapple', kana: ['i',' ','h','a','v','e',' ','a',' ','p','i','n','e','a','p','p','l','e'] },
+        { time: 36.66, text: 'uh', kana: ['u','h'] },
+        { time: 37.43, text: 'Pineapple pen', kana: ['p','i','n','e','a','p','p','l','e',' ','p','e','n'] },
+        { time: 39.30, text: 'Apple pen', kana: ['a','p','p','l','e',' ','p','e','n'] },
+        { time: 41.11, text: 'Pineapple pen', kana: ['p','i','n','e','a','p','p','l','e',' ','p','e','n'] },
+        { time: 43.79, text: 'uh', kana: ['u','h'] },
+        { time: 44.57, text: 'Pen-Pineapple-Apple-Pen!', kana: ['p','e','n',' ','p','i','n','e','a','p','p','l','e',' ','a','p','p','l','e',' ','p','e','n'] },
+        { time: 51.79, text: 'Pen-Pineapple-Apple-Pen!', kana: ['p','e','n',' ','p','i','n','e','a','p','p','l','e',' ','a','p','p','l','e',' ','p','e','n'] }
+    ]
 }
     
     // 新しい曲を追加する時はここにカンマ区切りで追加
