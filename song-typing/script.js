@@ -201,7 +201,7 @@ function startGame() {
 
 function onPlayerReady(event) {
     console.log('プレイヤー準備完了');
-    gameState.totalDuration = event.target.getDuration(); // 曲の長さを取得
+    gameState.totalDuration = event.target.getDuration();
     event.target.playVideo();
     startTracking();
 }
@@ -230,7 +230,7 @@ function initGame() {
         completedCurrentLine: false,
         completedUnits: 0,
         totalUnits: 0,
-        totalDuration: 0 // 初期化
+        totalDuration: 0
     };
 
     currentLyricIndex = 0;
@@ -248,7 +248,7 @@ function initGame() {
         gameState.totalNorma = Math.ceil(totalChars * 0.4);
         gameState.totalUnits = totalUnits;
     } else {
-        gameState.totalNorma = 0; // 歌詞なしの場合はノルマなし
+        gameState.totalNorma = 0;
     }
 
     const japaneseLineEl = document.getElementById('japanese-line');
@@ -274,7 +274,7 @@ function startTracking() {
         if (!player) return;
         const currentTime = player.getCurrentTime();
         
-        // ★追加：歌詞なし曲の場合
+        // 歌詞なし曲の場合
         if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
             if (gameState.totalDuration > 0) {
                 gameState.score = Math.floor((currentTime / gameState.totalDuration) * 1010000);
@@ -529,8 +529,13 @@ function endGame() {
         updateInterval = null;
     }
 
-    // ★追加：スコアを最大1,010,000に制限
-    gameState.score = Math.min(gameState.score, 1010000);
+    // ★追加：歌詞なし曲（インスト曲）の場合は最後に1010000点に上書き
+    if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
+        gameState.score = 1010000;
+    } else {
+        // 通常の歌詞あり曲は最大値をキャップ
+        gameState.score = Math.min(gameState.score, 1010000);
+    }
 
     const elapsedTime = (Date.now() - startTime) / 1000;
     const kps = elapsedTime > 0 ? (gameState.totalKeystrokes / elapsedTime).toFixed(2) : 0;
