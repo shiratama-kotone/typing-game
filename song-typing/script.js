@@ -24,7 +24,10 @@ let gameState = {
     totalLyricChars: 0,
     totalNorma: 0,
     totalTypedChars: 0,
-    completedCurrentLine: false
+    completedCurrentLine: false,
+    completedUnits: 0,   // ★ 完了したひらがな単位数
+    totalUnits: 0,       // ★ 曲全体のひらがな単位数
+    totalDuration: 0     // ★ 追加：曲の長さ
 };
 
 // ローマ字変換テーブル
@@ -198,6 +201,7 @@ function startGame() {
 
 function onPlayerReady(event) {
     console.log('プレイヤー準備完了');
+    gameState.totalDuration = event.target.getDuration(); // 曲の長さを取得
     event.target.playVideo();
     startTracking();
 }
@@ -224,14 +228,15 @@ function initGame() {
         totalNorma: 0,
         totalTypedChars: 0,
         completedCurrentLine: false,
-        completedUnits: 0,   // ★ 完了したひらがな単位数
-        totalUnits: 0        // ★ 曲全体のひらがな単位数
+        completedUnits: 0,
+        totalUnits: 0,
+        totalDuration: 0 // 初期化
     };
 
     currentLyricIndex = 0;
     startTime = Date.now();
 
-    if (currentSong && currentSong.lyrics) {
+    if (currentSong && currentSong.lyrics && currentSong.lyrics.length > 0) {
         let totalChars = 0;
         let totalUnits = 0;
         currentSong.lyrics.forEach(lyric => {
@@ -241,7 +246,9 @@ function initGame() {
         });
         gameState.totalLyricChars = totalChars;
         gameState.totalNorma = Math.ceil(totalChars * 0.4);
-        gameState.totalUnits = totalUnits;  // ★ 全単位数をセット
+        gameState.totalUnits = totalUnits;
+    } else {
+        gameState.totalNorma = 0; // 歌詞なしの場合はノルマなし
     }
 
     const japaneseLineEl = document.getElementById('japanese-line');
@@ -266,6 +273,18 @@ function startTracking() {
     updateInterval = setInterval(() => {
         if (!player) return;
         const currentTime = player.getCurrentTime();
+        
+        // ★追加：歌詞なし曲の場合
+        if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
+            if (gameState.totalDuration > 0) {
+                gameState.score = Math.floor((currentTime / gameState.totalDuration) * 1010000);
+                updateScore();
+                const japaneseLineEl = document.getElementById('japanese-line');
+                if (japaneseLineEl) japaneseLineEl.textContent = 'インストゥルメンタル';
+            }
+            return;
+        }
+
         checkLyricTiming(currentTime);
     }, 100);
 }
@@ -396,7 +415,6 @@ function handleInput(e) {
         gameState.totalTypedChars     += len;
         gameState.lineTypedChars      += len;
         playTypingSound();
-        // ★ ひらがな1単位完了ごとに比例スコア加算（全完了で1,010,000点）
         if (gameState.currentCharPosition >= currentChar.current.length) {
             gameState.completedUnits++;
             gameState.score = gameState.totalUnits > 0
@@ -510,6 +528,9 @@ function endGame() {
         clearInterval(updateInterval);
         updateInterval = null;
     }
+
+    // ★追加：スコアを最大1,010,000に制限
+    gameState.score = Math.min(gameState.score, 1010000);
 
     const elapsedTime = (Date.now() - startTime) / 1000;
     const kps = elapsedTime > 0 ? (gameState.totalKeystrokes / elapsedTime).toFixed(2) : 0;
