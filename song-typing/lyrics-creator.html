@@ -130,6 +130,26 @@
             background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
         }
 
+        /* Inst 行 */
+        .inst-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #e8f4ff;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+        }
+        .inst-row label {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1e90ff;
+            cursor: pointer;
+            margin-bottom: 0 !important;
+        }
+        .inst-row input[type="checkbox"] { width:18px; height:18px; cursor:pointer; flex-shrink:0; }
+
         /* World's End 行 */
         .worlds-end-row {
             display: flex;
@@ -286,31 +306,36 @@
                 <span id="worlds-end-hint">記号（漢字一文字）を入力</span>
             </div>
 
+            <!-- Inst 設定 -->
+            <div class="inst-row" id="inst-row">
+                <input type="checkbox" id="inst-check" onchange="toggleInst()">
+                <label for="inst-check">インスト曲（歌詞なし）</label>
+                <span style="font-size:0.82rem;color:#888;">チェックすると歌詞入力が不要になります</span>
+            </div>
+
             <div style="margin: 16px 0 12px; border-top: 2px solid #ddd;"></div>
 
-            <!-- 歌詞入力行（テキスト・読み・色HEX・カラーピッカー・追加ボタン） -->
-            <div class="lyrics-input-row">
-                <input type="text"  id="lyrics-text"  placeholder="歌詞（漢字・カタカナOK）">
-                <input type="text"  id="lyrics-kana"  placeholder="読み（ひらがなのみ）">
-                <input type="text"  id="lyrics-color-hex" placeholder="#ffffff" maxlength="7"
-                       oninput="syncColorPicker()" style="font-family:monospace;">
-                <input type="color" id="lyrics-color-picker" value="#ffffff"
-                       oninput="syncColorHex()">
-                <button class="btn btn-small" onclick="addLyric()">追加</button>
+            <!-- 歌詞入力エリア（Inst時は非表示） -->
+            <div id="lyrics-input-area">
+                <div class="lyrics-input-row">
+                    <input type="text"  id="lyrics-text"  placeholder="歌詞（漢字・カタカナOK）">
+                    <input type="text"  id="lyrics-kana"  placeholder="読み（ひらがなのみ）">
+                    <input type="text"  id="lyrics-color-hex" placeholder="#ffffff" maxlength="7"
+                           oninput="syncColorPicker()" style="font-family:monospace;">
+                    <input type="color" id="lyrics-color-picker" value="#ffffff"
+                           oninput="syncColorHex()">
+                    <button class="btn btn-small" onclick="addLyric()">追加</button>
+                </div>
+                <div class="color-end-row">
+                    <input type="checkbox" id="lyrics-color-end">
+                    <label for="lyrics-color-end">このラインで色を終了（colorEnd）</label>
+                    <button class="color-clear-btn" onclick="clearColor()">🎨 色なし</button>
+                    <span id="color-preview-swatch"
+                          style="display:inline-block;width:22px;height:22px;border-radius:4px;border:1px solid #bbb;background:#fff;vertical-align:middle;"></span>
+                    <span id="color-preview-label" style="font-size:0.82rem;color:#888;">色なし</span>
+                </div>
+                <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。</p>
             </div>
-
-            <!-- colorEnd チェックボックス & 色クリア -->
-            <div class="color-end-row">
-                <input type="checkbox" id="lyrics-color-end">
-                <label for="lyrics-color-end">このラインで色を終了（colorEnd）</label>
-                <button class="color-clear-btn" onclick="clearColor()">🎨 色なし</button>
-                <span id="color-preview-swatch"
-                      style="display:inline-block;width:22px;height:22px;border-radius:4px;border:1px solid #bbb;background:#fff;vertical-align:middle;"></span>
-                <span id="color-preview-label" style="font-size:0.82rem;color:#888;">色なし</span>
-            </div>
-
-            <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。</p>
-        </div>
 
         <div class="lyrics-list" id="lyrics-list"></div>
 
@@ -364,6 +389,7 @@ let previewCurrentTime = 0;
 let lyricsData = [];
 let songId = '', songTitle = '', youtubeId = '';
 let isWorldsEnd = false, worldsEndChar = '';
+let isInst = false;
 let updateInterval = null;
 let previewUpdateInterval = null;
 
@@ -441,6 +467,19 @@ function toggleWorldsEnd() {
     renderLyricsList();
 }
 
+function toggleInst() {
+    isInst = document.getElementById('inst-check').checked;
+    const area = document.getElementById('lyrics-input-area');
+    const listEl = document.getElementById('lyrics-list');
+    if (isInst) {
+        area.style.display = 'none';
+        lyricsData = [];
+    } else {
+        area.style.display = '';
+    }
+    renderLyricsList();
+}
+
 function onWorldsEndCharInput() {
     worldsEndChar = document.getElementById('worlds-end-char').value.trim();
     renderLyricsList();
@@ -500,11 +539,9 @@ function startSetup() {
     songId    = document.getElementById('song-id').value.trim();
     songTitle = document.getElementById('song-title').value.trim();
     youtubeId = document.getElementById('youtube-id').value.trim();
-    isWorldsEnd    = document.getElementById('worlds-end-check').checked;
-    worldsEndChar  = document.getElementById('worlds-end-char').value.trim();
     if (!songId || !songTitle || !youtubeId) { alert('全ての項目を入力してください'); return; }
-    if (isWorldsEnd && !worldsEndChar) { alert('WORLD\'S ENDの記号（漢字一文字）を入力してください'); return; }
     lyricsData = [];
+    isWorldsEnd = false; worldsEndChar = ''; isInst = false;
     createPlayer();
 }
 
@@ -519,6 +556,7 @@ function importAndStart() {
         youtubeId    = data.youtubeId;
         isWorldsEnd  = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
+        isInst = !data.lyrics || data.lyrics.length === 0;
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
@@ -546,7 +584,16 @@ function onPlayerReady() {
             document.getElementById('current-time').textContent = currentTime.toFixed(2) + '秒';
         }
     }, 100);
-    if (lyricsData.length > 0) renderLyricsList();
+    // UIをインポートした状態に合わせて復元
+    const weCheck = document.getElementById('worlds-end-check');
+    const weChar  = document.getElementById('worlds-end-char');
+    const instCheck = document.getElementById('inst-check');
+    const lyricsArea = document.getElementById('lyrics-input-area');
+    if (weCheck)  weCheck.checked  = isWorldsEnd;
+    if (weChar)   weChar.value     = worldsEndChar;
+    if (instCheck) instCheck.checked = isInst;
+    if (lyricsArea) lyricsArea.style.display = isInst ? 'none' : '';
+    renderLyricsList();
 }
 function pauseVideo() { if (player) player.pauseVideo(); }
 function playVideo()  { if (player) player.playVideo(); }
@@ -656,13 +703,15 @@ function renderLyricsList() {
 
 // ===== コード生成 / コピー / インポート =====
 function generateCode() {
-    if (!isWorldsEnd && lyricsData.length === 0) { alert('歌詞を1つ以上追加するか、WORLD\'S ENDを設定してください'); return; }
-    let weChar = document.getElementById('worlds-end-char') ? document.getElementById('worlds-end-char').value.trim() : worldsEndChar;
+    if (!isInst && !isWorldsEnd && lyricsData.length === 0) {
+        alert('歌詞を1つ以上追加するか、インスト曲またはWORLD\'S ENDを設定してください'); return;
+    }
+    const weChar = document.getElementById('worlds-end-char') ? document.getElementById('worlds-end-char').value.trim() : worldsEndChar;
     let code = `{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n`;
     if (isWorldsEnd && weChar) {
         code += `    worldsEnd: '${weChar}',\n`;
     }
-    if (lyricsData.length > 0) {
+    if (!isInst && lyricsData.length > 0) {
         code += `    lyrics: [\n`;
         lyricsData.forEach((lyric, i) => {
             const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
@@ -698,15 +747,29 @@ function importCode() {
         youtubeId    = data.youtubeId;
         isWorldsEnd  = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
+        isInst = !data.lyrics || data.lyrics.length === 0;
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
             colorEnd:   l.colorEnd   || false
         }));
+        // UI復元
+        const weCheck = document.getElementById('worlds-end-check');
+        const weChar  = document.getElementById('worlds-end-char');
+        const instCheck = document.getElementById('inst-check');
+        const lyricsArea = document.getElementById('lyrics-input-area');
+        if (weCheck)  weCheck.checked   = isWorldsEnd;
+        if (weChar)   weChar.value      = worldsEndChar;
+        if (instCheck) instCheck.checked = isInst;
+        if (lyricsArea) lyricsArea.style.display = isInst ? 'none' : '';
         if (player) player.loadVideoById(youtubeId);
         renderLyricsList();
         showMessage('import-success');
-        alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行${isWorldsEnd ? '\nWORLD\'S END: ★' + worldsEndChar : ''}`);
+        let info = `インポート完了！\n曲: ${songTitle}`;
+        if (isInst)       info += '\n種別: インスト曲';
+        else if (isWorldsEnd) info += `\nWORLD'S END: ★${worldsEndChar}`;
+        else              info += `\n歌詞数: ${lyricsData.length}行`;
+        alert(info);
     } catch (e) { alert('インポートに失敗しました。\n' + e.message); }
 }
 
