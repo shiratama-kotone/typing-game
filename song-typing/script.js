@@ -418,7 +418,7 @@ function showConfirmScreen(song) {
     if (diff.isWorldsEnd) {
         dnEl.className = 'confirm-diff-name confirm-diff-we';
         dnEl.style.color = '';
-        dnEl.textContent = `WORLD'S END ★${diff.weChar}`;
+        dnEl.textContent = `WORLD'S END 「${diff.weChar}」`;
     } else if (diff.isInst) {
         dnEl.className = 'confirm-diff-name';
         dnEl.style.color = '#1e90ff';
