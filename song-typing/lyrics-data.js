@@ -767,11 +767,11 @@ const SONGS = [
         { time: 122.66, text: 'はじまるよ', kana: ['は','じ','ま','る','よ'] }
     ]
 },
-    {
+{
     id: 'igaku',
     title: 'イガク (指破壊注意)',
     youtubeId: 'F38EuG2dAyM',
-    scorePerKey: 10,
+    worldsEnd: '医',
     lyrics: [
         { time: 12.54, text: 'ユ！', kana: ['ゆ'] },
         { time: 12.84, text: 'ドクター・キドリです', kana: ['ど','く','た','ー','き','ど','り','で','す'] },
