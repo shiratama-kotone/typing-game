@@ -125,6 +125,40 @@
             letter-spacing: 0.04em;
         }
         .diff-badge-ultima { background: #1a1a1a !important; border: 1px solid #666; }
+        .diff-badge-inst { background: #1e90ff; }
+        .diff-badge-we {
+            background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
+        }
+
+        /* World's End 行 */
+        .worlds-end-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .worlds-end-row label {
+            font-weight: 800;
+            font-size: 1rem;
+            background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            margin-bottom: 0 !important;
+        }
+        .worlds-end-row input[type="checkbox"] { width:18px; height:18px; cursor:pointer; flex-shrink:0; }
+        #worlds-end-char {
+            width: 56px; padding: 7px; border: 2px solid #555; border-radius: 6px;
+            font-size: 1.3rem; text-align: center; background: #2a2a2a; color: #fff;
+            display: none;
+        }
+        #worlds-end-char:focus { border-color: #ff7700; outline: none; }
+        #worlds-end-hint { font-size: 0.82rem; color: #888; display: none; }
 
         .lyrics-item {
             background:white; padding:10px; margin-bottom:5px;
@@ -245,6 +279,16 @@
         <div class="lyrics-input-section">
             <h3>歌詞を追加</h3>
 
+            <!-- WORLD'S END 設定 -->
+            <div class="worlds-end-row" id="worlds-end-row">
+                <input type="checkbox" id="worlds-end-check" onchange="toggleWorldsEnd()">
+                <label for="worlds-end-check">WORLD'S END</label>
+                <input type="text" id="worlds-end-char" placeholder="狂" maxlength="1" oninput="onWorldsEndCharInput()">
+                <span id="worlds-end-hint">記号（漢字一文字）を入力</span>
+            </div>
+
+            <div style="margin: 16px 0 12px; border-top: 2px solid #ddd;"></div>
+
             <!-- 歌詞入力行（テキスト・読み・色HEX・カラーピッカー・追加ボタン） -->
             <div class="lyrics-input-row">
                 <input type="text"  id="lyrics-text"  placeholder="歌詞（漢字・カタカナOK）">
@@ -320,6 +364,7 @@ let currentTime = 0;
 let previewCurrentTime = 0;
 let lyricsData = [];
 let songId = '', songTitle = '', youtubeId = '';
+let isWorldsEnd = false, worldsEndChar = '';
 let updateInterval = null;
 let previewUpdateInterval = null;
 
@@ -390,16 +435,35 @@ function countKeystrokes(kanaArray) {
     return total;
 }
 
-// ===== 難易度計算 =====
+// ===== World's End トグル =====
+function toggleWorldsEnd() {
+    const checked = document.getElementById('worlds-end-check').checked;
+    const charEl  = document.getElementById('worlds-end-char');
+    const hintEl  = document.getElementById('worlds-end-hint');
+    charEl.style.display = checked ? '' : 'none';
+    hintEl.style.display = checked ? '' : 'none';
+    isWorldsEnd = checked;
+    if (!checked) worldsEndChar = '';
+    renderLyricsList();
+}
+
+function onWorldsEndCharInput() {
+    worldsEndChar = document.getElementById('worlds-end-char').value.trim();
+    renderLyricsList();
+}
+
+// ===== 難易度計算（15上限、15超は15+） =====
 function calcDifficulty(totalKeystrokes) {
-    const level = Math.max(1, Math.ceil(totalKeystrokes / 100));
+    const rawLevel = Math.max(1, Math.ceil(totalKeystrokes / 100));
+    const level    = Math.min(rawLevel, 15);
+    const over15   = rawLevel > 15;
     let name, color;
     if      (level <= 3)  { name = 'BASIC';    color = '#00ac7e'; }
     else if (level <= 7)  { name = 'ADVANCED'; color = '#fc8207'; }
     else if (level <= 10) { name = 'EXPERT';   color = '#f22922'; }
     else if (level <= 12) { name = 'MASTER';   color = '#921cec'; }
     else                  { name = 'ULTIMA';   color = '#000000'; }
-    return { name, color, level };
+    return { name, color, level, over15 };
 }
 
 // ===== 色ピッカー同期 =====
@@ -442,7 +506,10 @@ function startSetup() {
     songId    = document.getElementById('song-id').value.trim();
     songTitle = document.getElementById('song-title').value.trim();
     youtubeId = document.getElementById('youtube-id').value.trim();
+    isWorldsEnd    = document.getElementById('worlds-end-check').checked;
+    worldsEndChar  = document.getElementById('worlds-end-char').value.trim();
     if (!songId || !songTitle || !youtubeId) { alert('全ての項目を入力してください'); return; }
+    if (isWorldsEnd && !worldsEndChar) { alert('WORLD\'S ENDの記号（漢字一文字）を入力してください'); return; }
     lyricsData = [];
     createPlayer();
 }
@@ -453,9 +520,11 @@ function importAndStart() {
     try {
         const data = eval('(' + code + ')');
         if (!data.id || !data.title || !data.youtubeId) throw new Error('不正なフォーマットです');
-        songId    = data.id;
-        songTitle = data.title;
-        youtubeId = data.youtubeId;
+        songId       = data.id;
+        songTitle    = data.title;
+        youtubeId    = data.youtubeId;
+        isWorldsEnd  = !!(data.worldsEnd);
+        worldsEndChar = data.worldsEnd || '';
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
@@ -529,24 +598,37 @@ function deleteLyric(index) {
 function renderLyricsList() {
     const container = document.getElementById('lyrics-list');
 
-    // 総打鍵数と難易度を計算
-    const totalKeystrokes = lyricsData.reduce((sum, l) => sum + countKeystrokes(l.kana), 0);
-    const diff = calcDifficulty(totalKeystrokes);
+    let badgeHtml = '';
+    let headerRight = '';
 
-    let badgeHtml;
-    if (diff.name === 'ULTIMA') {
-        badgeHtml = `<span class="diff-badge diff-badge-ultima" style="background:${diff.color};">${diff.name} Lv.${diff.level}</span>`;
+    if (isWorldsEnd) {
+        // WORLD'S END バッジ
+        badgeHtml = `<span class="diff-badge diff-badge-we">WE ★${worldsEndChar || '?'}</span>`;
+        headerRight = `<div class="diff-info-badges">${badgeHtml}</div>`;
+    } else if (lyricsData.length === 0) {
+        // 歌詞なし → Inst
+        badgeHtml = `<span class="diff-badge diff-badge-inst">Inst</span>`;
+        headerRight = `<div class="diff-info-badges">${badgeHtml}</div>`;
     } else {
-        badgeHtml = `<span class="diff-badge" style="background:${diff.color};">${diff.name} Lv.${diff.level}</span>`;
+        // 通常
+        const totalKeystrokes = lyricsData.reduce((sum, l) => sum + countKeystrokes(l.kana), 0);
+        const diff = calcDifficulty(totalKeystrokes);
+        const levelLabel = diff.over15
+            ? `15<sup>+</sup>`
+            : `${diff.level}`;
+        let cls = diff.name === 'ULTIMA' ? 'diff-badge diff-badge-ultima' : 'diff-badge';
+        badgeHtml = `<span class="${cls}" style="background:${diff.color};">${diff.name} Lv.${levelLabel}</span>`;
+        headerRight = `
+            <div class="diff-info-badges">
+                <span class="total-kana-badge">⌨️ 総打数: ${totalKeystrokes}</span>
+                ${badgeHtml}
+            </div>`;
     }
 
     container.innerHTML = `
         <div class="lyrics-list-header">
             <h3>追加済み歌詞（${lyricsData.length}行）</h3>
-            <div class="diff-info-badges">
-                <span class="total-kana-badge">⌨️ 総打数: ${totalKeystrokes}</span>
-                ${badgeHtml}
-            </div>
+            ${headerRight}
         </div>
     `;
 
@@ -580,18 +662,26 @@ function renderLyricsList() {
 
 // ===== コード生成 / コピー / インポート =====
 function generateCode() {
-    if (lyricsData.length === 0) { alert('歌詞を1つ以上追加してください'); return; }
-    let code = `{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n    lyrics: [\n`;
-    lyricsData.forEach((lyric, i) => {
-        const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
-        let extra = '';
-        if (lyric.colorStart) extra += `, colorStart: '${lyric.colorStart}'`;
-        if (lyric.colorEnd)   extra += `, colorEnd: true`;
-        code += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}]${extra} }`;
-        if (i < lyricsData.length - 1) code += ',';
-        code += '\n';
-    });
-    code += `    ]\n}`;
+    if (!isWorldsEnd && lyricsData.length === 0) { alert('歌詞を1つ以上追加するか、WORLD\'S ENDを設定してください'); return; }
+    let weChar = document.getElementById('worlds-end-char') ? document.getElementById('worlds-end-char').value.trim() : worldsEndChar;
+    let code = `{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n`;
+    if (isWorldsEnd && weChar) {
+        code += `    worldsEnd: '${weChar}',\n`;
+    }
+    if (lyricsData.length > 0) {
+        code += `    lyrics: [\n`;
+        lyricsData.forEach((lyric, i) => {
+            const kanaStr = lyric.kana.map(k => `'${k}'`).join(',');
+            let extra = '';
+            if (lyric.colorStart) extra += `, colorStart: '${lyric.colorStart}'`;
+            if (lyric.colorEnd)   extra += `, colorEnd: true`;
+            code += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}]${extra} }`;
+            if (i < lyricsData.length - 1) code += ',';
+            code += '\n';
+        });
+        code += `    ]\n`;
+    }
+    code += `}`;
     document.getElementById('output-textarea').value = code;
 }
 
@@ -609,9 +699,11 @@ function importCode() {
     try {
         const data = eval('(' + code + ')');
         if (!data.id || !data.title || !data.youtubeId) throw new Error('不正なフォーマットです');
-        songId    = data.id;
-        songTitle = data.title;
-        youtubeId = data.youtubeId;
+        songId       = data.id;
+        songTitle    = data.title;
+        youtubeId    = data.youtubeId;
+        isWorldsEnd  = !!(data.worldsEnd);
+        worldsEndChar = data.worldsEnd || '';
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
@@ -620,7 +712,7 @@ function importCode() {
         if (player) player.loadVideoById(youtubeId);
         renderLyricsList();
         showMessage('import-success');
-        alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行`);
+        alert(`インポート完了！\n曲: ${songTitle}\n歌詞数: ${lyricsData.length}行${isWorldsEnd ? '\nWORLD\'S END: ★' + worldsEndChar : ''}`);
     } catch (e) { alert('インポートに失敗しました。\n' + e.message); }
 }
 
