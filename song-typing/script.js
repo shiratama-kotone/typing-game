@@ -88,17 +88,23 @@ function calcTotalChars(song) {
 
 function getDifficultyInfo(song) {
     if (song.worldsEnd !== undefined && song.worldsEnd !== null && song.worldsEnd !== '') {
-        return { isWorldsEnd: true, weChar: song.worldsEnd, name: "WORLD'S END", color: null, level: null, totalChars: 0 };
+        return { isWorldsEnd: true, isInst: false, weChar: song.worldsEnd, name: "WORLD'S END", color: null, level: null, over15: false, totalChars: 0 };
     }
     const totalChars = calcTotalChars(song);
-    const level = Math.max(1, Math.ceil(totalChars / 100));
+    if (totalChars === 0) {
+        // 歌詞なし → Inst
+        return { isWorldsEnd: false, isInst: true, name: 'Inst', color: '#1e90ff', level: null, over15: false, totalChars: 0 };
+    }
+    const rawLevel = Math.max(1, Math.ceil(totalChars / 100));
+    const level    = Math.min(rawLevel, 15);
+    const over15   = rawLevel > 15;
     let name, color;
     if      (level <= 3)  { name = 'BASIC';    color = '#00ac7e'; }
     else if (level <= 7)  { name = 'ADVANCED'; color = '#fc8207'; }
     else if (level <= 10) { name = 'EXPERT';   color = '#f22922'; }
     else if (level <= 12) { name = 'MASTER';   color = '#921cec'; }
     else                  { name = 'ULTIMA';   color = '#000000'; }
-    return { isWorldsEnd: false, name, color, level, totalChars };
+    return { isWorldsEnd: false, isInst: false, name, color, level, over15, totalChars };
 }
 
 function formatDuration(sec) {
@@ -152,6 +158,7 @@ function formatDuration(sec) {
             background: #1a1a1a !important;
             border: 1px solid #666;
         }
+        .diff-badge-inst { background: #1e90ff; }
         .diff-badge-we {
             background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
         }
@@ -365,10 +372,14 @@ function createSongList() {
         if (diff.isWorldsEnd) {
             badge.classList.add('diff-badge-we');
             badge.textContent = `WE ★${diff.weChar}`;
+        } else if (diff.isInst) {
+            badge.classList.add('diff-badge-inst');
+            badge.textContent = 'Inst';
         } else {
             badge.style.background = diff.color;
             if (diff.name === 'ULTIMA') badge.classList.add('diff-badge-ultima');
-            badge.textContent = `${diff.name} Lv.${diff.level}`;
+            const lvLabel = diff.over15 ? '15+' : diff.level;
+            badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
         }
 
         item.appendChild(titleSpan);
@@ -408,18 +419,29 @@ function showConfirmScreen(song) {
         dnEl.className = 'confirm-diff-name confirm-diff-we';
         dnEl.style.color = '';
         dnEl.textContent = `WORLD'S END ★${diff.weChar}`;
+    } else if (diff.isInst) {
+        dnEl.className = 'confirm-diff-name';
+        dnEl.style.color = '#1e90ff';
+        dnEl.textContent = 'Inst';
     } else {
         dnEl.className = 'confirm-diff-name';
         dnEl.style.color = diff.color;
         dnEl.textContent = diff.name;
     }
-    document.getElementById('cs-diff-level').textContent = diff.isWorldsEnd ? '' : `Lv. ${diff.level}`;
+
+    const lvLabel = diff.over15 ? '15<sup>+</sup>' : diff.level;
+    const dlEl = document.getElementById('cs-diff-level');
+    if (diff.isWorldsEnd || diff.isInst) {
+        dlEl.innerHTML = '';
+    } else {
+        dlEl.innerHTML = `Lv. ${lvLabel}`;
+    }
 
     // 総打数・ライン数
     document.getElementById('cs-total').textContent =
-        diff.isWorldsEnd ? '---' : diff.totalChars;
+        (diff.isWorldsEnd || diff.isInst) ? '---' : diff.totalChars;
     document.getElementById('cs-lines').textContent =
-        (song.lyrics && !diff.isWorldsEnd) ? song.lyrics.length : '---';
+        (song.lyrics && !diff.isWorldsEnd && !diff.isInst) ? song.lyrics.length : '---';
 
     // 長さ・速度はロード後
     document.getElementById('cs-duration').textContent  = '---';
@@ -456,7 +478,7 @@ function onConfirmPlayerReady(event) {
     document.getElementById('cs-duration').textContent = formatDuration(duration);
 
     const diff = getDifficultyInfo(currentSong);
-    if (!diff.isWorldsEnd && duration > 0 && diff.totalChars > 0) {
+    if (!diff.isWorldsEnd && !diff.isInst && duration > 0 && diff.totalChars > 0) {
         document.getElementById('cs-speed').textContent     = (diff.totalChars / duration).toFixed(2);
         document.getElementById('cs-speed-unit').textContent = '打/秒';
     } else {
