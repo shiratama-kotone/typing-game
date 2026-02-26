@@ -371,7 +371,7 @@ function createSongList() {
         badge.className = 'diff-badge';
         if (diff.isWorldsEnd) {
             badge.classList.add('diff-badge-we');
-            badge.textContent = `WE ★${diff.weChar}`;
+            badge.textContent = `WORLD'S END 「${diff.weChar}」`;
         } else if (diff.isInst) {
             badge.classList.add('diff-badge-inst');
             badge.textContent = 'Inst';
