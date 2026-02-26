@@ -155,10 +155,9 @@
         #worlds-end-char {
             width: 56px; padding: 7px; border: 2px solid #555; border-radius: 6px;
             font-size: 1.3rem; text-align: center; background: #2a2a2a; color: #fff;
-            display: none;
         }
         #worlds-end-char:focus { border-color: #ff7700; outline: none; }
-        #worlds-end-hint { font-size: 0.82rem; color: #888; display: none; }
+        #worlds-end-hint { font-size: 0.82rem; color: #888; }
 
         .lyrics-item {
             background:white; padding:10px; margin-bottom:5px;
@@ -437,13 +436,8 @@ function countKeystrokes(kanaArray) {
 
 // ===== World's End トグル =====
 function toggleWorldsEnd() {
-    const checked = document.getElementById('worlds-end-check').checked;
-    const charEl  = document.getElementById('worlds-end-char');
-    const hintEl  = document.getElementById('worlds-end-hint');
-    charEl.style.display = checked ? '' : 'none';
-    hintEl.style.display = checked ? '' : 'none';
-    isWorldsEnd = checked;
-    if (!checked) worldsEndChar = '';
+    isWorldsEnd = document.getElementById('worlds-end-check').checked;
+    if (!isWorldsEnd) worldsEndChar = '';
     renderLyricsList();
 }
 
