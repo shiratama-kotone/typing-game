@@ -59,40 +59,40 @@ const RANKS = [
 
 // ローマ字変換テーブル
 const ROMAJI_TABLE = {
-    'あ': ['a'], 'い': ['i'], 'う': ['u'], 'え': ['e'], 'お': ['o'],
-    'か': ['ka'], 'き': ['ki'], 'く': ['ku'], 'け': ['ke'], 'こ': ['ko'],
-    'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
-    'さ': ['sa'], 'し': ['si', 'shi'], 'す': ['su'], 'せ': ['se'], 'そ': ['so'],
-    'ざ': ['za'], 'じ': ['zi', 'ji'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'],
-    'た': ['ta'], 'ち': ['ti', 'chi'], 'つ': ['tu', 'tsu'], 'て': ['te'], 'と': ['to'],
-    'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'],
-    'な': ['na'], 'に': ['ni'], 'ぬ': ['nu'], 'ね': ['ne'], 'の': ['no'],
-    'は': ['ha'], 'ひ': ['hi'], 'ふ': ['hu', 'fu'], 'へ': ['he'], 'ほ': ['ho'],
-    'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'],
-    'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'],
-    'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'],
-    'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
-    'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
-    'わ': ['wa'], 'を': ['wo'], 'ん': ['n', 'nn'],
-    'ー': ['-']
+    'あ':['a'],'い':['i'],'う':['u'],'え':['e'],'お':['o'],
+    'ぁ':['la','xa'],'ぃ':['li','xi'],'ぅ':['lu','xu'],'ぇ':['le','xe'],'ぉ':['lo','xo'],
+    'か':['ka'],'き':['ki'],'く':['ku'],'け':['ke'],'こ':['ko'],
+    'が':['ga'],'ぎ':['gi'],'ぐ':['gu'],'げ':['ge'],'ご':['go'],
+    'さ':['sa'],'し':['si','shi'],'す':['su'],'せ':['se'],'そ':['so'],
+    'ざ':['za'],'じ':['zi','ji'],'ず':['zu'],'ぜ':['ze'],'ぞ':['zo'],
+    'た':['ta'],'ち':['ti','chi'],'つ':['tu','tsu'],'て':['te'],'と':['to'],
+    'だ':['da'],'ぢ':['di'],'づ':['du'],'で':['de'],'ど':['do'],
+    'な':['na'],'に':['ni'],'ぬ':['nu'],'ね':['ne'],'の':['no'],
+    'は':['ha'],'ひ':['hi'],'ふ':['hu','fu'],'へ':['he'],'ほ':['ho'],
+    'ば':['ba'],'び':['bi'],'ぶ':['bu'],'べ':['be'],'ぼ':['bo'],
+    'ぱ':['pa'],'ぴ':['pi'],'ぷ':['pu'],'ぺ':['pe'],'ぽ':['po'],
+    'ま':['ma'],'み':['mi'],'む':['mu'],'め':['me'],'も':['mo'],
+    'や':['ya'],'ゆ':['yu'],'よ':['yo'],
+    'ら':['ra'],'り':['ri'],'る':['ru'],'れ':['re'],'ろ':['ro'],
+    'わ':['wa'],'を':['wo'],'ん':['nn','n'],'ー':['-']
 };
 
 // 拗音組み合わせローマ字
 const COMBO_ROMAJI = {
-    'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'],
-    'しゃ': ['sya', 'sha'], 'しゅ': ['syu', 'shu'], 'しょ': ['syo', 'sho'],
-    'ちゃ': ['tya', 'cha'], 'ちゅ': ['tyu', 'chu'], 'ちょ': ['tyo', 'cho'],
-    'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'],
-    'ひゃ': ['hya'], 'ひゅ': ['hyu'], 'ひょ': ['hyo'],
-    'みゃ': ['mya'], 'みゅ': ['myu'], 'みょ': ['myo'],
-    'りゃ': ['rya'], 'りゅ': ['ryu'], 'りょ': ['ryo'],
-    'ぎゃ': ['gya'], 'ぎゅ': ['gyu'], 'ぎょ': ['gyo'],
-    'じゃ': ['zya', 'ja', 'jya'], 'じゅ': ['zyu', 'ju', 'jyu'], 'じょ': ['zyo', 'jo', 'jyo'],
-    'びゃ': ['bya'], 'びゅ': ['byu'], 'びょ': ['byo'],
-    'ぴゃ': ['pya'], 'ぴゅ': ['pyu'], 'ぴょ': ['pyo'],
-    'ふぁ': ['fa'], 'ふぃ': ['fi'], 'ふぇ': ['fe'], 'ふぉ': ['fo'],
-    'うぃ': ['wi'], 'うぇ': ['we'],
-    'てぃ': ['thi'], 'てゅ': ['thu'],
+    'きゃ':['kya'],'きゅ':['kyu'],'きょ':['kyo'],
+    'しゃ':['sya','sha'],'しゅ':['syu','shu'],'しょ':['syo','sho'],
+    'ちゃ':['tya','cha'],'ちゅ':['tyu','chu'],'ちょ':['tyo','cho'],
+    'にゃ':['nya'],'にゅ':['nyu'],'にょ':['nyo'],
+    'ひゃ':['hya'],'ひゅ':['hyu'],'ひょ':['hyo'],
+    'みゃ':['mya'],'みゅ':['myu'],'みょ':['myo'],
+    'りゃ':['rya'],'りゅ':['ryu'],'りょ':['ryo'],
+    'ぎゃ':['gya'],'ぎゅ':['gyu'],'ぎょ':['gyo'],
+    'じゃ':['zya','ja','jya'],'じゅ':['zyu','ju','jyu'],'じょ':['zyo','jo','jyo'],
+    'びゃ':['bya'],'びゅ':['byu'],'びょ':['byo'],
+    'ぴゃ':['pya'],'ぴゅ':['pyu'],'ぴょ':['pyo'],
+    'ふぁ':['fa'],'ふぃ':['fi'],'ふぇ':['fe'],'ふぉ':['fo'],
+    'うぃ':['wi'],'うぇ':['we'],
+    'てぃ':['thi'],'でぃ':['dhi'],
     'でぃ': ['dhi'], 'でゅ': ['dhu']
 };
 
@@ -118,32 +118,32 @@ function setupAudio() {
         'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E6%9F%8A%E3%83%9E%E3%82%B0%E3%83%8D%E3%82%BF%E3%82%A4%E3%83%88%20-%20%E3%83%9E%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%BB%E3%83%9E%E3%82%AD%E3%82%B7%E3%83%9E%E3%82%A4%E3%82%B6%E3%83%BC%20%20%E5%8F%AF%E4%B8%8D.mp3',
         'https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E7%86%B1%E7%95%B0%E5%B8%B8%20-%20%E3%82%BB%E3%82%AB%E3%82%A4Ver..mp3'
     ];
-    
+
     // ランダムシャッフル
     musicTracks = shuffleArray([...tracks]);
-    
+
     // 音楽プレイヤー初期化
     musicPlayer = new Audio();
     musicPlayer.volume = 0.3;
     musicPlayer.loop = false;
-    
+
     // 曲が終わったら次の曲へ
     musicPlayer.addEventListener('ended', () => {
         nextTrack();
     });
-    
+
     // 最初の曲をロード（再生はしない）
     if (musicTracks.length > 0) {
         musicPlayer.src = musicTracks[0];
     }
-    
+
     // サウンドエフェクト
     typingSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%82%BF%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0-%E3%83%91%E3%83%B3%E3%82%BF%E3%82%B0%E3%83%A9%E3%83%95%E5%8D%982.mp3');
     typingSound.volume = 0.2;
-    
+
     missSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/%E3%83%9F%E3%82%B9.mp3');
     missSound.volume = 0.3;
-    
+
     bonusSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/mario-1up_eSTTTOB.mp3');
     bonusSound.volume = 0.4;
 }
@@ -151,7 +151,7 @@ function setupAudio() {
 // 音楽プレイヤー操作
 function togglePlay() {
     if (!musicPlayer) return;
-    
+
     if (isPlaying) {
         musicPlayer.pause();
         isPlaying = false;
@@ -167,10 +167,10 @@ function togglePlay() {
 
 function nextTrack() {
     if (!musicPlayer || musicTracks.length === 0) return;
-    
+
     currentTrackIndex = (currentTrackIndex + 1) % musicTracks.length;
     musicPlayer.src = musicTracks[currentTrackIndex];
-    
+
     if (isPlaying) {
         musicPlayer.play().catch(e => console.log('再生エラー:', e));
     }
@@ -178,10 +178,10 @@ function nextTrack() {
 
 function prevTrack() {
     if (!musicPlayer || musicTracks.length === 0) return;
-    
+
     currentTrackIndex = (currentTrackIndex - 1 + musicTracks.length) % musicTracks.length;
     musicPlayer.src = musicTracks[currentTrackIndex];
-    
+
     if (isPlaying) {
         musicPlayer.play().catch(e => console.log('再生エラー:', e));
     }
@@ -231,16 +231,16 @@ function setupEventListeners() {
     if (inputField) {
         inputField.addEventListener('input', handleInput);
     }
-    
+
     // 音楽プレイヤー
     const playBtn = document.getElementById('play-btn');
     const nextBtn = document.getElementById('next-btn');
     const prevBtn = document.getElementById('prev-btn');
-    
+
     if (playBtn) playBtn.addEventListener('click', togglePlay);
     if (nextBtn) nextBtn.addEventListener('click', nextTrack);
     if (prevBtn) prevBtn.addEventListener('click', prevTrack);
-    
+
     document.addEventListener('keydown', handleRankSelectKeydown);
     console.log('イベントリスナー設定完了');
 }
@@ -273,33 +273,33 @@ function showRankSelect() {
 function createRankCarousel() {
     const carousel = document.getElementById('rank-carousel');
     if (!carousel) return;
-    
+
     carousel.innerHTML = '';
-    
+
     const unlockedRanks = getUnlockedRanks();
     let selectedIndex = 0;
-    
+
     const displayStart = Math.max(0, selectedIndex - 2);
     const displayEnd = Math.min(RANKS.length - 1, selectedIndex + 2);
-    
+
     for (let index = displayStart; index <= displayEnd; index++) {
         const rank = RANKS[index];
         const rankBox = document.createElement('div');
         rankBox.className = 'rank-box';
         rankBox.textContent = rank.name;
         rankBox.dataset.index = index;
-        
+
         if (index > unlockedRanks) {
             rankBox.classList.add('locked');
         }
-        
+
         if (index === selectedIndex) {
             rankBox.classList.add('selected');
         }
-        
+
         carousel.appendChild(rankBox);
     }
-    
+
     carousel.dataset.selectedIndex = selectedIndex;
 }
 
@@ -307,29 +307,29 @@ function createRankCarousel() {
 function updateRankCarousel(selectedIndex) {
     const carousel = document.getElementById('rank-carousel');
     if (!carousel) return;
-    
+
     carousel.innerHTML = '';
-    
+
     const unlockedRanks = getUnlockedRanks();
-    
+
     const displayStart = Math.max(0, selectedIndex - 2);
     const displayEnd = Math.min(RANKS.length - 1, selectedIndex + 2);
-    
+
     for (let index = displayStart; index <= displayEnd; index++) {
         const rank = RANKS[index];
         const rankBox = document.createElement('div');
         rankBox.className = 'rank-box';
         rankBox.textContent = rank.name;
         rankBox.dataset.index = index;
-        
+
         if (index > unlockedRanks) {
             rankBox.classList.add('locked');
         }
-        
+
         if (index === selectedIndex) {
             rankBox.classList.add('selected');
         }
-        
+
         carousel.appendChild(rankBox);
     }
 }
@@ -340,14 +340,14 @@ function handleRankSelectKeydown(e) {
     if (!rankScreen || !rankScreen.classList.contains('active')) {
         return;
     }
-    
+
     const carousel = document.getElementById('rank-carousel');
     if (!carousel) return;
-    
+
     const currentIndex = parseInt(carousel.dataset.selectedIndex || 0);
     const unlockedRanks = getUnlockedRanks();
     let newIndex = currentIndex;
-    
+
     if (e.key === 'ArrowLeft') {
         e.preventDefault();
         newIndex = Math.max(0, currentIndex - 1);
@@ -363,7 +363,7 @@ function handleRankSelectKeydown(e) {
     } else {
         return;
     }
-    
+
     carousel.dataset.selectedIndex = newIndex;
     updateRankCarousel(newIndex);
 }
@@ -389,12 +389,12 @@ function unlockNextRank(currentRankIndex) {
 function showRankUnlockAnimation(rankName) {
     const overlay = document.getElementById('rank-unlock-overlay');
     const text = document.getElementById('unlock-text');
-    
+
     if (!overlay || !text) return;
-    
+
     text.textContent = `${rankName} 解禁 !!`;
     overlay.classList.add('active');
-    
+
     setTimeout(() => {
         overlay.classList.remove('active');
     }, 5000);
@@ -407,12 +407,12 @@ async function startNormalMode() {
         console.log('単語データ未読み込み、読み込み開始');
         await loadWords();
     }
-    
+
     if (!wordsData) {
         alert('単語データの読み込みに失敗しました');
         return;
     }
-    
+
     console.log('ゲーム初期化開始');
     currentMode = 'normal';
     currentRank = null;
@@ -428,12 +428,12 @@ async function startRankMode(rankIndex) {
         console.log('単語データ未読み込み、読み込み開始');
         await loadWords();
     }
-    
+
     if (!wordsData) {
         alert('単語データの読み込みに失敗しました');
         return;
     }
-    
+
     console.log('ゲーム初期化開始');
     currentMode = 'rank';
     currentRank = RANKS[rankIndex];
@@ -461,28 +461,28 @@ function initGame() {
         totalKeystrokes: 0,
         comboCount: 0
     };
-    
+
     if (!wordsData) {
         console.error('単語データが読み込まれていません');
         return;
     }
-    
+
     const allWords = [
         ...wordsData.short,
         ...wordsData.medium,
         ...wordsData.long
     ];
-    
+
     console.log('全単語数:', allWords.length);
-    
+
     gameState.wordList = shuffleArray([...allWords]);
-    
+
     const scoreEl = document.getElementById('score');
     const inputField = document.getElementById('input-field');
-    
+
     if (scoreEl) scoreEl.textContent = '0';
     if (inputField) inputField.value = '';
-    
+
     if (currentMode === 'rank') {
         const gauges = document.getElementById('gauges');
         const timeDisplay = document.getElementById('time-display');
@@ -491,11 +491,11 @@ function initGame() {
         const missGaugeText = document.getElementById('miss-gauge-text');
         const missGauge = document.getElementById('miss-gauge');
         const timeEl = document.getElementById('time');
-        
+
         if (gauges) gauges.style.display = 'flex';
         if (correctGaugeText) correctGaugeText.textContent = `0 / ${currentRank.requirement}`;
         if (correctGauge) correctGauge.style.width = '0%';
-        
+
         if (currentRank.missLimit !== null) {
             if (missGaugeText) missGaugeText.textContent = currentRank.missLimit;
             if (missGauge) missGauge.style.width = '100%';
@@ -503,19 +503,19 @@ function initGame() {
             if (missGaugeText) missGaugeText.textContent = '∞';
             if (missGauge) missGauge.style.width = '100%';
         }
-        
+
         if (timeDisplay) timeDisplay.style.display = 'block';
         if (timeEl) timeEl.textContent = '60';
     } else {
         const gauges = document.getElementById('gauges');
         const timeDisplay = document.getElementById('time-display');
         const timeEl = document.getElementById('time');
-        
+
         if (gauges) gauges.style.display = 'none';
         if (timeDisplay) timeDisplay.style.display = 'block';
         if (timeEl) timeEl.textContent = '60';
     }
-    
+
     console.log('initGame完了');
 }
 
@@ -524,17 +524,17 @@ function startGame() {
     console.log('startGame開始');
     startTime = Date.now();
     loadNextWord();
-    
+
     gameTimer = setInterval(() => {
         gameState.timeLeft--;
         const timeEl = document.getElementById('time');
         if (timeEl) timeEl.textContent = gameState.timeLeft;
-        
+
         if (gameState.timeLeft <= 0) {
             endGame();
         }
     }, 1000);
-    
+
     setTimeout(() => {
         const inputField = document.getElementById('input-field');
         if (inputField) {
@@ -542,7 +542,7 @@ function startGame() {
             inputField.focus();
         }
     }, 100);
-    
+
     console.log('startGame完了');
 }
 
@@ -552,7 +552,7 @@ function loadNextWord() {
         console.error('単語データが読み込まれていません');
         return;
     }
-    
+
     if (gameState.wordIndex >= gameState.wordList.length) {
         const allWords = [
             ...wordsData.short,
@@ -562,16 +562,16 @@ function loadNextWord() {
         gameState.wordList = shuffleArray([...allWords]);
         gameState.wordIndex = 0;
     }
-    
+
     const wordObj = gameState.wordList[gameState.wordIndex++];
     gameState.currentWord = wordObj.kana;
     gameState.displayWord = wordObj.word;
     gameState.currentRomaji = convertToRomaji(gameState.currentWord);
     gameState.currentCharIndex = 0;
     gameState.currentCharPosition = 0;
-    
+
     console.log('新しい単語:', gameState.displayWord, '読み:', gameState.currentWord.join(''));
-    
+
     displayWord();
 }
 
@@ -579,7 +579,7 @@ function loadNextWord() {
 function convertToRomaji(hiraganaArray) {
     const result = [];
     let i = 0;
-    
+
     while (i < hiraganaArray.length) {
         // 促音チェック
         if (hiraganaArray[i] === 'っ' && i + 1 < hiraganaArray.length) {
@@ -595,7 +595,7 @@ function convertToRomaji(hiraganaArray) {
                 continue;
             }
         }
-        
+
         // 2文字組み合わせチェック（拗音など）
         if (i + 1 < hiraganaArray.length) {
             const combo = hiraganaArray[i] + hiraganaArray[i + 1];
@@ -608,33 +608,17 @@ function convertToRomaji(hiraganaArray) {
                 continue;
             }
         }
-        
+
         // 「ん」の特殊処理
         if (hiraganaArray[i] === 'ん') {
-            if (i === hiraganaArray.length - 1) {
-                result.push({
-                    options: ['nn'],
-                    current: 'nn'
-                });
-            } else {
-                const nextChar = hiraganaArray[i + 1];
-                const nextRomaji = ROMAJI_TABLE[nextChar];
-                if (nextRomaji && nextRomaji[0] && !'aiueoyn'.includes(nextRomaji[0][0])) {
-                    result.push({
-                        options: ['nn', 'n'],
-                        current: 'nn'
-                    });
-                } else {
-                    result.push({
-                        options: ['nn'],
-                        current: 'nn'
-                    });
-                }
-            }
+            result.push(i === hiraganaArray.length - 1
+                ? { options: ['nn'], current: 'nn' }
+                : { options: ['n', 'nn'], current: 'n' }
+            );
             i++;
             continue;
         }
-        
+
         // 通常の文字
         const char = hiraganaArray[i];
         if (ROMAJI_TABLE[char]) {
@@ -645,7 +629,7 @@ function convertToRomaji(hiraganaArray) {
         }
         i++;
     }
-    
+
     return result;
 }
 
@@ -653,17 +637,17 @@ function convertToRomaji(hiraganaArray) {
 function displayWord() {
     const japaneseWordEl = document.getElementById('japanese-word');
     const romajiWordEl = document.getElementById('romaji-word');
-    
+
     if (!japaneseWordEl || !romajiWordEl) return;
-    
+
     japaneseWordEl.textContent = gameState.displayWord || gameState.currentWord.join('');
-    
+
     let romajiHTML = '';
-    
+
     for (let i = 0; i < gameState.currentRomaji.length; i++) {
         const charObj = gameState.currentRomaji[i];
         const romaji = charObj.current;
-        
+
         for (let j = 0; j < romaji.length; j++) {
             if (i < gameState.currentCharIndex) {
                 romajiHTML += `<span class="correct">${romaji[j]}</span>`;
@@ -680,24 +664,24 @@ function displayWord() {
             }
         }
     }
-    
+
     romajiWordEl.innerHTML = romajiHTML;
 }
 
 // 入力処理
 function handleInput(e) {
     const input = e.target.value.toLowerCase();
-    
+
     if (input.length === 0 || gameState.currentCharIndex >= gameState.currentRomaji.length) {
         return;
     }
-    
+
     const currentChar = gameState.currentRomaji[gameState.currentCharIndex];
     const currentRomaji = currentChar.current;
     const expectedPart = currentRomaji.substring(gameState.currentCharPosition);
-    
+
     let matched = false;
-    
+
     // 現在選択中のローマ字パターンでマッチするか
     if (expectedPart.startsWith(input)) {
         matched = true;
@@ -706,21 +690,21 @@ function handleInput(e) {
         gameState.totalKeystrokes += input.length;
         gameState.score += 5 * input.length;
         gameState.comboCount += input.length;
-        
+
         // タイピング音再生
         playTypingSound();
-        
+
         // 100ノーミスボーナスチェック
         if (gameState.comboCount >= 100) {
             playBonusSound();
             gameState.timeLeft += 10;
             gameState.comboCount = 0;
-            
+
             // 時間更新
             const timeEl = document.getElementById('time');
             if (timeEl) timeEl.textContent = gameState.timeLeft;
         }
-        
+
         if (gameState.currentCharPosition >= currentRomaji.length) {
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
@@ -737,21 +721,21 @@ function handleInput(e) {
                 gameState.totalKeystrokes += input.length;
                 gameState.score += 5 * input.length;
                 gameState.comboCount += input.length;
-                
+
                 // タイピング音再生
                 playTypingSound();
-                
+
                 // 100ノーミスボーナスチェック
                 if (gameState.comboCount >= 100) {
                     playBonusSound();
                     gameState.timeLeft += 10;
                     gameState.comboCount = 0;
-                    
+
                     // 時間更新
                     const timeEl = document.getElementById('time');
                     if (timeEl) timeEl.textContent = gameState.timeLeft;
                 }
-                
+
                 if (gameState.currentCharPosition >= option.length) {
                     gameState.currentCharIndex++;
                     gameState.currentCharPosition = 0;
@@ -760,15 +744,15 @@ function handleInput(e) {
             }
         }
     }
-    
+
     if (matched) {
         e.target.value = '';
-        
+
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = gameState.score;
-        
+
         updateGauges();
-        
+
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             loadNextWord();
         } else {
@@ -780,16 +764,16 @@ function handleInput(e) {
         gameState.totalKeystrokes++;
         gameState.score = Math.max(0, gameState.score - 3);
         gameState.comboCount = 0; // コンボリセット
-        
+
         // ミス音再生
         playMissSound();
-        
+
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = gameState.score;
         e.target.value = '';
-        
+
         updateGauges();
-        
+
         if (currentMode === 'rank' && currentRank.missLimit !== null) {
             if (gameState.missCount >= currentRank.missLimit) {
                 endGame();
@@ -804,26 +788,26 @@ function updateGauges() {
     const comboPercent = (gameState.comboCount % 100);
     const comboGauge = document.getElementById('combo-gauge');
     const comboGaugeText = document.getElementById('combo-gauge-text');
-    
+
     if (comboGauge) comboGauge.style.width = comboPercent + '%';
     if (comboGaugeText) comboGaugeText.textContent = `${gameState.comboCount % 100} / 100`;
-    
+
     if (currentMode === 'rank') {
         const correctPercent = Math.min(100, (gameState.correctCount / currentRank.requirement) * 100);
         const correctGauge = document.getElementById('correct-gauge');
         const correctGaugeText = document.getElementById('correct-gauge-text');
-        
+
         if (correctGauge) correctGauge.style.width = correctPercent + '%';
         if (correctGaugeText) {
             correctGaugeText.textContent = `${gameState.correctCount} / ${currentRank.requirement}`;
         }
-        
+
         if (currentRank.missLimit !== null) {
             const remainingMiss = currentRank.missLimit - gameState.missCount;
             const missPercent = Math.max(0, (remainingMiss / currentRank.missLimit) * 100);
             const missGauge = document.getElementById('miss-gauge');
             const missGaugeText = document.getElementById('miss-gauge-text');
-            
+
             if (missGauge) missGauge.style.width = missPercent + '%';
             if (missGaugeText) missGaugeText.textContent = Math.max(0, remainingMiss);
         }
@@ -833,41 +817,41 @@ function updateGauges() {
 // ゲーム終了
 function endGame() {
     console.log('ゲーム終了');
-    
+
     if (gameTimer) {
         clearInterval(gameTimer);
         gameTimer = null;
     }
-    
+
     const elapsedTime = (Date.now() - startTime) / 1000;
     const kps = elapsedTime > 0 ? (gameState.totalKeystrokes / elapsedTime).toFixed(2) : 0;
-    
+
     const finalScore = document.getElementById('final-score');
     const finalCorrect = document.getElementById('final-correct');
     const finalKps = document.getElementById('final-kps');
     const finalMiss = document.getElementById('final-miss');
-    
+
     if (finalScore) finalScore.textContent = gameState.score;
     if (finalCorrect) finalCorrect.textContent = gameState.correctCount;
     if (finalKps) finalKps.textContent = kps;
     if (finalMiss) finalMiss.textContent = gameState.missCount;
-    
+
     let passed = false;
     const resultAnimation = document.getElementById('result-animation');
     const resultContent = document.getElementById('result-content');
-    
+
     if (currentMode === 'rank') {
         const metRequirement = gameState.correctCount >= currentRank.requirement;
         const withinMissLimit = currentRank.missLimit === null || gameState.missCount < currentRank.missLimit;
-        
+
         passed = metRequirement && withinMissLimit;
-        
+
         if (passed) {
             if (resultAnimation) resultAnimation.innerHTML = '<div class="pass-animation">合　格</div>';
             if (resultContent) resultContent.classList.remove('fail');
-            
+
             saveHighScore();
-            
+
             const rankIndex = RANKS.findIndex(r => r.id === currentRank.id);
             unlockNextRank(rankIndex);
         } else {
@@ -879,7 +863,7 @@ function endGame() {
         if (resultContent) resultContent.classList.remove('fail');
         saveHighScore();
     }
-    
+
     switchScreen('result-screen');
 }
 
@@ -887,11 +871,11 @@ function endGame() {
 function saveHighScore() {
     const key = currentMode === 'rank' ? `highscore_${currentRank.id}` : 'highscore_normal';
     const currentHigh = parseInt(localStorage.getItem(key) || 0);
-    
+
     const highScoreText = document.getElementById('high-score-text');
-    
+
     if (!highScoreText) return;
-    
+
     if (gameState.score > currentHigh) {
         localStorage.setItem(key, gameState.score);
         highScoreText.textContent = `🎉 新記録！ 前回: ${currentHigh}`;
