@@ -2265,6 +2265,11 @@ const SONGS = [
         { "time": 142.95, "text": "オレ", "kana": ["お","れ"] },
         { "time": 150.30, "text": "オレ", "kana": ["お","れ"] }
     ]
+},
+    {
+    id: 'vs_vigvangs',
+    title: 'vs.VIGVANGS',
+    youtubeId: 'ogGYZpKsz3M',
 }
     
     // 新しい曲を追加する時はここにカンマ区切りで追加
