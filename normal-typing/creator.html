@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>単語→JSON変換</title>
+</head>
+<body>
+
+<h2>単語→JSON変換ツール</h2>
+
+<input type="text" id="word" placeholder="文字（例：猫）">
+<input type="text" id="kana" placeholder="読み（例：ネコ でもOK）">
+<button onclick="convert()">変換</button>
+<button onclick="copyResult()">コピー</button>
+
+<pre id="output"></pre>
+
+<script>
+function toHiragana(str) {
+    return str.replace(/[\u30A1-\u30F6]/g, function(match) {
+        return String.fromCharCode(match.charCodeAt(0) - 0x60)
+    })
+}
+
+function convert() {
+    var word = document.getElementById("word").value
+    var kanaInput = document.getElementById("kana").value
+    var kana = toHiragana(kanaInput).split("")
+
+    var result = {
+        word: word,
+        kana: kana
+    }
+
+    document.getElementById("output").textContent =
+        JSON.stringify(result) + ","
+}
+
+function copyResult() {
+    var text = document.getElementById("output").textContent
+    navigator.clipboard.writeText(text)
+}
+</script>
+
+</body>
+</html>
