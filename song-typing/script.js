@@ -577,10 +577,7 @@ function checkLyricTiming(t) {
 }
 
 function loadLyric(lyric) {
-    // colorStart → activeColor 更新（このラインから色変更）
-    if (lyric.colorStart) {
-        activeColor = lyric.colorStart;
-    }
+    if (lyric.colorStart) activeColor = lyric.colorStart;
 
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
     gameState.currentCharIndex    = 0;
@@ -588,25 +585,29 @@ function loadLyric(lyric) {
     gameState.lineTypedChars      = 0;
 
     const jl = document.getElementById('japanese-line');
-    if (jl) {
-        jl.textContent  = lyric.text;
-        jl.style.color  = activeColor || '';
-    }
+    if (jl) { jl.textContent = lyric.text; jl.style.color = activeColor || ''; }
 
     const nl = document.getElementById('next-line');
     if (nl) {
         nl.textContent = (currentLyricIndex + 1 < currentSong.lyrics.length)
-            ? `次は ${currentSong.lyrics[currentLyricIndex + 1].text}`
-            : '';
+            ? `次は ${currentSong.lyrics[currentLyricIndex + 1].text}` : '';
     }
 
-    displayRomaji();
-    updateNormaGauge();
-
     const inp = document.getElementById('input-field');
-    if (inp) { inp.disabled = false; inp.focus(); }
+    const hasKana = lyric.kana && lyric.kana.length > 0;
 
-    // colorEnd: true → このライン表示後にリセット
+    if (!hasKana) {
+        // かなが空 → 入力欄無効化、ローマ字表示もクリア
+        const rl = document.getElementById('romaji-line');
+        if (rl) rl.innerHTML = '';
+        if (inp) { inp.value = ''; inp.disabled = true; }
+        gameState.completedCurrentLine = true; // タイプなしで完了扱い
+    } else {
+        displayRomaji();
+        updateNormaGauge();
+        if (inp) { inp.disabled = false; inp.focus(); }
+    }
+
     if (lyric.colorEnd) activeColor = null;
 }
 
