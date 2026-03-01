@@ -2275,6 +2275,7 @@ const SONGS = [
     id: 'dark_ex_machina',
     title: 'ダーク・エクス・マキナ♡',
     youtubeId: 'klv4FU8WTfk',
+    "worldsEnd": "打",
     lyrics: [
         { time: 0.47, text: 'ざぁ～こ♡ ざぁ～こ♡', kana: ['ざ','ぁ','ー','こ','ざ','ぁ','ー','こ'] },
         { time: 1.64, text: '聞こえる？', kana: ['き','こ','え','る'] },
