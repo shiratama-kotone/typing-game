@@ -137,13 +137,33 @@ function formatDuration(sec) {
 
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
         #lyrics-scroll-panel {
-            width: 100vw;
-            margin-left: calc(-50vw + 50%);
-            overflow: hidden;
+            width: 100%;
+            overflow: visible;
             position: relative;
             height: clamp(160px, 28vh, 260px);
-            mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+        }
+        /* 上下フェードはスクロール内側のクリップで実現 */
+        #lyrics-scroll-clip {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        #lyrics-scroll-fade-top,
+        #lyrics-scroll-fade-bottom {
+            position: absolute;
+            left: 0; right: 0;
+            height: 25%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #lyrics-scroll-fade-top {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(30,20,60,1) 0%, rgba(30,20,60,0) 100%);
+        }
+        #lyrics-scroll-fade-bottom {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(30,20,60,1) 0%, rgba(30,20,60,0) 100%);
         }
         #lyrics-scroll-inner {
             display: flex;
@@ -743,6 +763,15 @@ function buildLyricScrollPanel() {
     const inner = document.createElement('div');
     inner.id = 'lyrics-scroll-inner';
     panel.appendChild(inner);
+
+    // 上下フェードオーバーレイ
+    const fadeTop = document.createElement('div');
+    fadeTop.id = 'lyrics-scroll-fade-top';
+    const fadeBot = document.createElement('div');
+    fadeBot.id = 'lyrics-scroll-fade-bottom';
+    panel.appendChild(fadeTop);
+    panel.appendChild(fadeBot);
+
     jl.parentNode.insertBefore(panel, jl);
 
     if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) return;
