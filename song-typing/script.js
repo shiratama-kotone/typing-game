@@ -159,11 +159,11 @@ function formatDuration(sec) {
         }
         #lyrics-scroll-fade-top {
             top: 0;
-            background: linear-gradient(to bottom, rgba(30,20,60,1) 0%, rgba(30,20,60,0) 100%);
+            background: linear-gradient(to bottom, rgba(102,126,234,0.95) 0%, rgba(102,126,234,0) 100%);
         }
         #lyrics-scroll-fade-bottom {
             bottom: 0;
-            background: linear-gradient(to top, rgba(30,20,60,1) 0%, rgba(30,20,60,0) 100%);
+            background: linear-gradient(to top, rgba(118,75,162,0.95) 0%, rgba(118,75,162,0) 100%);
         }
         #lyrics-scroll-inner {
             display: flex;
