@@ -398,6 +398,7 @@ function injectConfirmScreen() {
     div.id = 'confirm-screen';
     div.className = 'screen';
     div.innerHTML = `
+        <div id="confirm-yt-player" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></div>
         <div class="confirm-box">
             <div class="confirm-song-title" id="cs-title"></div>
             <div id="cs-diff-area">
@@ -605,7 +606,7 @@ function showConfirmScreen(song) {
 
     // YT プレイヤーを生成（game-screen の #youtube-player へ）
     if (player) { try { player.destroy(); } catch(e){} player = null; }
-    player = new YT.Player('youtube-player', {
+    player = new YT.Player('confirm-yt-player', {
         height: '100%', width: '100%',
         videoId: song.youtubeId,
         host: 'https://www.youtube.com',
@@ -643,6 +644,16 @@ function onConfirmPlayerReady(event) {
 // ===== 確認画面からゲーム開始 =====
 function startGameFromConfirm() {
     switchScreen('game-screen');
+    // confirm-yt-player の iframe を youtube-player に移動
+    const ytTarget = document.getElementById('youtube-player');
+    const confirmDiv = document.getElementById('confirm-yt-player');
+    if (ytTarget && confirmDiv) {
+        const iframe = confirmDiv.querySelector('iframe');
+        if (iframe) {
+            ytTarget.innerHTML = '';
+            ytTarget.appendChild(iframe);
+        }
+    }
     initGame();
     if (player) {
         player.seekTo(0);
