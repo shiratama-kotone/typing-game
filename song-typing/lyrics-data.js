@@ -2548,7 +2548,7 @@ const SONGS = [
 },
     {
     id: 'syoujo_rei',
-    title: '少女レイ',
+    title: '少女レイ / MORE MORE JUMP！ × 初音ミク',
     youtubeId: '3VT85q-E-UU',
     lyrics: [
         { time: 25.42, text: '本能が狂い始める', kana: ['ほ','ん','の','う','が','く','る','い','は','じ','め','る'] },
