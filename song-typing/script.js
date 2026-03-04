@@ -4,7 +4,8 @@ let currentSong = null;
 let currentLyricIndex = 0;
 let startTime = null;
 let updateInterval = null;
-let activeColor = null; // colorStart/colorEnd で管理する現在の歌詞色
+let activeColor = null;
+let songSortOrder = 'default'; // 'default' | 'difficulty'
 
 // サウンドエフェクト
 let typingSound = null;
@@ -129,6 +130,101 @@ function formatDuration(sec) {
         }
         .rainbow-text { animation: rainbow 1.5s linear infinite; font-weight: bold; }
         #final-score, #final-rank { font-style: italic; }
+
+        /* ===== 次ライン非表示 ===== */
+        #next-line { display: none !important; }
+
+        /* ===== 歌詞アニメーション ===== */
+        @keyframes lyric-enter {
+            from { transform: translateY(3.5vh) scale(0.72); opacity: 0; }
+            to   { transform: translateY(0)     scale(1);    opacity: 1; }
+        }
+        @keyframes lyric-exit {
+            0%   { transform: translateY(0);      opacity: 1; }
+            100% { transform: translateY(-6vh);   opacity: 0; }
+        }
+        .lyric-entering {
+            animation: lyric-enter 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+        }
+        .lyric-exiting {
+            animation: lyric-exit 0.42s ease-in forwards;
+            pointer-events: none;
+        }
+        /* 退場テキスト用の絶対配置レイヤー */
+        #lyric-outgoing {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* 入場テキストを z-index 2 に */
+        #japanese-line { position: relative; z-index: 2; }
+
+        /* ===== レスポンシブ ===== */
+        #game-screen {
+            font-size: clamp(11px, 1.3vw, 16px);
+        }
+        #japanese-line {
+            font-size: clamp(1.8rem, 4.8vw, 3.4rem) !important;
+        }
+        #romaji-line {
+            font-size: clamp(1rem, 2.4vw, 1.8rem) !important;
+        }
+        #input-field {
+            font-size: clamp(0.9rem, 1.8vw, 1.3rem) !important;
+            width: 100% !important;
+        }
+        #score, #correct-count, #miss-count {
+            font-size: clamp(0.8rem, 1.4vw, 1rem) !important;
+        }
+        #norma-gauge-text {
+            font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important;
+        }
+        /* 確認画面レスポンシブ */
+        .confirm-box {
+            padding: clamp(20px, 4vw, 44px) clamp(18px, 4vw, 48px) !important;
+        }
+        .confirm-diff-name {
+            font-size: clamp(1.4rem, 3.5vw, 2.2rem) !important;
+        }
+        .confirm-stat-value {
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem) !important;
+        }
+        /* 曲選択レスポンシブ */
+        .song-item {
+            font-size: clamp(0.82rem, 1.3vw, 1rem) !important;
+        }
+
+        /* ===== ソートUI ===== */
+        .sort-bar {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .sort-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-right: 2px;
+        }
+        .sort-btn {
+            font-size: 0.78em;
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: 1px solid #aaa;
+            background: transparent;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.18s;
+            font-weight: bold;
+        }
+        .sort-btn:hover { border-color: #ccc; color: #eee; }
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: #fff;
+        }
 
         /* 曲選択バッジ */
         .song-item {
@@ -329,6 +425,7 @@ function injectConfirmScreen() {
 // ===== 初期化 =====
 window.addEventListener('DOMContentLoaded', () => {
     injectConfirmScreen();
+    injectSortUI();
     setupAudio();
     setupEventListeners();
     createSongList();
@@ -352,12 +449,47 @@ function setupEventListeners() {
     if (inp) inp.addEventListener('input', handleInput);
 }
 
+// ===== ソートUI注入 =====
+function injectSortUI() {
+    const songList = document.getElementById('song-list');
+    if (!songList || document.getElementById('sort-bar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'sort-bar';
+    bar.className = 'sort-bar';
+    bar.innerHTML = `
+        <span class="sort-label">並び替え:</span>
+        <button class="sort-btn active" id="sort-btn-default" onclick="setSortOrder('default')">追加順</button>
+        <button class="sort-btn"        id="sort-btn-diff"    onclick="setSortOrder('difficulty')">難易度順</button>
+    `;
+    songList.parentNode.insertBefore(bar, songList);
+}
+
+function setSortOrder(order) {
+    songSortOrder = order;
+    document.getElementById('sort-btn-default').classList.toggle('active', order === 'default');
+    document.getElementById('sort-btn-diff').classList.toggle('active',    order === 'difficulty');
+    createSongList();
+}
+
 // ===== 曲リスト（難易度バッジ付き） =====
 function createSongList() {
     const songList = document.getElementById('song-list');
     if (!songList) return;
     songList.innerHTML = '';
-    SONGS.forEach(song => {
+
+    // ソート
+    let songs = [...SONGS];
+    if (songSortOrder === 'difficulty') {
+        songs.sort((a, b) => {
+            const da = getDifficultyInfo(a);
+            const db = getDifficultyInfo(b);
+            // WE → 末尾、Inst → その前
+            const rank = d => d.isWorldsEnd ? 9999 : d.isInst ? 9998 : (d.over15 ? 9997 : (d.level ?? 0));
+            return rank(da) - rank(db);
+        });
+    }
+
+    songs.forEach(song => {
         const diff = getDifficultyInfo(song);
         const item = document.createElement('div');
         item.className = 'song-item';
@@ -528,7 +660,8 @@ function initGame() {
     }
 
     const jl = document.getElementById('japanese-line');
-    if (jl) { jl.textContent = ''; jl.style.color = ''; }
+    if (jl) { jl.textContent = ''; jl.style.color = ''; jl.className = ''; }
+    injectLyricStage();
     const nl = document.getElementById('next-line');
     if (nl) nl.textContent = '';
     const rl = document.getElementById('romaji-line');
@@ -576,6 +709,21 @@ function checkLyricTiming(t) {
     }
 }
 
+// ===== 歌詞ステージ（アニメーション用DOM） =====
+function injectLyricStage() {
+    const jl = document.getElementById('japanese-line');
+    if (!jl) return;
+    // 退場用レイヤーが既にあればスキップ
+    if (document.getElementById('lyric-outgoing')) return;
+    // 親を relative に
+    const parent = jl.parentNode;
+    if (parent) parent.style.position = 'relative';
+    // 退場テキスト用要素を japanese-line の直前に挿入
+    const og = document.createElement('div');
+    og.id = 'lyric-outgoing';
+    parent.insertBefore(og, jl);
+}
+
 function loadLyric(lyric) {
     if (lyric.colorStart) activeColor = lyric.colorStart;
 
@@ -584,24 +732,46 @@ function loadLyric(lyric) {
     gameState.currentCharPosition = 0;
     gameState.lineTypedChars      = 0;
 
+    // ===== 歌詞アニメーション =====
     const jl = document.getElementById('japanese-line');
-    if (jl) { jl.textContent = lyric.text; jl.style.color = activeColor || ''; }
+    const og = document.getElementById('lyric-outgoing');
 
-    const nl = document.getElementById('next-line');
-    if (nl) {
-        nl.textContent = (currentLyricIndex + 1 < currentSong.lyrics.length)
-            ? `次は ${currentSong.lyrics[currentLyricIndex + 1].text}` : '';
+    if (jl && og) {
+        // 現在表示中の歌詞を退場レイヤーにコピーしてスライドアウト
+        if (jl.textContent.trim()) {
+            og.textContent = jl.textContent;
+            og.style.color      = jl.style.color || '';
+            og.style.fontSize   = window.getComputedStyle(jl).fontSize;
+            og.style.fontWeight = window.getComputedStyle(jl).fontWeight;
+            og.style.textAlign  = window.getComputedStyle(jl).textAlign;
+            og.style.letterSpacing = window.getComputedStyle(jl).letterSpacing;
+            og.classList.remove('lyric-exiting');
+            void og.offsetWidth;
+            og.classList.add('lyric-exiting');
+            og.addEventListener('animationend', () => {
+                og.textContent = '';
+                og.classList.remove('lyric-exiting');
+            }, { once: true });
+        }
+        // 新しい歌詞を入場アニメーション
+        jl.textContent  = lyric.text;
+        jl.style.color  = activeColor || '';
+        jl.classList.remove('lyric-entering');
+        void jl.offsetWidth;
+        jl.classList.add('lyric-entering');
+    } else if (jl) {
+        jl.textContent = lyric.text;
+        jl.style.color = activeColor || '';
     }
 
     const inp = document.getElementById('input-field');
     const hasKana = lyric.kana && lyric.kana.length > 0;
 
     if (!hasKana) {
-        // かなが空 → 入力欄無効化、ローマ字表示もクリア
         const rl = document.getElementById('romaji-line');
         if (rl) rl.innerHTML = '';
         if (inp) { inp.value = ''; inp.disabled = true; }
-        gameState.completedCurrentLine = true; // タイプなしで完了扱い
+        gameState.completedCurrentLine = true;
     } else {
         displayRomaji();
         updateNormaGauge();
