@@ -218,13 +218,45 @@
         /* プレビュー */
         .preview-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; flex-direction:column; align-items:center; justify-content:center; }
         .preview-overlay.active { display:flex; }
-        .preview-video-wrapper { width:100%; max-width:900px; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 0 60px rgba(102,126,234,0.4); margin-bottom:30px; }
+        .preview-video-wrapper { width:100%; max-width:900px; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 0 60px rgba(102,126,234,0.4); margin-bottom:20px; }
         #preview-player { width:100%; height:100%; }
-        .preview-lyrics-area { width:100%; max-width:900px; text-align:center; padding:0 20px; }
-        .preview-current-lyric { font-size:2.4rem; font-weight:bold; color:#fff; letter-spacing:0.05em; min-height:3rem; margin-bottom:16px; text-shadow:0 0 20px rgba(102,126,234,0.8); transition:color 0.3s; }
-        .preview-romaji { font-size:1.4rem; color:#aac4ff; letter-spacing:0.12em; min-height:2rem; margin-bottom:24px; font-family:'Courier New',monospace; }
-        .preview-next-lyric { font-size:1.1rem; color:#888; min-height:1.5rem; }
-        .preview-controls { display:flex; gap:12px; align-items:center; margin-top:30px; }
+        .preview-lyrics-area { width:100%; max-width:900px; padding:0; }
+
+        /* Spotifyスクロール（ゲームと同じ） */
+        #preview-scroll-panel {
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            height: 200px;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        }
+        #preview-scroll-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.55s cubic-bezier(0.3, 0.8, 0.3, 1);
+            will-change: transform;
+        }
+        .preview-scroll-line {
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.3;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.28);
+            transition: font-size 0.45s ease, color 0.45s ease;
+        }
+        .preview-scroll-line.past  { color: rgba(255,255,255,0.22); font-size: 1rem; }
+        .preview-scroll-line.active { font-size: 2.2rem; color: #fff; }
+        .preview-scroll-line.near  { font-size: 1.3rem; color: rgba(255,255,255,0.55); }
+
+        /* ローマ字 */
+        #preview-romaji { font-size:1.1rem; color:#aac4ff; letter-spacing:0.12em; min-height:1.6rem; text-align:center; font-family:'Courier New',monospace; margin-top: 8px; }
+
+        .preview-controls { display:flex; gap:12px; align-items:center; margin-top:16px; }
         .preview-time { font-size:1.2rem; font-weight:bold; color:#667eea; min-width:100px; text-align:center; }
         .preview-close-btn { position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.3); padding:10px 22px; border-radius:50px; font-size:1rem; cursor:pointer; transition:all 0.3s ease; }
         .preview-close-btn:hover { background:rgba(255,255,255,0.28); }
@@ -362,11 +394,10 @@
     <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
     <div class="preview-video-wrapper"><div id="preview-player"></div></div>
     <div class="preview-lyrics-area">
-        <div class="preview-current-lyric" id="preview-current-lyric">
-            <span style="color:#555;font-size:1rem;">▶ 再生すると歌詞が表示されます</span>
+        <div id="preview-scroll-panel">
+            <div id="preview-scroll-inner"></div>
         </div>
-        <div class="preview-romaji" id="preview-romaji"></div>
-        <div class="preview-next-lyric" id="preview-next-lyric"></div>
+        <div id="preview-romaji"></div>
     </div>
     <div class="preview-controls">
         <div class="preview-time" id="preview-time">0.00秒</div>
@@ -606,15 +637,15 @@ function addLyric() {
     const colorHex = document.getElementById('lyrics-color-hex').value.trim();
     const colorEnd = document.getElementById('lyrics-color-end').checked;
 
-    if (!text || !kana) { alert('歌詞と読みを入力してください'); return; }
-    if (!/^[ぁ-んーa-z0-9 ]+$/.test(kana)) {
+    if (!text) { alert('歌詞を入力してください'); return; }
+    if (kana && !/^[ぁ-んーa-z0-9 ]+$/.test(kana)) {
         alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください'); return;
     }
 
     const entry = {
         time: currentTime,
         text: text,
-        kana: kana.split(''),
+        kana: kana ? kana.split('') : [],
         colorStart: (/^#[0-9a-fA-F]{6}$/.test(colorHex)) ? colorHex : null,
         colorEnd: colorEnd
     };
@@ -625,7 +656,6 @@ function addLyric() {
 
     document.getElementById('lyrics-text').value = '';
     document.getElementById('lyrics-kana').value = '';
-    // 色とチェックはリセットしない（連続入力で使いやすいように）
 }
 
 function deleteLyric(index) {
@@ -780,13 +810,64 @@ function showMessage(id) {
 }
 
 // ===== プレビュー =====
-let previewActiveColor = null;
+function buildPreviewScrollPanel() {
+    const inner = document.getElementById('preview-scroll-inner');
+    if (!inner) return;
+    inner.innerHTML = '';
+    inner.style.transform = '';
+
+    lyricsData.forEach((lyric, i) => {
+        const el = document.createElement('div');
+        el.className = 'preview-scroll-line';
+        el.id = `psl-${i}`;
+        el.textContent = lyric.text;
+        inner.appendChild(el);
+    });
+
+    // 色を事前適用
+    let preColor = null;
+    lyricsData.forEach((lyric, i) => {
+        if (lyric.colorStart) preColor = lyric.colorStart;
+        const el = document.getElementById(`psl-${i}`);
+        if (el && preColor) el.dataset.color = preColor;
+        if (lyric.colorEnd) preColor = null;
+    });
+}
+
+function updatePreviewScroll(idx) {
+    const inner = document.getElementById('preview-scroll-inner');
+    const panel = document.getElementById('preview-scroll-panel');
+    if (!inner || !panel) return;
+
+    inner.querySelectorAll('.preview-scroll-line').forEach((el, i) => {
+        el.className = 'preview-scroll-line';
+        if (i < idx)            el.classList.add('past');
+        else if (i === idx)     el.classList.add('active');
+        else if (i === idx + 1 || i === idx - 1) el.classList.add('near');
+        el.style.color = el.dataset.color || '';
+    });
+
+    const activeEl = document.getElementById(`psl-${idx}`);
+    if (!activeEl) return;
+    const panelH = panel.offsetHeight;
+    const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
+    if (idx === 0) {
+        inner.style.transition = 'none';
+        inner.style.transform = `translateY(${-offset}px)`;
+        void inner.offsetWidth;
+        inner.style.transition = '';
+    } else {
+        inner.style.transform = `translateY(${-offset}px)`;
+    }
+}
 
 function openPreview() {
     if (lyricsData.length === 0) { alert('歌詞が1つもありません。'); return; }
     if (player) player.pauseVideo();
-    previewActiveColor = null;
+    _prevPreviewIdx = -1;
     document.getElementById('preview-overlay').classList.add('active');
+    buildPreviewScrollPanel();
+    document.getElementById('preview-romaji').textContent = '';
     previewPlayer = new YT.Player('preview-player', {
         height: '100%', width: '100%', videoId: youtubeId,
         host: 'https://www.youtube.com',
@@ -798,7 +879,6 @@ function openPreview() {
         events: {
             onReady: (e) => {
                 e.target.playVideo();
-                document.getElementById('preview-current-lyric').textContent = '';
                 previewUpdateInterval = setInterval(updatePreviewLyric, 50);
             }
         }
@@ -817,34 +897,15 @@ function updatePreviewLyric() {
         else break;
     }
 
-    // 新しいラインに切り替わったとき colorStart/colorEnd を処理
     if (idx !== _prevPreviewIdx) {
-        if (idx === -1) {
-            previewActiveColor = null;
-        } else {
-            // ループするとリセットが必要なため全ライン再走査
-            previewActiveColor = null;
-            for (let j = 0; j <= idx; j++) {
-                if (lyricsData[j].colorStart) previewActiveColor = lyricsData[j].colorStart;
-                if (lyricsData[j].colorEnd && j < idx)   previewActiveColor = null;
-            }
-        }
         _prevPreviewIdx = idx;
-    }
-
-    const curEl = document.getElementById('preview-current-lyric');
-    if (idx === -1) {
-        curEl.innerHTML = '<span style="color:#555;font-size:1rem;">▶ 歌詞を待っています...</span>';
-        curEl.style.color = '';
-        document.getElementById('preview-romaji').textContent = '';
-        document.getElementById('preview-next-lyric').textContent =
-            lyricsData.length > 0 ? '次: ' + lyricsData[0].text : '';
-    } else {
-        curEl.textContent = lyricsData[idx].text;
-        curEl.style.color = previewActiveColor || '#fff';
-        document.getElementById('preview-romaji').textContent = toRomaji(lyricsData[idx].kana);
-        const next = lyricsData[idx + 1];
-        document.getElementById('preview-next-lyric').textContent = next ? '次: ' + next.text : '';
+        if (idx >= 0) {
+            updatePreviewScroll(idx);
+            const hasKana = lyricsData[idx].kana && lyricsData[idx].kana.length > 0;
+            document.getElementById('preview-romaji').textContent = hasKana ? toRomaji(lyricsData[idx].kana) : '';
+        } else {
+            document.getElementById('preview-romaji').textContent = '';
+        }
     }
 }
 
@@ -864,7 +925,7 @@ function pausePreview() { if (previewPlayer) previewPlayer.pauseVideo(); }
 function playPreview()  { if (previewPlayer) previewPlayer.playVideo(); }
 function seekPreview(sec) {
     if (previewPlayer) {
-        _prevPreviewIdx = -2; // 強制リセット
+        _prevPreviewIdx = -2;
         previewPlayer.seekTo(Math.max(0, previewCurrentTime + sec), true);
     }
 }
