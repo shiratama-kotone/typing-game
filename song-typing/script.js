@@ -138,7 +138,7 @@ function formatDuration(sec) {
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
         #lyrics-scroll-panel {
             width: 100%;
-            overflow: hidden;
+            overflow: visible;
             position: relative;
             height: clamp(160px, 28vh, 260px);
             mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
