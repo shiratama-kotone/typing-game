@@ -133,32 +133,54 @@ function formatDuration(sec) {
 
         /* ===== 次ライン非表示 ===== */
         #next-line { display: none !important; }
+        #japanese-line { display: none !important; }
 
-        /* ===== 歌詞アニメーション ===== */
-        @keyframes lyric-enter {
-            from { transform: translateY(3.5vh) scale(0.72); opacity: 0; }
-            to   { transform: translateY(0)     scale(1);    opacity: 1; }
+        /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
+        #lyrics-scroll-panel {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            height: clamp(160px, 28vh, 260px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
         }
-        @keyframes lyric-exit {
-            0%   { transform: translateY(0);      opacity: 1; }
-            100% { transform: translateY(-6vh);   opacity: 0; }
+        #lyrics-scroll-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(6px, 1.2vh, 14px);
+            transition: transform 0.55s cubic-bezier(0.3, 0.8, 0.3, 1);
+            will-change: transform;
         }
-        .lyric-entering {
-            animation: lyric-enter 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+        .lyric-scroll-line {
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            text-align: center;
+            white-space: nowrap;
+            transition: font-size 0.45s ease, color 0.45s ease, opacity 0.45s ease;
+            line-height: 1.3;
+            cursor: default;
+            /* デフォルト：未来の歌詞 */
+            font-size: clamp(0.85rem, 1.9vw, 1.4rem);
+            color: rgba(255,255,255,0.28);
+            opacity: 1;
         }
-        .lyric-exiting {
-            animation: lyric-exit 0.42s ease-in forwards;
-            pointer-events: none;
+        .lyric-scroll-line.past {
+            font-size: clamp(0.85rem, 1.9vw, 1.4rem);
+            color: rgba(255,255,255,0.22);
         }
-        /* 退場テキスト用の絶対配置レイヤー */
-        #lyric-outgoing {
-            position: absolute;
-            left: 0; right: 0; top: 0;
-            pointer-events: none;
-            z-index: 1;
+        .lyric-scroll-line.active {
+            font-size: clamp(1.6rem, 4.2vw, 3.2rem);
+            color: #fff;
         }
-        /* 入場テキストを z-index 2 に */
-        #japanese-line { position: relative; z-index: 2; }
+        .lyric-scroll-line.near {
+            font-size: clamp(1rem, 2.3vw, 1.7rem);
+            color: rgba(255,255,255,0.55);
+        }
 
         /* ===== レスポンシブ ===== */
         #game-screen {
@@ -661,7 +683,7 @@ function initGame() {
 
     const jl = document.getElementById('japanese-line');
     if (jl) { jl.textContent = ''; jl.style.color = ''; jl.className = ''; }
-    injectLyricStage();
+    buildLyricScrollPanel();
     const nl = document.getElementById('next-line');
     if (nl) nl.textContent = '';
     const rl = document.getElementById('romaji-line');
@@ -709,19 +731,68 @@ function checkLyricTiming(t) {
     }
 }
 
-// ===== 歌詞ステージ（アニメーション用DOM） =====
-function injectLyricStage() {
+// ===== 歌詞スクロールパネル構築 =====
+function buildLyricScrollPanel() {
+    // 既存パネルを削除してリセット
+    const old = document.getElementById('lyrics-scroll-panel');
+    if (old) old.remove();
+
     const jl = document.getElementById('japanese-line');
     if (!jl) return;
-    // 退場用レイヤーが既にあればスキップ
-    if (document.getElementById('lyric-outgoing')) return;
-    // 親を relative に
-    const parent = jl.parentNode;
-    if (parent) parent.style.position = 'relative';
-    // 退場テキスト用要素を japanese-line の直前に挿入
-    const og = document.createElement('div');
-    og.id = 'lyric-outgoing';
-    parent.insertBefore(og, jl);
+
+    // パネルを japanese-line の親に挿入
+    const panel = document.createElement('div');
+    panel.id = 'lyrics-scroll-panel';
+    const inner = document.createElement('div');
+    inner.id = 'lyrics-scroll-inner';
+    panel.appendChild(inner);
+    jl.parentNode.insertBefore(panel, jl);
+
+    if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) return;
+
+    currentSong.lyrics.forEach((lyric, i) => {
+        const el = document.createElement('div');
+        el.className = 'lyric-scroll-line';
+        el.id = `lsl-${i}`;
+        el.textContent = lyric.text;
+        inner.appendChild(el);
+    });
+
+    // 各ラインの色を事前計算して適用
+    let preColor = null;
+    currentSong.lyrics.forEach((lyric, i) => {
+        if (lyric.colorStart) preColor = lyric.colorStart;
+        const el = document.getElementById(`lsl-${i}`);
+        if (el && preColor) el.dataset.color = preColor;
+        if (lyric.colorEnd) preColor = null;
+    });
+}
+
+function updateLyricScroll(idx) {
+    const inner = document.getElementById('lyrics-scroll-inner');
+    const panel = document.getElementById('lyrics-scroll-panel');
+    if (!inner || !panel || !currentSong.lyrics) return;
+
+    const lines = inner.querySelectorAll('.lyric-scroll-line');
+    lines.forEach((el, i) => {
+        el.className = 'lyric-scroll-line';
+        if (i < idx)      el.classList.add('past');
+        else if (i === idx) el.classList.add('active');
+        else if (i === idx + 1 || i === idx - 1) el.classList.add('near');
+        // それ以外はデフォルト（薄い）
+
+        // data-color で事前に設定された色を使う
+        el.style.color = el.dataset.color || '';
+    });
+
+    // アクティブ行をパネル中央にスクロール
+    const activeEl = document.getElementById(`lsl-${idx}`);
+    if (!activeEl) return;
+    const panelH = panel.offsetHeight;
+    const activeTop  = activeEl.offsetTop;
+    const activeH    = activeEl.offsetHeight;
+    const offset = activeTop - panelH / 2 + activeH / 2;
+    inner.style.transform = `translateY(${-offset}px)`;
 }
 
 function loadLyric(lyric) {
@@ -732,37 +803,8 @@ function loadLyric(lyric) {
     gameState.currentCharPosition = 0;
     gameState.lineTypedChars      = 0;
 
-    // ===== 歌詞アニメーション =====
-    const jl = document.getElementById('japanese-line');
-    const og = document.getElementById('lyric-outgoing');
-
-    if (jl && og) {
-        // 現在表示中の歌詞を退場レイヤーにコピーしてスライドアウト
-        if (jl.textContent.trim()) {
-            og.textContent = jl.textContent;
-            og.style.color      = jl.style.color || '';
-            og.style.fontSize   = window.getComputedStyle(jl).fontSize;
-            og.style.fontWeight = window.getComputedStyle(jl).fontWeight;
-            og.style.textAlign  = window.getComputedStyle(jl).textAlign;
-            og.style.letterSpacing = window.getComputedStyle(jl).letterSpacing;
-            og.classList.remove('lyric-exiting');
-            void og.offsetWidth;
-            og.classList.add('lyric-exiting');
-            og.addEventListener('animationend', () => {
-                og.textContent = '';
-                og.classList.remove('lyric-exiting');
-            }, { once: true });
-        }
-        // 新しい歌詞を入場アニメーション
-        jl.textContent  = lyric.text;
-        jl.style.color  = activeColor || '';
-        jl.classList.remove('lyric-entering');
-        void jl.offsetWidth;
-        jl.classList.add('lyric-entering');
-    } else if (jl) {
-        jl.textContent = lyric.text;
-        jl.style.color = activeColor || '';
-    }
+    // スクロールパネル更新（currentLyricIndex はこの時点でまだ+1前）
+    updateLyricScroll(currentLyricIndex);
 
     const inp = document.getElementById('input-field');
     const hasKana = lyric.kana && lyric.kana.length > 0;
