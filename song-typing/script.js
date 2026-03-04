@@ -141,10 +141,6 @@ function formatDuration(sec) {
             overflow: hidden;
             position: relative;
             height: clamp(160px, 28vh, 260px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
         }
@@ -776,23 +772,26 @@ function updateLyricScroll(idx) {
     const lines = inner.querySelectorAll('.lyric-scroll-line');
     lines.forEach((el, i) => {
         el.className = 'lyric-scroll-line';
-        if (i < idx)      el.classList.add('past');
-        else if (i === idx) el.classList.add('active');
+        if (i < idx)            el.classList.add('past');
+        else if (i === idx)     el.classList.add('active');
         else if (i === idx + 1 || i === idx - 1) el.classList.add('near');
-        // それ以外はデフォルト（薄い）
-
-        // data-color で事前に設定された色を使う
         el.style.color = el.dataset.color || '';
     });
 
-    // アクティブ行をパネル中央にスクロール
     const activeEl = document.getElementById(`lsl-${idx}`);
     if (!activeEl) return;
     const panelH = panel.offsetHeight;
-    const activeTop  = activeEl.offsetTop;
-    const activeH    = activeEl.offsetHeight;
-    const offset = activeTop - panelH / 2 + activeH / 2;
-    inner.style.transform = `translateY(${-offset}px)`;
+    const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
+
+    // 最初のラインは即座に（アニメーションなし）
+    if (idx === 0) {
+        inner.style.transition = 'none';
+        inner.style.transform = `translateY(${-offset}px)`;
+        void inner.offsetWidth; // reflow
+        inner.style.transition = '';
+    } else {
+        inner.style.transform = `translateY(${-offset}px)`;
+    }
 }
 
 function loadLyric(lyric) {
