@@ -209,6 +209,10 @@
         .lyrics-item-delete { display:flex; gap:5px; }
         .btn-delete { background:#f44336; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-size:0.8rem; }
         .btn-delete:hover { background:#d32f2f; }
+        .btn-edit { background:#2196F3; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-size:0.8rem; }
+        .btn-edit:hover { background:#1976D2; }
+        .btn-edit { background:#2196f3; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-size:0.8rem; }
+        .btn-edit:hover { background:#1976d2; }
         .hint { color:#666; font-size:0.9rem; margin-top:5px; }
         .success-message { background:#4CAF50; color:white; padding:15px; border-radius:5px; margin-top:10px; margin-bottom:10px; display:none; }
         .success-message.show { display:block; animation:fadeIn 0.3s ease; }
@@ -250,7 +254,17 @@
             transition: font-size 0.45s ease, color 0.45s ease;
         }
         .preview-scroll-line.past  { color: rgba(255,255,255,0.22); font-size: 1rem; }
-        .preview-scroll-line.active { font-size: 2.2rem; color: #fff; }
+        .preview-scroll-line.active {
+            font-size: 2.2rem;
+            color: #fff;
+            -webkit-text-stroke: 2px rgba(255,255,255,0.35);
+            text-shadow:
+                0 0 12px rgba(255,255,255,0.4),
+                1px 1px 0 rgba(0,0,0,0.5),
+                -1px -1px 0 rgba(0,0,0,0.5),
+                1px -1px 0 rgba(0,0,0,0.5),
+                -1px 1px 0 rgba(0,0,0,0.5);
+        }
         .preview-scroll-line.near  { font-size: 1.3rem; color: rgba(255,255,255,0.55); }
 
         /* ローマ字 */
@@ -295,7 +309,20 @@
             <p class="hint">既存の歌詞データを編集する場合はこちら</p>
         </div>
         <button class="btn btn-import" onclick="importAndStart()">インポートして開始</button>
-    </div>
+
+        <div class="setup-divider"><span>または</span></div>
+
+        <h3>lyrics-data.js から読み込む</h3>
+        <p class="hint" style="margin-bottom:10px;">lyrics-data.jsを選択すると、収録されている曲を選んで編集できます。</p>
+        <label class="btn btn-small" style="cursor:pointer;display:inline-block;">
+            📂 lyrics-data.js を選択
+            <input type="file" id="lyricsdata-file" accept=".js" style="display:none" onchange="loadFromLyricsDataJs(this)">
+        </label>
+        <select id="lyricsdata-song-select" style="display:none;margin-left:10px;padding:8px;border-radius:8px;border:2px solid #ddd;font-size:1rem;">
+            <option value="">-- 曲を選択 --</option>
+        </select>
+        <button id="lyricsdata-edit-btn" class="btn btn-small" style="display:none;margin-left:6px;" onclick="editSelectedSong()">この曲を編集</button>
+    </div><!-- /setup-section -->
 
     <div id="main-content" class="main-content">
         <div class="video-section"><div id="youtube-player"></div></div>
@@ -366,8 +393,9 @@
                           style="display:inline-block;width:22px;height:22px;border-radius:4px;border:1px solid #bbb;background:#fff;vertical-align:middle;"></span>
                     <span id="color-preview-label" style="font-size:0.82rem;color:#888;">色なし</span>
                 </div>
-                <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。</p>
+                <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。読みなしの場合は空欄でも追加できます。</p>
             </div>
+        </div><!-- /lyrics-input-section -->
 
         <div class="lyrics-list" id="lyrics-list"></div>
 
@@ -386,8 +414,8 @@
                 【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
             </p>
         </div>
-    </div>
-</div>
+    </div><!-- /main-content -->
+</div><!-- /container -->
 
 <!-- プレビュー -->
 <div class="preview-overlay" id="preview-overlay">
@@ -716,19 +744,97 @@ function renderLyricsList() {
         if (lyric.colorEnd) {
             colorInfo += `<span class="lyrics-item-tag tag-end">colorEnd</span>`;
         }
+        const kanaDisplay = lyric.kana.length > 0 ? ` (${lyric.kana.join('')})` : ' <span style="color:#aaa;font-size:0.8em;">読みなし</span>';
 
         el.innerHTML = `
             <div class="lyrics-item-content">
                 <span class="lyrics-item-time">${lyric.time.toFixed(2)}秒</span>
-                <span class="lyrics-item-text">${lyric.text} (${lyric.kana.join('')})</span>
+                <span class="lyrics-item-text">${lyric.text}${kanaDisplay}</span>
                 ${colorInfo}
             </div>
             <div class="lyrics-item-delete">
+                <button class="btn-edit" onclick="editLyric(${i})">編集</button>
                 <button class="btn-delete" onclick="deleteLyric(${i})">削除</button>
             </div>
         `;
         container.appendChild(el);
     });
+}
+
+// ===== 歌詞編集 =====
+function editLyric(index) {
+    const lyric = lyricsData[index];
+    if (!lyric) return;
+
+    // 入力欄に値を戻す
+    document.getElementById('lyrics-text').value  = lyric.text;
+    document.getElementById('lyrics-kana').value  = lyric.kana.join('');
+    const colorHex = lyric.colorStart || '';
+    document.getElementById('lyrics-color-hex').value    = colorHex;
+    document.getElementById('lyrics-color-picker').value = colorHex || '#ffffff';
+    document.getElementById('lyrics-color-end').checked  = lyric.colorEnd || false;
+    updateColorPreview();
+
+    // 時間もその歌詞のタイミングにシーク
+    if (player) player.seekTo(lyric.time, true);
+
+    // リストから削除（追加時に新しいエントリが作られる）
+    lyricsData.splice(index, 1);
+    renderLyricsList();
+
+    // テキスト欄にフォーカス
+    document.getElementById('lyrics-text').focus();
+}
+
+// ===== lyrics-data.js から読み込む =====
+let _loadedSongs = [];
+function loadFromLyricsDataJs(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            // SONGS 配列を抽出して eval
+            const text = e.target.result;
+            const match = text.match(/const\s+SONGS\s*=\s*(\[[\s\S]*?\]);/);
+            if (!match) throw new Error('SONGS配列が見つかりません');
+            _loadedSongs = eval(match[1]);
+            const sel = document.getElementById('lyricsdata-song-select');
+            sel.innerHTML = '<option value="">-- 曲を選択 --</option>';
+            _loadedSongs.forEach((song, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = song.title;
+                sel.appendChild(opt);
+            });
+            sel.style.display = '';
+            document.getElementById('lyricsdata-edit-btn').style.display = '';
+        } catch(err) {
+            alert('読み込みに失敗しました: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function editSelectedSong() {
+    const sel = document.getElementById('lyricsdata-song-select');
+    const idx = parseInt(sel.value);
+    if (isNaN(idx) || !_loadedSongs[idx]) { alert('曲を選択してください'); return; }
+    const song = _loadedSongs[idx];
+    const code = JSON.stringify(song).replace(/"([^"]+)":/g, '$1:').replace(/"/g, "'");
+    // importAndStart と同じ処理をオブジェクトから直接実行
+    songId       = song.id;
+    songTitle    = song.title;
+    youtubeId    = song.youtubeId;
+    isWorldsEnd  = !!(song.worldsEnd);
+    worldsEndChar = song.worldsEnd || '';
+    isInst = !song.lyrics || song.lyrics.length === 0;
+    lyricsData = (song.lyrics || []).map(l => ({
+        time: l.time, text: l.text, kana: l.kana || [],
+        colorStart: l.colorStart || null,
+        colorEnd:   l.colorEnd   || false
+    }));
+    createPlayer();
 }
 
 // ===== コード生成 / コピー / インポート =====
