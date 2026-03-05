@@ -11,6 +11,7 @@ let songSortOrder = 'default'; // 'default' | 'difficulty'
 let typingSound = null;
 let missSound = null;
 let bonusSound = null;
+let allJusticeSound = null;
 
 // ゲーム状態
 let gameState = {
@@ -135,6 +136,15 @@ function formatDuration(sec) {
         #next-line { display: none !important; }
         #japanese-line { display: none !important; }
 
+        /* game-screen は display:none だと YT が読み込めないので visibility で隠す */
+        #game-screen:not(.active) {
+            display: block !important;
+            visibility: hidden;
+            pointer-events: none;
+            position: fixed;
+            top: -9999px; left: -9999px;
+        }
+
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
         #lyrics-scroll-panel {
             width: 100vw;
@@ -158,13 +168,12 @@ function formatDuration(sec) {
             letter-spacing: 0.05em;
             text-align: center;
             white-space: nowrap;
-            transition: font-size 0.45s ease, color 0.45s ease, opacity 0.45s ease;
+            transition: font-size 0.45s ease, color 0.45s ease;
             line-height: 1.3;
             cursor: default;
-            /* デフォルト：未来の歌詞 */
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
             color: rgba(255,255,255,0.28);
-            opacity: 1;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
         }
         .lyric-scroll-line.past {
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
@@ -173,6 +182,8 @@ function formatDuration(sec) {
         .lyric-scroll-line.active {
             font-size: clamp(1.6rem, 4.2vw, 3.2rem);
             color: #fff;
+            -webkit-text-stroke: 3px rgba(255,255,255,0.9);
+            paint-order: stroke fill;
         }
         .lyric-scroll-line.near {
             font-size: clamp(1rem, 2.3vw, 1.7rem);
@@ -182,9 +193,6 @@ function formatDuration(sec) {
         /* ===== レスポンシブ ===== */
         #game-screen {
             font-size: clamp(11px, 1.3vw, 16px);
-        }
-        #japanese-line {
-            font-size: clamp(1.8rem, 4.8vw, 3.4rem) !important;
         }
         #romaji-line {
             font-size: clamp(1rem, 2.4vw, 1.8rem) !important;
@@ -199,6 +207,26 @@ function formatDuration(sec) {
         #norma-gauge-text {
             font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important;
         }
+
+        /* ===== スマホ：上半分に詰める ===== */
+        @media (max-width: 768px) {
+            .youtube-container {
+                padding-bottom: 30% !important;
+                max-width: 100% !important;
+            }
+            #lyrics-scroll-panel {
+                height: clamp(100px, 18vh, 160px);
+            }
+            .lyric-scroll-line       { font-size: 0.78rem; }
+            .lyric-scroll-line.near  { font-size: 0.95rem; }
+            .lyric-scroll-line.active { font-size: clamp(1.2rem, 5vw, 2rem); }
+            .score-display { padding: 8px 12px !important; font-size: 0.9rem !important; margin-bottom: 8px !important; }
+            .combo-gauge-container { padding: 8px 10px !important; margin-bottom: 8px !important; }
+            #romaji-line { font-size: 1rem !important; }
+            .input-field { padding: 8px !important; font-size: 1rem !important; margin: 8px auto !important; }
+            .lyrics-display { margin: 8px auto !important; }
+        }
+
         /* 確認画面レスポンシブ */
         .confirm-box {
             padding: clamp(20px, 4vw, 44px) clamp(18px, 4vw, 48px) !important;
@@ -398,7 +426,7 @@ function injectConfirmScreen() {
     div.id = 'confirm-screen';
     div.className = 'screen';
     div.innerHTML = `
-        <div id="confirm-yt-player" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></div>
+        <div id="confirm-yt-player" style="position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;overflow:hidden;"></div>
         <div class="confirm-box">
             <div class="confirm-song-title" id="cs-title"></div>
             <div id="cs-diff-area">
@@ -462,6 +490,8 @@ function setupAudio() {
     missSound.volume = 0.3;
     bonusSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/mario-1up_eSTTTOB.mp3');
     bonusSound.volume = 0.4;
+    allJusticeSound = new Audio('https://github.com/shiratama-kotone/typing-game/raw/refs/heads/main/assets/ALL%20JUSTICE.m4a');
+    allJusticeSound.volume = 1.0;
 }
 
 function setupEventListeners() {
@@ -604,7 +634,7 @@ function showConfirmScreen(song) {
 
     switchScreen('confirm-screen');
 
-    // YT プレイヤーを生成（game-screen の #youtube-player へ）
+    // YT プレイヤーを confirm-yt-player（画面外）に生成して duration を取得
     if (player) { try { player.destroy(); } catch(e){} player = null; }
     player = new YT.Player('confirm-yt-player', {
         height: '100%', width: '100%',
@@ -624,42 +654,52 @@ function showConfirmScreen(song) {
 }
 
 function onConfirmPlayerReady(event) {
-    const duration = event.target.getDuration();
-    gameState.totalDuration = duration;
-
-    document.getElementById('cs-duration').textContent = formatDuration(duration);
-
-    const diff = getDifficultyInfo(currentSong);
-    if (!diff.isWorldsEnd && !diff.isInst && duration > 0 && diff.totalChars > 0) {
-        document.getElementById('cs-speed').textContent     = (diff.totalChars / duration).toFixed(2);
-        document.getElementById('cs-speed-unit').textContent = '打/秒';
-    } else {
-        document.getElementById('cs-speed').textContent = '---';
-    }
-
-    document.getElementById('btn-confirm-start').disabled = false;
-    document.getElementById('cs-loading').style.display   = 'none';
+    let attempts = 0;
+    const tryGetDuration = () => {
+        const duration = event.target.getDuration();
+        if (duration > 0 || attempts++ >= 20) {
+            gameState.totalDuration = duration;
+            // 曲長さは全タイプで表示
+            document.getElementById('cs-duration').textContent = duration > 0 ? formatDuration(duration) : '---';
+            const diff = getDifficultyInfo(currentSong);
+            // 平均速度は通常曲のみ
+            if (!diff.isWorldsEnd && !diff.isInst && duration > 0 && diff.totalChars > 0) {
+                document.getElementById('cs-speed').textContent      = (diff.totalChars / duration).toFixed(2);
+                document.getElementById('cs-speed-unit').textContent = '打/秒';
+            }
+            document.getElementById('btn-confirm-start').disabled = false;
+            document.getElementById('cs-loading').style.display   = 'none';
+        } else {
+            setTimeout(tryGetDuration, 300);
+        }
+    };
+    tryGetDuration();
 }
 
 // ===== 確認画面からゲーム開始 =====
 function startGameFromConfirm() {
+    // confirm用プレイヤーを破棄
+    if (player) { try { player.destroy(); } catch(e){} player = null; }
+
     switchScreen('game-screen');
-    // confirm-yt-player の iframe を youtube-player に移動
-    const ytTarget = document.getElementById('youtube-player');
-    const confirmDiv = document.getElementById('confirm-yt-player');
-    if (ytTarget && confirmDiv) {
-        const iframe = confirmDiv.querySelector('iframe');
-        if (iframe) {
-            ytTarget.innerHTML = '';
-            ytTarget.appendChild(iframe);
-        }
-    }
     initGame();
-    if (player) {
-        player.seekTo(0);
-        player.playVideo();
-        startTracking();
-    }
+
+    // game-screen が visible になったので youtube-player に新規作成
+    player = new YT.Player('youtube-player', {
+        height: '100%', width: '100%',
+        videoId: currentSong.youtubeId,
+        host: 'https://www.youtube.com',
+        playerVars: {
+            autoplay: 1, controls: 0, disablekb: 1, fs: 0,
+            modestbranding: 1, rel: 0, iv_load_policy: 3,
+            cc_load_policy: 0, playsinline: 1, enablejsapi: 1,
+            origin: window.location.origin
+        },
+        events: {
+            onReady: (e) => { e.target.seekTo(0); e.target.playVideo(); startTracking(); },
+            onStateChange: onPlayerStateChange
+        }
+    });
 }
 
 // ===== ゲーム初期化 =====
@@ -994,9 +1034,10 @@ function getRank(score) {
 }
 
 // ===== サウンド =====
-function playTypingSound() { if (typingSound) { typingSound.currentTime = 0; typingSound.play().catch(()=>{}); } }
-function playMissSound()   { if (missSound)   { missSound.currentTime   = 0; missSound.play().catch(()=>{});   } }
-function playBonusSound()  { if (bonusSound)  { bonusSound.currentTime  = 0; bonusSound.play().catch(()=>{});  } }
+function playTypingSound()    { if (typingSound)    { typingSound.currentTime    = 0; typingSound.play().catch(()=>{}); } }
+function playMissSound()      { if (missSound)      { missSound.currentTime      = 0; missSound.play().catch(()=>{});   } }
+function playBonusSound()     { if (bonusSound)     { bonusSound.currentTime     = 0; bonusSound.play().catch(()=>{});  } }
+function playAllJusticeSound(){ if (allJusticeSound){ allJusticeSound.currentTime= 0; allJusticeSound.play().catch(()=>{}); } }
 
 // ===== 動画状態変化 =====
 function onPlayerStateChange(event) {
@@ -1011,6 +1052,11 @@ function endGame() {
         gameState.score = 1010000;
     } else {
         gameState.score = Math.min(gameState.score, 1010000);
+    }
+
+    // ノーミスかつ全ユニット完走でALL JUSTICE
+    if (gameState.missCount === 0 && gameState.completedUnits > 0 && gameState.completedUnits >= gameState.totalUnits) {
+        playAllJusticeSound();
     }
 
     const elapsed = (Date.now() - startTime) / 1000;
