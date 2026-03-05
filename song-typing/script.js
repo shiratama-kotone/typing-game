@@ -242,7 +242,36 @@ function formatDuration(sec) {
             font-size: clamp(0.82rem, 1.3vw, 1rem) !important;
         }
 
-        /* ===== ソートUI ===== */
+        /* ===== ALL JUSTICE アニメーション ===== */
+        #all-justice-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+        }
+        #all-justice-text {
+            font-style: italic;
+            font-weight: 900;
+            font-size: clamp(2rem, 6vw, 5rem);
+            background: linear-gradient(45deg, #66FFDF, #D540BB);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
+            letter-spacing: 0em;
+        }
+        @keyframes aj-appear {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes aj-fadeout {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
         .sort-bar {
             display: flex;
             gap: 6px;
@@ -474,6 +503,7 @@ function injectConfirmScreen() {
 window.addEventListener('DOMContentLoaded', () => {
     injectConfirmScreen();
     injectSortUI();
+    injectAllJusticeOverlay();
     setupAudio();
     setupEventListeners();
     createSongList();
@@ -497,6 +527,48 @@ function setupAudio() {
 function setupEventListeners() {
     const inp = document.getElementById('input-field');
     if (inp) inp.addEventListener('input', handleInput);
+}
+
+function injectAllJusticeOverlay() {
+    const div = document.createElement('div');
+    div.id = 'all-justice-overlay';
+    const txt = document.createElement('div');
+    txt.id = 'all-justice-text';
+    txt.textContent = 'ALL JUSTICE';
+    div.appendChild(txt);
+    document.body.appendChild(div);
+}
+
+function showAllJustice() {
+    const overlay = document.getElementById('all-justice-overlay');
+    const txt = document.getElementById('all-justice-text');
+    if (!overlay || !txt) return;
+
+    // リセット
+    overlay.style.animation = 'none';
+    txt.style.letterSpacing = '0em';
+    overlay.style.opacity = '0';
+    void overlay.offsetWidth;
+
+    // 出現（0.1秒）
+    overlay.style.animation = 'aj-appear 0.1s ease forwards';
+
+    // 4秒かけて字間隔を広げる（75px相当）
+    const startTime = performance.now();
+    const duration = 4000;
+    let rafId;
+    const expand = (now) => {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        txt.style.letterSpacing = `${t * 0.35}em`;
+        if (t < 1) {
+            rafId = requestAnimationFrame(expand);
+        } else {
+            // 4秒後に0.1秒でフェードアウト
+            overlay.style.animation = 'aj-fadeout 0.1s ease forwards';
+        }
+    };
+    rafId = requestAnimationFrame(expand);
 }
 
 // ===== ソートUI注入 =====
@@ -983,6 +1055,7 @@ function handleInput(e) {
             // 最後のユニットを打ち終えた瞬間、ミス0なら ALL JUSTICE
             if (gameState.missCount === 0 && gameState.completedUnits >= gameState.totalUnits) {
                 playAllJusticeSound();
+                showAllJustice();
             }
         } else {
             displayRomaji();
