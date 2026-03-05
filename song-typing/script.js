@@ -980,6 +980,10 @@ function handleInput(e) {
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             gameState.completedCurrentLine = true;
             e.target.disabled = true;
+            // 最後のユニットを打ち終えた瞬間、ミス0なら ALL JUSTICE
+            if (gameState.missCount === 0 && gameState.completedUnits >= gameState.totalUnits) {
+                playAllJusticeSound();
+            }
         } else {
             displayRomaji();
         }
@@ -1052,11 +1056,6 @@ function endGame() {
         gameState.score = 1010000;
     } else {
         gameState.score = Math.min(gameState.score, 1010000);
-    }
-
-    // ノーミスかつ全ユニット完走でALL JUSTICE
-    if (gameState.missCount === 0 && gameState.completedUnits > 0 && gameState.completedUnits >= gameState.totalUnits) {
-        playAllJusticeSound();
     }
 
     const elapsed = (Date.now() - startTime) / 1000;
