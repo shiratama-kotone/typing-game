@@ -173,7 +173,8 @@ function formatDuration(sec) {
             cursor: default;
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
             color: rgba(255,255,255,0.28);
-            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+            -webkit-text-stroke: 1px rgba(255,255,255,0.4);
+            paint-order: stroke fill;
         }
         .lyric-scroll-line.past {
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
@@ -184,10 +185,25 @@ function formatDuration(sec) {
             color: #fff;
             -webkit-text-stroke: 3px rgba(255,255,255,0.9);
             paint-order: stroke fill;
-        }
-        .lyric-scroll-line.near {
+        }        .lyric-scroll-line.near {
             font-size: clamp(1rem, 2.3vw, 1.7rem);
             color: rgba(255,255,255,0.55);
+        }
+
+        #lyrics-prelude-label {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            font-weight: bold;
+            color: rgba(255,255,255,0.45);
+            -webkit-text-stroke: 1px rgba(255,255,255,0.5);
+            paint-order: stroke fill;
+            letter-spacing: 0.3em;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
         }
 
         /* ===== レスポンシブ ===== */
@@ -886,6 +902,12 @@ function buildLyricScrollPanel() {
     panel.appendChild(inner);
     jl.parentNode.insertBefore(panel, jl);
 
+    // 前奏ラベル
+    const prelude = document.createElement('div');
+    prelude.id = 'lyrics-prelude-label';
+    prelude.textContent = '前奏';
+    panel.appendChild(prelude);
+
     if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) return;
 
     currentSong.lyrics.forEach((lyric, i) => {
@@ -927,6 +949,10 @@ function updateLyricScroll(idx) {
         else if (i === idx + 1 || i === idx - 1) el.classList.add('near');
         el.style.color = el.dataset.color || '';
     });
+
+    // 歌詞が始まったら前奏ラベルを消す
+    const prelude = document.getElementById('lyrics-prelude-label');
+    if (prelude) prelude.style.opacity = '0';
 
     const activeEl = document.getElementById(`lsl-${idx}`);
     if (!activeEl) return;
