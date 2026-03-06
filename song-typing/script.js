@@ -257,10 +257,6 @@ function formatDuration(sec) {
             font-style: italic;
             font-weight: 900;
             font-size: clamp(2rem, 6vw, 5rem);
-            background: linear-gradient(45deg, #66FFDF, #D540BB);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
             white-space: nowrap;
             letter-spacing: 0em;
         }
@@ -534,7 +530,29 @@ function injectAllJusticeOverlay() {
     div.id = 'all-justice-overlay';
     const txt = document.createElement('div');
     txt.id = 'all-justice-text';
-    txt.textContent = 'ALL JUSTICE';
+
+    // 1文字ずつ span に分けてグラデーション
+    const chars = 'ALL JUSTICE'.split('');
+    const nonSpaceChars = chars.filter(c => c !== ' ').length;
+    let colorIdx = 0;
+    chars.forEach((ch) => {
+        const span = document.createElement('span');
+        if (ch === ' ') {
+            span.textContent = '\u2002'; // en-space
+            span.style.letterSpacing = '0';
+        } else {
+            span.textContent = ch;
+            const t = nonSpaceChars > 1 ? colorIdx / (nonSpaceChars - 1) : 0;
+            const r = Math.round(0x66 + (0xD5 - 0x66) * t);
+            const g = Math.round(0xFF + (0x40 - 0xFF) * t);
+            const b = Math.round(0xDF + (0xBB - 0xDF) * t);
+            span.style.color = `rgb(${r},${g},${b})`;
+            span.style.textShadow = `0 0 20px rgba(${r},${g},${b},0.7)`;
+            colorIdx++;
+        }
+        txt.appendChild(span);
+    });
+
     div.appendChild(txt);
     document.body.appendChild(div);
 }
@@ -886,6 +904,14 @@ function buildLyricScrollPanel() {
         if (el && preColor) el.dataset.color = preColor;
         if (lyric.colorEnd) preColor = null;
     });
+
+    // 初期状態: 歌詞をパネルの直下に隠す
+    // offsetHeightが0になる場合に備えて大きめの値でフォールバック
+    const panelH = panel.offsetHeight || 260;
+    inner.style.transition = 'none';
+    inner.style.transform = `translateY(${panelH + 40}px)`;
+    void inner.offsetWidth;
+    inner.style.transition = '';
 }
 
 function updateLyricScroll(idx) {
@@ -906,16 +932,7 @@ function updateLyricScroll(idx) {
     if (!activeEl) return;
     const panelH = panel.offsetHeight;
     const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
-
-    // 最初のラインは即座に（アニメーションなし）
-    if (idx === 0) {
-        inner.style.transition = 'none';
-        inner.style.transform = `translateY(${-offset}px)`;
-        void inner.offsetWidth; // reflow
-        inner.style.transition = '';
-    } else {
-        inner.style.transform = `translateY(${-offset}px)`;
-    }
+    inner.style.transform = `translateY(${-offset}px)`;
 }
 
 function loadLyric(lyric) {
