@@ -313,11 +313,8 @@
         <div class="setup-divider"><span>または</span></div>
 
         <h3>lyrics-data.js から読み込む</h3>
-        <p class="hint" style="margin-bottom:10px;">lyrics-data.jsを選択すると、収録されている曲を選んで編集できます。</p>
-        <label class="btn btn-small" style="cursor:pointer;display:inline-block;">
-            📂 lyrics-data.js を選択
-            <input type="file" id="lyricsdata-file" accept=".js" style="display:none" onchange="loadFromLyricsDataJs(this)">
-        </label>
+        <p class="hint" style="margin-bottom:10px;">同じ階層の lyrics-data.js を読み込んで曲を選択できます。</p>
+        <button class="btn btn-small" onclick="loadFromLyricsDataJs()">📂 lyrics-data.js を読み込む</button>
         <select id="lyricsdata-song-select" style="display:none;margin-left:10px;padding:8px;border-radius:8px;border:2px solid #ddd;font-size:1rem;">
             <option value="">-- 曲を選択 --</option>
         </select>
@@ -788,14 +785,13 @@ function editLyric(index) {
 
 // ===== lyrics-data.js から読み込む =====
 let _loadedSongs = [];
-function loadFromLyricsDataJs(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            // SONGS 配列を抽出して eval
-            const text = e.target.result;
+function loadFromLyricsDataJs() {
+    fetch('./lyrics-data.js')
+        .then(r => {
+            if (!r.ok) throw new Error(`読み込み失敗 (${r.status})`);
+            return r.text();
+        })
+        .then(text => {
             const match = text.match(/const\s+SONGS\s*=\s*(\[[\s\S]*?\]);/);
             if (!match) throw new Error('SONGS配列が見つかりません');
             _loadedSongs = eval(match[1]);
@@ -809,11 +805,11 @@ function loadFromLyricsDataJs(input) {
             });
             sel.style.display = '';
             document.getElementById('lyricsdata-edit-btn').style.display = '';
-        } catch(err) {
-            alert('読み込みに失敗しました: ' + err.message);
-        }
-    };
-    reader.readAsText(file);
+            alert(`${_loadedSongs.length}曲を読み込みました！`);
+        })
+        .catch(err => {
+            alert('lyrics-data.js の読み込みに失敗しました。\n同じ階層に置いてあるか確認してください。\n\n' + err.message);
+        });
 }
 
 function editSelectedSong() {
