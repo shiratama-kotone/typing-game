@@ -230,17 +230,14 @@ function formatDuration(sec) {
             width: 100%;
             max-width: 800px;
             margin: 0 auto 10px;
-            height: 40px;
-            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: visible;
         }
-        /* トップバー */
+        /* トップバー 90px */
         #norma-top-bar {
             position: relative;
-            height: 12px;
-            background: rgba(0,0,0,0.35);
+            height: 90px;
+            background: rgba(0,0,0,0.5);
             overflow: hidden;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
         #norma-top-fill {
             position: absolute;
@@ -248,30 +245,29 @@ function formatDuration(sec) {
             width: 0%;
             background: linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%);
             transition: width 0.12s ease-out, background 0.3s ease;
+            z-index: 1;
         }
-        /* 五線譜オーバーレイ */
-        #norma-staff-overlay {
+        /* 五線譜（トップバー内、黒） */
+        #norma-top-staff {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            z-index: 10;
+            z-index: 2;
         }
         /* セグメント行 */
         #norma-segs-row {
             display: flex;
             gap: 2px;
-            height: 24px;
-            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            align-items: stretch;
+            align-items: flex-end;
         }
         .nseg {
             flex: 1;
             background: #474911;
             transform: skewX(-12deg);
             transition: background 0.25s ease;
-            position: relative;
         }
-        /* 最初と最後のセグメントの端をクリップ */
+        .nseg.pre-norma  { height: 40px; }
+        .nseg.at-norma   { height: 63px; }
         #norma-segs-row .nseg:first-child { margin-left: 4px; }
         #norma-segs-row .nseg:last-child  { margin-right: 4px; }
 
@@ -1179,99 +1175,86 @@ function buildNormaGauge() {
     const container = document.querySelector('.combo-gauge-container');
     if (!container) return;
 
+    const totalChars = gameState.totalLyricChars;
+    const charsPerSeg = totalChars > 0 ? totalChars / 10 : 100;
+    const normaSegs = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSeg)));
+
+    const segsHtml = Array.from({length: 10}, (_, i) => {
+        const cls = i < normaSegs - 1 ? 'pre-norma' : 'at-norma';
+        return `<div class="nseg ${cls}" id="nseg-${i}"></div>`;
+    }).join('');
+
     container.innerHTML = `
         <div id="norma-gauge-wrapper">
             <div id="norma-top-bar">
                 <div id="norma-top-fill"></div>
+                <svg id="norma-top-staff" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
             </div>
-            <div id="norma-segs-row">
-                ${Array.from({length:10}, (_,i) => `<div class="nseg" id="nseg-${i}"></div>`).join('')}
-            </div>
-            <svg id="norma-staff-overlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            </svg>
+            <div id="norma-segs-row">${segsHtml}</div>
         </div>
     `;
-    // SVG五線譜は描画後にサイズが確定するのでrAFで
     requestAnimationFrame(drawNormaStaff);
 }
 
 function drawNormaStaff() {
-    const svg = document.getElementById('norma-staff-overlay');
+    const svg = document.getElementById('norma-top-staff');
     if (!svg) return;
     const w = svg.offsetWidth || 800;
-    const h = svg.offsetHeight || 40;
+    const h = 90;
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     let lines = '';
-    // 五線（水平5本）
+    // 五線（水平5本、黒）
     for (let i = 1; i <= 5; i++) {
         const y = (h * i / 6).toFixed(1);
-        lines += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>`;
+        lines += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="rgba(0,0,0,0.55)" stroke-width="1.2"/>`;
     }
-    // 4拍子の縦線（3本 = 4分割）
+    // 4拍子の縦線（3本）
     for (let i = 1; i <= 3; i++) {
         const x = (w * i / 4).toFixed(1);
-        lines += `<line x1="${x}" y1="0" x2="${x}" y2="${h}" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
+        lines += `<line x1="${x}" y1="0" x2="${x}" y2="${h}" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>`;
     }
     svg.innerHTML = lines;
 }
 
 // ===== ノルマゲージ更新 =====
 function updateNormaGauge() {
-    const wrapper = document.getElementById('norma-gauge-wrapper');
     const topFill = document.getElementById('norma-top-fill');
     const segsRow = document.getElementById('norma-segs-row');
-    if (!wrapper || !topFill || !segsRow) return;
+    if (!topFill || !segsRow) return;
 
     const totalChars = gameState.totalLyricChars;
     if (totalChars <= 0) return;
 
-    const charsPerSeg  = totalChars / 10;
-    const normaSegs    = Math.max(1, Math.round(gameState.totalNorma / charsPerSeg));
-    const typed        = gameState.totalTypedChars;
-    const cleared      = typed >= gameState.totalNorma;
+    const charsPerSeg   = totalChars / 10;
+    const normaSegs     = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSeg)));
+    const typed         = gameState.totalTypedChars;
+    const cleared       = typed >= gameState.totalNorma;
     const completedSegs = Math.min(10, Math.floor(typed / charsPerSeg));
-    const segProgress  = (typed % charsPerSeg) / charsPerSeg;
 
-    // 高さ変化
-    if (cleared) {
-        wrapper.style.height = '63px';
-        segsRow.style.height = '47px';
-    } else {
-        wrapper.style.height = '40px';
-        segsRow.style.height = '24px';
-    }
+    // トップバーの進捗：現在のセグメント内の進み具合（クリア後も継続）
+    const segProgress = (typed % charsPerSeg) / charsPerSeg;
+    topFill.style.width = (segProgress * 100).toFixed(1) + '%';
 
-    // トップバー
-    const topPct = cleared ? 100 : segProgress * 100;
-    topFill.style.width = topPct + '%';
     if (cleared) {
-        topFill.style.background = 'linear-gradient(to right, #ffff75 0%, #ffd040 30%, #f07802 100%)';
+        topFill.style.background = 'linear-gradient(to right, #ffff75 0%, #ffd040 40%, #f07802 100%)';
     } else {
         topFill.style.background = 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
     }
 
-    // セグメント
+    // セグメント色
     for (let i = 0; i < 10; i++) {
         const seg = document.getElementById('nseg-' + i);
         if (!seg) continue;
         if (i < completedSegs) {
-            if (i === normaSegs - 1) {
-                // クリアセグメント（最後のノルマ）
-                seg.style.background = 'linear-gradient(to bottom, #e67606 0%, #f0a020 50%, #ebba30 100%)';
-            } else if (i < normaSegs - 1) {
-                // ノルマ前のセグメント
+            if (i < normaSegs - 1) {
                 seg.style.background = 'linear-gradient(to bottom, #4bffff 0%, #3df5ea 50%, #3decde 100%)';
             } else {
-                // クリア後の余剰セグメント
                 seg.style.background = 'linear-gradient(to bottom, #e67606 0%, #f0a020 50%, #ebba30 100%)';
             }
         } else {
             seg.style.background = '#474911';
         }
     }
-
-    // 五線譜リサイズ対応
-    drawNormaStaff();
 }
 
 // ===== ランク =====
