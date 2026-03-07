@@ -745,7 +745,7 @@ function showConfirmScreen(song) {
     player = new YT.Player('confirm-yt-player', {
         height: '100%', width: '100%',
         videoId: song.youtubeId,
-        host: 'https://www.youtube.com',
+        host: 'https://www.youtube-nocookie.com',
         playerVars: {
             autoplay: 0, controls: 0, disablekb: 1, fs: 0,
             modestbranding: 1, rel: 0, iv_load_policy: 3,
@@ -794,7 +794,7 @@ function startGameFromConfirm() {
     player = new YT.Player('youtube-player', {
         height: '100%', width: '100%',
         videoId: currentSong.youtubeId,
-        host: 'https://www.youtube.com',
+        host: 'https://www.youtube-nocookie.com',
         playerVars: {
             autoplay: 1, controls: 0, disablekb: 1, fs: 0,
             modestbranding: 1, rel: 0, iv_load_policy: 3,
