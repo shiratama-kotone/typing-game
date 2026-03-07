@@ -224,6 +224,57 @@ function formatDuration(sec) {
             font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important;
         }
 
+        /* ===== ノルマゲージ（新） ===== */
+        #norma-gauge-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 10px;
+            height: 40px;
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: visible;
+        }
+        /* トップバー */
+        #norma-top-bar {
+            position: relative;
+            height: 12px;
+            background: rgba(0,0,0,0.35);
+            overflow: hidden;
+            margin-bottom: 2px;
+        }
+        #norma-top-fill {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0%;
+            background: linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%);
+            transition: width 0.12s ease-out, background 0.3s ease;
+        }
+        /* 五線譜オーバーレイ */
+        #norma-staff-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        /* セグメント行 */
+        #norma-segs-row {
+            display: flex;
+            gap: 2px;
+            height: 24px;
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            align-items: stretch;
+        }
+        .nseg {
+            flex: 1;
+            background: #474911;
+            transform: skewX(-12deg);
+            transition: background 0.25s ease;
+            position: relative;
+        }
+        /* 最初と最後のセグメントの端をクリップ */
+        #norma-segs-row .nseg:first-child { margin-left: 4px; }
+        #norma-segs-row .nseg:last-child  { margin-right: 4px; }
+
         /* ===== スマホ：上半分に詰める ===== */
         @media (max-width: 768px) {
             .youtube-container {
@@ -837,6 +888,7 @@ function initGame() {
 
     const jl = document.getElementById('japanese-line');
     if (jl) { jl.textContent = ''; jl.style.color = ''; jl.className = ''; }
+    buildNormaGauge();
     buildLyricScrollPanel();
     const nl = document.getElementById('next-line');
     if (nl) nl.textContent = '';
@@ -1106,9 +1158,11 @@ function handleInput(e) {
     } else {
         gameState.missCount++;
         gameState.totalKeystrokes++;
+        gameState.totalTypedChars = Math.max(0, gameState.totalTypedChars - 1);
         playMissSound();
         e.target.value = '';
         updateScore();
+        updateNormaGauge();
     }
 }
 
@@ -1120,19 +1174,104 @@ function updateScore() {
     set('miss-count', gameState.missCount);
 }
 
-// ===== ノルマゲージ =====
-function updateNormaGauge() {
-    const g = document.getElementById('norma-gauge');
-    const t = document.getElementById('norma-gauge-text');
-    if (gameState.totalNorma <= 0) {
-        if (g) g.style.width = '0%';
-        if (t) t.textContent = '-';
-        return;
+// ===== ノルマゲージ構築 =====
+function buildNormaGauge() {
+    const container = document.querySelector('.combo-gauge-container');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div id="norma-gauge-wrapper">
+            <div id="norma-top-bar">
+                <div id="norma-top-fill"></div>
+            </div>
+            <div id="norma-segs-row">
+                ${Array.from({length:10}, (_,i) => `<div class="nseg" id="nseg-${i}"></div>`).join('')}
+            </div>
+            <svg id="norma-staff-overlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            </svg>
+        </div>
+    `;
+    // SVG五線譜は描画後にサイズが確定するのでrAFで
+    requestAnimationFrame(drawNormaStaff);
+}
+
+function drawNormaStaff() {
+    const svg = document.getElementById('norma-staff-overlay');
+    if (!svg) return;
+    const w = svg.offsetWidth || 800;
+    const h = svg.offsetHeight || 40;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    let lines = '';
+    // 五線（水平5本）
+    for (let i = 1; i <= 5; i++) {
+        const y = (h * i / 6).toFixed(1);
+        lines += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>`;
     }
-    const cleared = gameState.totalTypedChars >= gameState.totalNorma;
-    const pct = Math.min(Math.floor((gameState.totalTypedChars / gameState.totalNorma) * 100), 100);
-    if (g) { g.style.width = pct + '%'; g.style.background = cleared ? '#4caf50' : ''; }
-    if (t) t.textContent = cleared ? 'クリア!' : `${gameState.totalTypedChars} / ${gameState.totalNorma}`;
+    // 4拍子の縦線（3本 = 4分割）
+    for (let i = 1; i <= 3; i++) {
+        const x = (w * i / 4).toFixed(1);
+        lines += `<line x1="${x}" y1="0" x2="${x}" y2="${h}" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
+    }
+    svg.innerHTML = lines;
+}
+
+// ===== ノルマゲージ更新 =====
+function updateNormaGauge() {
+    const wrapper = document.getElementById('norma-gauge-wrapper');
+    const topFill = document.getElementById('norma-top-fill');
+    const segsRow = document.getElementById('norma-segs-row');
+    if (!wrapper || !topFill || !segsRow) return;
+
+    const totalChars = gameState.totalLyricChars;
+    if (totalChars <= 0) return;
+
+    const charsPerSeg  = totalChars / 10;
+    const normaSegs    = Math.max(1, Math.round(gameState.totalNorma / charsPerSeg));
+    const typed        = gameState.totalTypedChars;
+    const cleared      = typed >= gameState.totalNorma;
+    const completedSegs = Math.min(10, Math.floor(typed / charsPerSeg));
+    const segProgress  = (typed % charsPerSeg) / charsPerSeg;
+
+    // 高さ変化
+    if (cleared) {
+        wrapper.style.height = '63px';
+        segsRow.style.height = '47px';
+    } else {
+        wrapper.style.height = '40px';
+        segsRow.style.height = '24px';
+    }
+
+    // トップバー
+    const topPct = cleared ? 100 : segProgress * 100;
+    topFill.style.width = topPct + '%';
+    if (cleared) {
+        topFill.style.background = 'linear-gradient(to right, #ffff75 0%, #ffd040 30%, #f07802 100%)';
+    } else {
+        topFill.style.background = 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
+    }
+
+    // セグメント
+    for (let i = 0; i < 10; i++) {
+        const seg = document.getElementById('nseg-' + i);
+        if (!seg) continue;
+        if (i < completedSegs) {
+            if (i === normaSegs - 1) {
+                // クリアセグメント（最後のノルマ）
+                seg.style.background = 'linear-gradient(to bottom, #e67606 0%, #f0a020 50%, #ebba30 100%)';
+            } else if (i < normaSegs - 1) {
+                // ノルマ前のセグメント
+                seg.style.background = 'linear-gradient(to bottom, #4bffff 0%, #3df5ea 50%, #3decde 100%)';
+            } else {
+                // クリア後の余剰セグメント
+                seg.style.background = 'linear-gradient(to bottom, #e67606 0%, #f0a020 50%, #ebba30 100%)';
+            }
+        } else {
+            seg.style.background = '#474911';
+        }
+    }
+
+    // 五線譜リサイズ対応
+    drawNormaStaff();
 }
 
 // ===== ランク =====
