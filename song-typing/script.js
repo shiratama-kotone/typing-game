@@ -5,7 +5,7 @@ let currentLyricIndex = 0;
 let startTime = null;
 let updateInterval = null;
 let activeColor = null;
-let songSortOrder = 'difficulty'; // 'default' | 'difficulty'
+let songSortOrder = 'default'; // 'default' | 'difficulty'
 
 // サウンドエフェクト
 let typingSound = null;
@@ -227,8 +227,6 @@ function formatDuration(sec) {
         /* ===== ノルマゲージ（新） ===== */
         #norma-gauge-wrapper {
             position: relative;
-            width: 100%;
-            max-width: 800px;
             margin: 0 auto 10px;
         }
         /* トップバー 90px */
@@ -566,6 +564,15 @@ window.addEventListener('DOMContentLoaded', () => {
     setupAudio();
     setupEventListeners();
     createSongList();
+
+    window.addEventListener('resize', () => {
+        const ytContainer = document.querySelector('.youtube-container');
+        const wrapper = document.getElementById('norma-gauge-wrapper');
+        if (ytContainer && wrapper) {
+            wrapper.style.width = ytContainer.offsetWidth + 'px';
+        }
+        drawNormaStaff();
+    });
 });
 
 function onYouTubeIframeAPIReady() {
@@ -1193,7 +1200,14 @@ function buildNormaGauge() {
             <div id="norma-segs-row">${segsHtml}</div>
         </div>
     `;
-    requestAnimationFrame(drawNormaStaff);
+    requestAnimationFrame(() => {
+        const ytContainer = document.querySelector('.youtube-container');
+        const wrapper = document.getElementById('norma-gauge-wrapper');
+        if (ytContainer && wrapper) {
+            wrapper.style.width = ytContainer.offsetWidth + 'px';
+        }
+        drawNormaStaff();
+    });
 }
 
 function drawNormaStaff() {
