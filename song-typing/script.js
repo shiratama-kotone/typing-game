@@ -6,6 +6,8 @@ let startTime = null;
 let updateInterval = null;
 let activeColor = null;
 let songSortOrder = 'default'; // 'default' | 'difficulty'
+let autoMode = false;
+let autoTypeTimers = [];
 
 // サウンドエフェクト
 let typingSound = null;
@@ -502,6 +504,52 @@ function formatDuration(sec) {
             color: #555;
             margin-top: 14px;
         }
+        /* オートモード */
+        .confirm-automode {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+            color: #aaa;
+            cursor: pointer;
+            user-select: none;
+        }
+        .confirm-automode input[type=checkbox] {
+            width: 16px; height: 16px;
+            accent-color: #764ba2;
+            cursor: pointer;
+        }
+        .confirm-automode:hover { color: #ddd; }
+        /* CLEARラベル */
+        #norma-clear-label {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #ffe600;
+            text-shadow: 0 0 12px #ffaa00, 0 0 24px #ff8800;
+            letter-spacing: 0.12em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 5;
+        }
+        /* リザルト画像 */
+        #result-badges {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 12px 0;
+        }
+        #result-badges img {
+            height: 80px;
+            object-fit: contain;
+        }
     `;
     document.head.appendChild(style);
 })();
@@ -546,6 +594,10 @@ function injectConfirmScreen() {
                     </div>
                 </div>
             </div>
+            <label class="confirm-automode">
+                <input type="checkbox" id="cb-automode">
+                オートモード（自動入力）
+            </label>
             <div class="confirm-btns">
                 <button id="btn-confirm-start" disabled onclick="startGameFromConfirm()">▶ スタート</button>
                 <button id="btn-confirm-back" onclick="showSongSelect()">戻る</button>
@@ -838,11 +890,16 @@ function onConfirmPlayerReady(event) {
 
 // ===== 確認画面からゲーム開始 =====
 function startGameFromConfirm() {
+    autoMode = document.getElementById('cb-automode')?.checked || false;
     // confirm用プレイヤーを破棄
     if (player) { try { player.destroy(); } catch(e){} player = null; }
 
     switchScreen('game-screen');
     initGame();
+
+    // オートモードは入力欄を非表示
+    const inp = document.getElementById('input-field');
+    if (inp) inp.style.display = autoMode ? 'none' : '';
 
     // game-screen が visible になったので youtube-player に新規作成
     player = new YT.Player('youtube-player', {
@@ -1017,6 +1074,10 @@ function updateLyricScroll(idx) {
 }
 
 function loadLyric(lyric) {
+    // 前の自動タイプタイマーをキャンセル
+    autoTypeTimers.forEach(t => clearTimeout(t));
+    autoTypeTimers = [];
+
     if (lyric.colorStart) activeColor = lyric.colorStart;
 
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
@@ -1038,10 +1099,66 @@ function loadLyric(lyric) {
     } else {
         displayRomaji();
         updateNormaGauge();
-        if (inp) { inp.disabled = false; inp.focus(); }
+        if (!autoMode && inp) { inp.disabled = false; inp.focus(); }
+
+        if (autoMode) {
+            // 次の歌詞の開始時間を取得してウィンドウを計算
+            const nextLyric = currentSong.lyrics[currentLyricIndex + 1];
+            const windowEnd = nextLyric
+                ? nextLyric.time
+                : (gameState.totalDuration || lyric.time + 3);
+            const windowMs = Math.max(200, (windowEnd - lyric.time) * 0.9 * 1000);
+
+            // 総キーストローク数を計算
+            const totalKeys = gameState.currentRomaji.reduce((s, c) => s + c.current.length, 0);
+            if (totalKeys > 0) {
+                const interval = windowMs / totalKeys;
+                scheduleAutoType(0, interval);
+            }
+        }
     }
 
     if (lyric.colorEnd) activeColor = null;
+}
+
+function scheduleAutoType(keyIndex, interval) {
+    const t = setTimeout(() => {
+        if (gameState.completedCurrentLine) return;
+        const cur = gameState.currentRomaji[gameState.currentCharIndex];
+        if (!cur) return;
+
+        // 1文字進める
+        gameState.currentCharPosition++;
+        gameState.correctCount++;
+        gameState.totalKeystrokes++;
+        gameState.totalTypedChars++;
+        gameState.lineTypedChars++;
+        playTypingSound();
+
+        if (gameState.currentCharPosition >= cur.current.length) {
+            gameState.completedUnits++;
+            gameState.score = gameState.totalUnits > 0
+                ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits) : 0;
+            gameState.currentCharIndex++;
+            gameState.currentCharPosition = 0;
+        }
+
+        updateScore();
+        updateNormaGauge();
+
+        if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
+            gameState.completedCurrentLine = true;
+            displayRomaji();
+            if (gameState.missCount === 0 && gameState.completedUnits >= gameState.totalUnits) {
+                playAllJusticeSound();
+                showAllJustice();
+            }
+        } else {
+            displayRomaji();
+            scheduleAutoType(keyIndex + 1, interval);
+        }
+    }, interval);
+    autoTypeTimers.push(t);
 }
 
 // ===== ローマ字変換 =====
@@ -1196,6 +1313,7 @@ function buildNormaGauge() {
             <div id="norma-top-bar">
                 <div id="norma-top-fill"></div>
                 <svg id="norma-top-staff" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+                <div id="norma-clear-label">CLEAR</div>
             </div>
             <div id="norma-segs-row">${segsHtml}</div>
         </div>
@@ -1255,8 +1373,9 @@ function updateNormaGauge() {
         topFill.style.background = 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
     }
 
-    // セグメント色
-    for (let i = 0; i < 10; i++) {
+    // CLEARラベル
+    const clearLabel = document.getElementById('norma-clear-label');
+    if (clearLabel) clearLabel.style.opacity = cleared ? '1' : '0';
         const seg = document.getElementById('nseg-' + i);
         if (!seg) continue;
         if (i < completedSegs) {
@@ -1303,6 +1422,8 @@ function onPlayerStateChange(event) {
 // ===== ゲーム終了 =====
 function endGame() {
     if (updateInterval) { clearInterval(updateInterval); updateInterval = null; }
+    autoTypeTimers.forEach(t => clearTimeout(t));
+    autoTypeTimers = [];
 
     if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
         gameState.score = 1010000;
@@ -1314,19 +1435,47 @@ function endGame() {
     const kps = elapsed > 0 ? (gameState.totalKeystrokes / elapsed).toFixed(2) : 0;
     const rank = getRank(gameState.score);
 
-    let rankInner = '';
-    const cls = rank.rainbow ? ' class="rainbow-text"' : '';
-    rankInner += `<span${cls}>${rank.label}</span>`;
-    if (rank.sup) rankInner += `<sup${cls}>${rank.sup}</sup>`;
-
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set('final-score', gameState.score);
     set('final-correct', gameState.correctCount);
     set('final-miss', gameState.missCount);
     set('final-missed-lines', gameState.missedLines);
     set('final-kps', kps);
+
+    // ランク・CLEAR・コンボ画像
+    const BASE = 'https://github.com/shiratama-kotone/typing-game/blob/main/assets/';
+    const rankLabel = rank.label + rank.sup; // e.g. "SSS+", "S+", "D"
+    const rankImgUrl = `${BASE}${encodeURIComponent(rankLabel)}.png?raw=true`;
+
+    const normaCleared = gameState.totalTypedChars >= gameState.totalNorma && gameState.totalNorma > 0;
+    const allTyped = gameState.completedUnits >= gameState.totalUnits && gameState.totalUnits > 0;
+    const allJustice = allTyped && gameState.missCount === 0 && gameState.missedLines === 0;
+    const fullCombo  = allTyped && !allJustice && gameState.missedLines === 0;
+
     const fr = document.getElementById('final-rank');
-    if (fr) fr.innerHTML = rankInner;
+    if (fr) {
+        // #final-rank の親に badges エリアを注入（初回のみ）
+        let badges = document.getElementById('result-badges');
+        if (!badges) {
+            badges = document.createElement('div');
+            badges.id = 'result-badges';
+            fr.parentNode.insertBefore(badges, fr);
+        }
+
+        // badges HTML
+        let badgesHtml = '';
+        if (normaCleared) {
+            badgesHtml += `<img src="${BASE}clear.png?raw=true" alt="CLEAR" title="CLEAR">`;
+        }
+        badgesHtml += `<img src="${rankImgUrl}" alt="${rankLabel}" title="${rankLabel}">`;
+        if (allJustice) {
+            badgesHtml += `<img src="${BASE}ALL%20JUSTICE.png?raw=true" alt="ALL JUSTICE">`;
+        } else if (fullCombo) {
+            badgesHtml += `<img src="${BASE}FULL%20COMBO.png?raw=true" alt="FULL COMBO">`;
+        }
+        badges.innerHTML = badgesHtml;
+        fr.innerHTML = ''; // テキストランクは非表示
+    }
 
     switchScreen('result-screen');
 }
