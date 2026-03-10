@@ -1376,6 +1376,9 @@ function updateNormaGauge() {
     // CLEARラベル
     const clearLabel = document.getElementById('norma-clear-label');
     if (clearLabel) clearLabel.style.opacity = cleared ? '1' : '0';
+
+    // セグメント色
+    for (let i = 0; i < 10; i++) {
         const seg = document.getElementById('nseg-' + i);
         if (!seg) continue;
         if (i < completedSegs) {
