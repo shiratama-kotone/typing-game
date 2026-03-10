@@ -545,9 +545,13 @@ function formatDuration(sec) {
             justify-content: center;
             gap: 16px;
             margin: 12px 0;
+            width: 100%;
         }
         #result-badges img {
-            height: 80px;
+            height: auto;
+            max-height: 120px;
+            max-width: 200px;
+            width: auto;
             object-fit: contain;
         }
     `;
@@ -988,7 +992,27 @@ function checkLyricTiming(t) {
         const lyric = currentSong.lyrics[currentLyricIndex];
         if (t >= lyric.time) {
             if (currentLyricIndex > 0 && !gameState.completedCurrentLine) {
-                gameState.missedLines++;
+                if (autoMode) {
+                    // オートモード：未打鍵分を全部強制完了
+                    autoTypeTimers.forEach(t => clearTimeout(t));
+                    autoTypeTimers = [];
+                    while (gameState.currentCharIndex < gameState.currentRomaji.length) {
+                        const cur = gameState.currentRomaji[gameState.currentCharIndex];
+                        const remaining = cur.current.length - gameState.currentCharPosition;
+                        gameState.correctCount        += remaining;
+                        gameState.totalKeystrokes     += remaining;
+                        gameState.totalTypedChars     += remaining;
+                        gameState.lineTypedChars      += remaining;
+                        gameState.completedUnits++;
+                        gameState.score = gameState.totalUnits > 0
+                            ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits) : 0;
+                        gameState.currentCharIndex++;
+                        gameState.currentCharPosition = 0;
+                    }
+                    gameState.completedCurrentLine = true;
+                } else {
+                    gameState.missedLines++;
+                }
             }
             loadLyric(lyric);
             currentLyricIndex++;
@@ -1437,6 +1461,12 @@ function endGame() {
     const elapsed = (Date.now() - startTime) / 1000;
     const kps = elapsed > 0 ? (gameState.totalKeystrokes / elapsed).toFixed(2) : 0;
     const rank = getRank(gameState.score);
+
+    // オートモードは必ずALL JUSTICE
+    if (autoMode) {
+        gameState.missCount   = 0;
+        gameState.missedLines = 0;
+    }
 
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set('final-score', gameState.score);
