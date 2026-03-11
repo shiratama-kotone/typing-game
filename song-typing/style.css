@@ -53,18 +53,19 @@ body {
 /* ===== ゲーム画面だけコンパクト ===== */
 #game-screen .youtube-container {
     max-width: 640px;
-    padding-bottom: 36%;
-    margin-bottom: 6px;
+    padding-bottom: 0;
+    height: clamp(180px, 28vh, 320px);
+    margin-bottom: 3px;
 }
 #game-screen .combo-gauge-container {
     max-width: 640px;
-    padding: 4px 8px;
-    margin-bottom: 5px;
+    padding: 3px 8px;
+    margin-bottom: 3px;
 }
 #game-screen .score-display {
     max-width: 640px;
-    padding: 5px 10px;
-    margin-bottom: 5px;
+    padding: 4px 10px;
+    margin-bottom: 3px;
     font-size: 0.78rem;
 }
 #game-screen #score {
@@ -172,13 +173,13 @@ h2 {
     border: 1px solid var(--border);
     padding: clamp(10px, 1.8vh, 16px) clamp(14px, 2vw, 22px);
     border-radius: 10px; cursor: pointer;
-    transition: all 0.16s;
+    transition: background 0.16s, color 0.16s, transform 0.16s;
     color: var(--text2);
     font-size: clamp(0.88rem, 1.4vw, 1.1rem);
     font-weight: 500; backdrop-filter: blur(6px);
+    will-change: transform;
 }
 .song-item:hover { background: var(--surface2); transform: translateX(6px); color: var(--text); }
-
 .back-btn { margin-top: 10px; }
 
 /* YouTube */
@@ -186,12 +187,17 @@ h2 {
     position: relative; width: 100%;
     max-width: 680px;
     margin: 0 auto clamp(6px, 1.2vh, 12px);
-    padding-bottom: 38.25%; height: 0; overflow: hidden;
+    padding-bottom: 56.25%; height: 0; overflow: hidden;
+}
+/* ゲーム画面では height 固定に切り替え */
+#game-screen .youtube-container {
+    max-width: 640px;
+    padding-bottom: 0;
+    height: clamp(180px, 28vh, 320px);
+    margin-bottom: 3px;
 }
 #youtube-player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .youtube-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: all; }
-
-/* ノルマゲージ */
 .combo-gauge-container {
     background: var(--surface2);
     border: 1px solid var(--border2);
