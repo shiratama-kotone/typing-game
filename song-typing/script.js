@@ -1475,6 +1475,19 @@ function endGame() {
     set('final-missed-lines', gameState.missedLines);
     set('final-kps', kps);
 
+    // 曲名をリザルト画面に表示
+    let resultTitle = document.getElementById('result-song-title');
+    if (!resultTitle) {
+        const rc = document.querySelector('.result-content');
+        if (rc) {
+            resultTitle = document.createElement('div');
+            resultTitle.id = 'result-song-title';
+            resultTitle.style.cssText = 'font-size:clamp(1rem,2vw,1.4rem);font-weight:700;color:var(--text2,#aaa);margin-bottom:12px;letter-spacing:0.03em;';
+            rc.insertBefore(resultTitle, rc.firstChild);
+        }
+    }
+    if (resultTitle && currentSong) resultTitle.textContent = currentSong.title || '';
+
     // ランク・CLEAR・コンボ画像
     const BASE = '../assets/';
     const rankLabel = rank.label + rank.sup; // e.g. "SSS+", "S+", "D"
