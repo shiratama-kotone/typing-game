@@ -149,14 +149,12 @@ function formatDuration(sec) {
         }
 
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
-        /* 動画上に重なるため常にダーク背景を維持 */
         #lyrics-scroll-panel {
             width: 100vw;
             margin-left: calc(-50vw + 50%);
             overflow: hidden;
             position: relative;
             height: clamp(160px, 28vh, 260px);
-            background: rgba(0,0,0,0.55);
             mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
         }
@@ -177,24 +175,25 @@ function formatDuration(sec) {
             line-height: 1.3;
             cursor: default;
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
-            color: rgba(255,255,255,0.35);
-            -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+            color: var(--text3);
+            -webkit-text-stroke: 0;
             paint-order: stroke fill;
         }
         .lyric-scroll-line.past {
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
-            color: rgba(255,255,255,0.25);
+            color: var(--text3);
+            opacity: 0.6;
         }
         .lyric-scroll-line.active {
             font-size: clamp(1.6rem, 4.2vw, 3.2rem);
-            color: #fff;
-            -webkit-text-stroke: 2px rgba(255,255,255,0.6);
+            color: var(--text);
+            -webkit-text-stroke: 0;
             paint-order: stroke fill;
-            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            text-shadow: none;
         }
         .lyric-scroll-line.near {
             font-size: clamp(1rem, 2.3vw, 1.7rem);
-            color: rgba(255,255,255,0.6);
+            color: var(--text2);
         }
         #lyrics-prelude-label {
             position: absolute;
@@ -204,9 +203,7 @@ function formatDuration(sec) {
             justify-content: center;
             font-size: clamp(1.2rem, 2.5vw, 2rem);
             font-weight: bold;
-            color: rgba(255,255,255,0.5);
-            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
-            paint-order: stroke fill;
+            color: var(--text3);
             letter-spacing: 0.3em;
             pointer-events: none;
             transition: opacity 0.4s ease;
@@ -576,13 +573,13 @@ function formatDuration(sec) {
             padding: 0 !important;
             gap: 0;
         }
-        /* 順序: スコアバー → ゲージ → 動画 → 歌詞scroll → 歌詞/ローマ字 → 入力 */
-        #game-screen .score-display      { order: 1; }
+        /* 順序 */
+        #game-screen .score-display         { order: 1; }
         #game-screen .combo-gauge-container { order: 2; }
-        #game-screen .youtube-container  { order: 3; }
-        #game-screen #lyrics-scroll-panel { order: 4; }
-        #game-screen .lyrics-display     { order: 5; }
-        #game-screen .input-field        { order: 6; }
+        #game-screen .youtube-container     { order: 3; }
+        #game-screen #lyrics-scroll-panel   { order: 4; }
+        #game-screen .lyrics-display        { order: 5; }
+        #game-screen .input-field           { order: 6; }
 
         /* スコアバー: 上部横並び */
         #game-screen .score-display {
@@ -595,24 +592,11 @@ function formatDuration(sec) {
             padding: 5px 16px;
             margin-bottom: 0;
             border-radius: 0;
-            border-left: none;
-            border-right: none;
-            border-top: none;
+            border-left: none; border-right: none; border-top: none;
             font-size: 0.8rem;
         }
         #game-screen .score-display div { margin: 0; }
         #game-screen #score { font-size: 1rem; }
-
-        /* ゲージ: 全幅 */
-        #game-screen .combo-gauge-container {
-            width: 100%;
-            max-width: 100%;
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
-            padding: 4px 12px;
-            margin-bottom: 0;
-        }
 
         /* 動画: 中央・大きめ */
         #game-screen .youtube-container {
@@ -631,21 +615,10 @@ function formatDuration(sec) {
         }
 
         /* ローマ字・歌詞表示 */
-        #game-screen .lyrics-display {
-            width: 100%;
-            max-width: 100%;
-            margin: 4px auto 2px;
-        }
+        #game-screen .lyrics-display { width: 100%; max-width: 100%; margin: 4px auto 2px; }
 
         /* 入力欄 */
-        #game-screen .input-field {
-            margin: 4px auto 6px;
-        }
-
-        /* ノルマゲージ高さ */
-        #game-screen #norma-top-bar { height: 54px !important; }
-        #game-screen .nseg.pre-norma { height: 22px !important; }
-        #game-screen .nseg.at-norma  { height: 36px !important; }
+        #game-screen .input-field { margin: 4px auto 6px; }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
