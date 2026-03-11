@@ -1131,7 +1131,7 @@ function loadLyric(lyric) {
             const windowEnd = nextLyric
                 ? nextLyric.time
                 : (gameState.totalDuration || lyric.time + 3);
-            const windowMs = Math.min(10000, Math.max(200, (windowEnd - lyric.time) * 0.75 * 1000));
+            const windowMs = Math.min(5000, Math.max(200, (windowEnd - lyric.time) * 0.75 * 1000));
 
             // 総キーストローク数を計算
             const totalKeys = gameState.currentRomaji.reduce((s, c) => s + c.current.length, 0);
