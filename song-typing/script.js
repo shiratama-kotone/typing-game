@@ -5,7 +5,7 @@ let currentLyricIndex = 0;
 let startTime = null;
 let updateInterval = null;
 let activeColor = null;
-let songSortOrder = 'difficulty'; // 'default' | 'difficulty'
+let songSortOrder = 'default'; // 'default' | 'difficulty'
 let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
@@ -438,53 +438,95 @@ function formatDuration(sec) {
         /* ===== 右上ゲーム情報オーバーレイ ===== */
         #game-info-overlay {
             position: fixed;
-            top: 12px;
-            right: 14px;
+            top: 14px;
+            right: 16px;
             z-index: 500;
             display: none;
-            align-items: center;
-            gap: 0;
-            border-radius: 10px;
+            align-items: stretch;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.65);
             font-family: 'M PLUS 1p', sans-serif;
-            min-width: 220px;
-            max-width: 340px;
+            min-width: 300px;
+            max-width: 440px;
+            height: 80px;
         }
         #game-info-overlay.visible { display: flex; }
+
+        /* 難易度ブロック */
         #gio-diff {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 14px;
-            background: var(--gio-color, #921cec);
+            padding: 6px 22px;
+            min-width: 130px;
             color: #fff;
-            min-width: 100px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        /* WORLD'S END: 斜めストライプ虹 */
+        #gio-diff.we-bg {
+            background:
+                repeating-linear-gradient(
+                    105deg,
+                    #ff0000 0px,   #ff0000 18px,
+                    #ff7700 18px,  #ff7700 36px,
+                    #ffee00 36px,  #ffee00 54px,
+                    #00cc00 54px,  #00cc00 72px,
+                    #0099ff 72px,  #0099ff 90px,
+                    #8800cc 90px,  #8800cc 108px,
+                    #ff00aa 108px, #ff00aa 126px
+                );
         }
         #gio-diff-label {
-            font-size: 0.6rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            opacity: 0.85;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            opacity: 0.9;
             text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 2px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
         #gio-diff-name {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 900;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
+            line-height: 1.1;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
+        #gio-diff-name.we-text {
+            font-size: 1.05rem;
+            letter-spacing: 0.02em;
+        }
+        #gio-speed-badge {
+            font-size: 0.7rem;
+            font-weight: 900;
+            opacity: 0.92;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+            line-height: 1;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        /* 曲名ブロック */
         #gio-title {
             flex: 1;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.82);
             color: #fff;
-            padding: 6px 10px;
-            font-size: 0.78rem;
+            padding: 0 14px;
+            font-size: 0.9rem;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
         }
+
+        /* レベルブロック（通常） */
         #gio-level {
             display: flex;
             flex-direction: column;
@@ -492,50 +534,46 @@ function formatDuration(sec) {
             justify-content: center;
             background: #111;
             color: #fff;
-            padding: 4px 10px;
-            min-width: 48px;
-            border-left: 1px solid rgba(255,255,255,0.12);
+            padding: 4px 16px;
+            min-width: 64px;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
         #gio-level-label {
-            font-size: 0.5rem;
-            letter-spacing: 0.08em;
-            opacity: 0.7;
+            font-size: 0.52rem;
+            letter-spacing: 0.1em;
+            opacity: 0.65;
             text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 2px;
         }
         #gio-level-num {
-            font-size: 1.2rem;
+            font-size: 1.7rem;
             font-weight: 900;
             line-height: 1;
         }
+        /* WE専用レベル */
+        #gio-level.we-level {
+            background: #1a1209;
+            border-left-color: rgba(255,200,0,0.2);
+            min-width: 72px;
+        }
+        #gio-level-we-stars {
+            font-size: 1rem;
+            letter-spacing: -3px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        #gio-level-we-char {
+            font-size: 1.8rem;
+            font-weight: 900;
+            line-height: 1;
+            color: #c8860a;
+            text-shadow: 0 0 8px rgba(200,134,10,0.5);
+        }
 
-        /* ===== 録画ボタン（非表示化） ===== */
+        /* ===== 録画・RECインジケーター ===== */
         #record-btn { display: none !important; }
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            color: var(--text2);
-            font-size: 1.3rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(8px);
-            transition: all 0.2s;
-            box-shadow: 0 4px 16px var(--shadow);
-        }
-        #record-btn:hover { transform: scale(1.1); color: var(--text); }
-        #record-btn.recording {
-            background: #e03030;
-            border-color: #ff5555;
-            color: #fff;
-            animation: rec-pulse 1.2s ease-in-out infinite;
-        }
         @keyframes rec-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(224,48,48,0.5); }
             50%       { box-shadow: 0 0 0 10px rgba(224,48,48,0); }
@@ -564,29 +602,16 @@ function formatDuration(sec) {
             background: #ff4444;
             animation: rec-pulse 1.2s ease-in-out infinite;
         }
-        #result-download-wrap {
-            margin-top: 16px;
-        }
+        #result-download-wrap { margin-top: 16px; }
         #result-download-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 28px;
-            border-radius: 50px;
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 28px; border-radius: 50px;
             border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--text);
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-            font-family: inherit;
+            background: var(--surface); color: var(--text);
+            font-size: 0.95rem; font-weight: 700; cursor: pointer;
+            text-decoration: none; transition: all 0.2s; font-family: inherit;
         }
-        #result-download-btn:hover {
-            background: var(--surface2);
-            transform: translateY(-2px);
-        }
+        #result-download-btn:hover { background: var(--surface2); transform: translateY(-2px); }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
@@ -743,24 +768,63 @@ function updateGameInfoOverlay(show) {
         return;
     }
     const diff = getDifficultyInfo(currentSong);
+    const gioDiv   = document.getElementById('gio-diff');
+    const gioName  = document.getElementById('gio-diff-name');
+    const gioSpeed = document.getElementById('gio-speed-badge');
+    const gioLevel = document.getElementById('gio-level');
 
-    // 難易度色・名前
-    let color = '#555', name = '---', levelHtml = '';
     if (diff.isWorldsEnd) {
-        color = '#333'; name = "W'S END";
+        // --- WORLD'S END ---
+        gioDiv.className = 'we-bg';
+        gioDiv.style.background = '';
+        gioName.className = 'we-text';
+        gioName.textContent = "WORLD'S END";
+
+        // レベル欄: 星 + WEキャラ
+        const weStars = '★'.repeat(diff.weStars || 0) + '☆'.repeat(Math.max(0, 3 - (diff.weStars || 0)));
+        gioLevel.className = 'we-level';
+        gioLevel.innerHTML = `
+            <div id="gio-level-we-stars">${weStars}</div>
+            <div id="gio-level-we-char">${diff.weChar || '？'}</div>
+        `;
     } else if (diff.isInst) {
-        color = '#1e90ff'; name = 'Inst';
+        // --- Inst ---
+        gioDiv.className = '';
+        gioDiv.style.background = '#1e90ff';
+        gioName.className = '';
+        gioName.textContent = 'Inst';
+        gioLevel.className = '';
+        gioLevel.innerHTML = `
+            <div id="gio-level-label">LEVEL</div>
+            <div id="gio-level-num">—</div>
+        `;
     } else {
-        color = diff.color || '#555';
-        name = diff.name;
-        levelHtml = diff.over15 ? '15<sup style="font-size:0.6em">+</sup>' : String(diff.level ?? '');
+        // --- 通常難易度 ---
+        gioDiv.className = '';
+        gioDiv.style.background = diff.color || '#555';
+        gioName.className = '';
+        gioName.textContent = diff.name;
+        const lvHtml = diff.over15
+            ? '15<sup style="font-size:0.55em;vertical-align:top">+</sup>'
+            : String(diff.level ?? '—');
+        gioLevel.className = '';
+        gioLevel.innerHTML = `
+            <div id="gio-level-label">LEVEL</div>
+            <div id="gio-level-num">${lvHtml}</div>
+        `;
     }
 
-    document.getElementById('gio-diff').style.setProperty('--gio-color', color);
-    document.getElementById('gio-diff').style.background = color;
-    document.getElementById('gio-diff-name').textContent = name;
+    // 倍速バッジ
+    if (gioSpeed) {
+        if (playbackSpeed && playbackSpeed !== 1.0) {
+            gioSpeed.textContent = `×${playbackSpeed.toFixed(2).replace(/\.?0+$/, '')}`;
+            gioSpeed.style.display = '';
+        } else {
+            gioSpeed.style.display = 'none';
+        }
+    }
+
     document.getElementById('gio-title').textContent = currentSong.title || '';
-    document.getElementById('gio-level-num').innerHTML = levelHtml || '—';
     gio.classList.add('visible');
 }
 
@@ -1766,7 +1830,7 @@ function endGame() {
     }
 
     switchScreen('result-screen');
-    updateGameInfoOverlay(false);
+    updateGameInfoOverlay(true);
 }
 
 // ===== もう一度（確認画面から再スタート） =====
