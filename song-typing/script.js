@@ -601,8 +601,8 @@ function formatDuration(sec) {
         /* 動画: 16:9固定 */
         #game-screen .youtube-container {
             width: 100%;
-            max-width: 100%;
-            padding-bottom: 56.25%;
+            max-width: 640px;
+            padding-bottom: calc(min(100vw, 640px) * 9 / 16);
             height: 0;
             margin: 0;
         }
