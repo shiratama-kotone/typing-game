@@ -153,13 +153,14 @@ function formatDuration(sec) {
         }
 
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
-        /* 歌詞パネルは動画の上に重なるため白系を維持 */
+        /* 動画上に重なるため常にダーク背景を維持 */
         #lyrics-scroll-panel {
             width: 100vw;
             margin-left: calc(-50vw + 50%);
             overflow: hidden;
             position: relative;
             height: clamp(160px, 28vh, 260px);
+            background: rgba(0,0,0,0.55);
             mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
         }
@@ -180,23 +181,24 @@ function formatDuration(sec) {
             line-height: 1.3;
             cursor: default;
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
-            color: rgba(255,255,255,0.28);
-            -webkit-text-stroke: 1px rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.35);
+            -webkit-text-stroke: 1px rgba(255,255,255,0.2);
             paint-order: stroke fill;
         }
         .lyric-scroll-line.past {
             font-size: clamp(0.85rem, 1.9vw, 1.4rem);
-            color: rgba(255,255,255,0.22);
+            color: rgba(255,255,255,0.25);
         }
         .lyric-scroll-line.active {
             font-size: clamp(1.6rem, 4.2vw, 3.2rem);
             color: #fff;
-            -webkit-text-stroke: 3px rgba(255,255,255,0.9);
+            -webkit-text-stroke: 2px rgba(255,255,255,0.6);
             paint-order: stroke fill;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
         }
         .lyric-scroll-line.near {
             font-size: clamp(1rem, 2.3vw, 1.7rem);
-            color: rgba(255,255,255,0.55);
+            color: rgba(255,255,255,0.6);
         }
         #lyrics-prelude-label {
             position: absolute;
@@ -206,8 +208,8 @@ function formatDuration(sec) {
             justify-content: center;
             font-size: clamp(1.2rem, 2.5vw, 2rem);
             font-weight: bold;
-            color: rgba(255,255,255,0.45);
-            -webkit-text-stroke: 1px rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.5);
+            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
             paint-order: stroke fill;
             letter-spacing: 0.3em;
             pointer-events: none;
