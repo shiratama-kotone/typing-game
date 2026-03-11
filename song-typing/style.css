@@ -50,57 +50,13 @@ body {
     transition: background 0.3s, color 0.3s, padding-bottom 0.3s;
 }
 
-/* ===== ゲーム画面だけコンパクト ===== */
-#game-screen .youtube-container {
-    max-width: 640px;
-    padding-bottom: 0;
-    height: clamp(180px, 28vh, 320px);
-    margin-bottom: 3px;
-}
-#game-screen .combo-gauge-container {
-    max-width: 640px;
-    padding: 3px 8px;
-    margin-bottom: 3px;
-}
-#game-screen .score-display {
-    max-width: 640px;
-    padding: 4px 10px;
-    margin-bottom: 3px;
-    font-size: 0.78rem;
-}
-#game-screen #score {
-    font-size: 1.1rem;
-}
-#game-screen .lyrics-display {
-    max-width: 640px;
-    margin: 4px auto 4px;
-}
-#game-screen .japanese-line {
-    font-size: clamp(0.95rem, 2.2vw, 1.55rem);
-    margin-bottom: 4px;
-    min-height: 28px;
-}
-#game-screen .romaji-line {
-    font-size: clamp(0.72rem, 1.6vw, 1.1rem);
-    min-height: 22px;
-}
-#game-screen .input-field {
-    padding: 5px 10px;
-    margin: 5px auto;
-    font-size: clamp(0.78rem, 1.4vw, 1rem);
-}
-#game-screen #norma-top-bar {
-    height: 60px !important;
-}
-#game-screen .nseg.pre-norma { height: 26px !important; }
-#game-screen .nseg.at-norma  { height: 42px !important; }
-#game-screen #lyrics-scroll-panel {
-    height: clamp(100px, 18vh, 180px);
+
+/* ゲーム画面は screen の padding を上書き（JS側のflexレイアウトで制御） */
+#game-screen.active {
+    padding: 0 !important;
+    overflow-y: auto;
 }
 
-/* 録画中：共有バナー分さらにコンパクト */
-body.sharing-active #game-screen .youtube-container { padding-bottom: 30%; }
-body.sharing-active #game-screen #lyrics-scroll-panel { height: clamp(80px, 14vh, 140px); }
 
 .screen {
     display: none;
