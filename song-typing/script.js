@@ -5,7 +5,7 @@ let currentLyricIndex = 0;
 let startTime = null;
 let updateInterval = null;
 let activeColor = null;
-let songSortOrder = 'default'; // 'default' | 'difficulty'
+let songSortOrder = 'difficulty'; // 'default' | 'difficulty'
 let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
@@ -295,7 +295,7 @@ function formatDuration(sec) {
 
         /* ===== ソートUI ===== */
         .sort-bar {
-            display: flex; gap: 6px; align-items: center;
+            display: flex; gap: 6px; align-items: center; justify-content: center;
             margin-bottom: 10px; flex-wrap: wrap;
         }
         .sort-label { font-size: 0.8em; color: var(--text3); margin-right: 2px; }
@@ -1016,8 +1016,8 @@ function injectSortUI() {
     bar.className = 'sort-bar';
     bar.innerHTML = `
         <span class="sort-label">並び替え:</span>
-        <button class="sort-btn active" id="sort-btn-default" onclick="setSortOrder('default')">追加順</button>
-        <button class="sort-btn"        id="sort-btn-diff"    onclick="setSortOrder('difficulty')">難易度順</button>
+        <button class="sort-btn"        id="sort-btn-default" onclick="setSortOrder('default')">追加順</button>
+        <button class="sort-btn active" id="sort-btn-diff"    onclick="setSortOrder('difficulty')">難易度順</button>
     `;
     songList.parentNode.insertBefore(bar, songList);
 }
@@ -1042,7 +1042,7 @@ function createSongList() {
             const da = getDifficultyInfo(a);
             const db = getDifficultyInfo(b);
             // WE → 末尾、Inst → その前
-            const rank = d => d.isWorldsEnd ? 9999 : d.isInst ? 9998 : (d.over15 ? 9997 : (d.level ?? 0));
+            const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.over15 ? 9997 : (d.level ?? 0));
             return rank(da) - rank(db);
         });
     }
