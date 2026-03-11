@@ -50,10 +50,17 @@ body {
     transition: background 0.3s, color 0.3s, padding-bottom 0.3s;
 }
 
-/* 録画中：ブラウザの共有バナー（上部）分だけコンテンツを縮小 */
-body.sharing-active .screen {
-    transform: scale(0.88);
+/* ===== ゲーム画面だけ縮小 ===== */
+#game-screen.active {
+    transform: scale(0.82);
     transform-origin: top center;
+    margin-top: calc(-9vh);  /* scale で空く上の隙間を詰める */
+}
+
+/* 録画中：共有バナー分さらに縮小 */
+body.sharing-active #game-screen.active {
+    transform: scale(0.74);
+    margin-top: calc(-14vh);
 }
 
 .screen {
