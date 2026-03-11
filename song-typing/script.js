@@ -217,7 +217,7 @@ function formatDuration(sec) {
         #norma-gauge-text { font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important; }
 
         /* ===== ノルマゲージ ===== */
-        #norma-gauge-wrapper { position: relative; margin: 0 auto 10px; }
+        #norma-gauge-wrapper { position: relative; margin: 0 auto 10px; width: 100%; }
         #norma-top-bar {
             position: relative;
             height: 72px !important;
