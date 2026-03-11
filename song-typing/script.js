@@ -704,11 +704,6 @@ window.addEventListener('DOMContentLoaded', () => {
     createSongList();
 
     window.addEventListener('resize', () => {
-        const ytContainer = document.querySelector('.youtube-container');
-        const wrapper = document.getElementById('norma-gauge-wrapper');
-        if (ytContainer && wrapper) {
-            wrapper.style.width = ytContainer.offsetWidth + 'px';
-        }
         drawNormaStaff();
     });
 });
@@ -1531,11 +1526,6 @@ function buildNormaGauge() {
         </div>
     `;
     requestAnimationFrame(() => {
-        const ytContainer = document.querySelector('.youtube-container');
-        const wrapper = document.getElementById('norma-gauge-wrapper');
-        if (ytContainer && wrapper) {
-            wrapper.style.width = ytContainer.offsetWidth + 'px';
-        }
         drawNormaStaff();
     });
 }
