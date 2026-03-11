@@ -575,7 +575,7 @@ function formatDuration(sec) {
         }
         /* 順序 */
         #game-screen .score-display         { order: 1; }
-        #game-screen .combo-gauge-container { order: 2; width: 100%; max-width: 100%; box-sizing: border-box; }
+        #game-screen .combo-gauge-container { order: 2; width: 100%; max-width: 640px; box-sizing: border-box; }
         #game-screen .youtube-container     { order: 3; }
         #game-screen #lyrics-scroll-panel   { order: 4; }
         #game-screen .lyrics-display        { order: 5; }
@@ -598,12 +598,12 @@ function formatDuration(sec) {
         #game-screen .score-display div { margin: 0; }
         #game-screen #score { font-size: 1rem; }
 
-        /* 動画: 中央・大きめ */
+        /* 動画: 16:9固定 */
         #game-screen .youtube-container {
             width: 100%;
             max-width: 100%;
-            padding-bottom: 0;
-            height: clamp(160px, 42vh, 480px);
+            padding-bottom: 56.25%;
+            height: 0;
             margin: 0;
         }
 
@@ -619,6 +619,11 @@ function formatDuration(sec) {
 
         /* 入力欄 */
         #game-screen .input-field { margin: 4px auto 6px; }
+
+        /* ノルマゲージ高さ（元の値） */
+        #game-screen #norma-top-bar   { height: 60px !important; }
+        #game-screen .nseg.pre-norma  { height: 26px !important; }
+        #game-screen .nseg.at-norma   { height: 42px !important; }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
