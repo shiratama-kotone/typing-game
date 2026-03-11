@@ -575,7 +575,7 @@ function formatDuration(sec) {
         }
         /* 順序 */
         #game-screen .score-display         { order: 1; }
-        #game-screen .combo-gauge-container { order: 2; }
+        #game-screen .combo-gauge-container { order: 2; width: 100%; max-width: 100%; box-sizing: border-box; }
         #game-screen .youtube-container     { order: 3; }
         #game-screen #lyrics-scroll-panel   { order: 4; }
         #game-screen .lyrics-display        { order: 5; }
