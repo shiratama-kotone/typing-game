@@ -10,11 +10,6 @@ let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
 
-// 録画
-let mediaRecorder = null;
-let recordedChunks = [];
-let recordingActive = false;
-
 // サウンドエフェクト
 let typingSound = null;
 let missSound = null;
@@ -572,46 +567,85 @@ function formatDuration(sec) {
             text-shadow: 0 0 8px rgba(200,134,10,0.5);
         }
 
-        /* ===== 録画・RECインジケーター ===== */
-        #record-btn { display: none !important; }
-        @keyframes rec-pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(224,48,48,0.5); }
-            50%       { box-shadow: 0 0 0 10px rgba(224,48,48,0); }
-        }
-        #record-indicator {
-            position: fixed;
-            top: 14px;
-            right: 14px;
-            z-index: 1000;
-            display: none;
+        /* ===== ゲーム画面レイアウト ===== */
+        #game-screen {
+            display: flex !important;
+            flex-direction: column;
             align-items: center;
-            gap: 6px;
-            background: rgba(0,0,0,0.6);
-            color: #fff;
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 5px 12px;
-            border-radius: 20px;
-            backdrop-filter: blur(6px);
-            letter-spacing: 0.06em;
+            width: 100%;
+            padding: 0 !important;
+            gap: 0;
         }
-        #record-indicator.on { display: flex; }
-        #rec-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: #ff4444;
-            animation: rec-pulse 1.2s ease-in-out infinite;
+        /* 順序: スコアバー → ゲージ → 動画 → 歌詞scroll → 歌詞/ローマ字 → 入力 */
+        #game-screen .score-display      { order: 1; }
+        #game-screen .combo-gauge-container { order: 2; }
+        #game-screen .youtube-container  { order: 3; }
+        #game-screen #lyrics-scroll-panel { order: 4; }
+        #game-screen .lyrics-display     { order: 5; }
+        #game-screen .input-field        { order: 6; }
+
+        /* スコアバー: 上部横並び */
+        #game-screen .score-display {
+            width: 100%;
+            max-width: 100%;
+            display: flex !important;
+            flex-direction: row;
+            justify-content: center;
+            gap: 24px;
+            padding: 5px 16px;
+            margin-bottom: 0;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            font-size: 0.8rem;
         }
-        #result-download-wrap { margin-top: 16px; }
-        #result-download-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 10px 28px; border-radius: 50px;
-            border: 1px solid var(--border);
-            background: var(--surface); color: var(--text);
-            font-size: 0.95rem; font-weight: 700; cursor: pointer;
-            text-decoration: none; transition: all 0.2s; font-family: inherit;
+        #game-screen .score-display div { margin: 0; }
+        #game-screen #score { font-size: 1rem; }
+
+        /* ゲージ: 全幅 */
+        #game-screen .combo-gauge-container {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            padding: 4px 12px;
+            margin-bottom: 0;
         }
-        #result-download-btn:hover { background: var(--surface2); transform: translateY(-2px); }
+
+        /* 動画: 中央・大きめ */
+        #game-screen .youtube-container {
+            width: 100%;
+            max-width: 100%;
+            padding-bottom: 0;
+            height: clamp(160px, 42vh, 480px);
+            margin: 0;
+        }
+
+        /* 歌詞scroll */
+        #game-screen #lyrics-scroll-panel {
+            width: 100%;
+            margin: 0;
+            height: clamp(90px, 14vh, 160px);
+        }
+
+        /* ローマ字・歌詞表示 */
+        #game-screen .lyrics-display {
+            width: 100%;
+            max-width: 100%;
+            margin: 4px auto 2px;
+        }
+
+        /* 入力欄 */
+        #game-screen .input-field {
+            margin: 4px auto 6px;
+        }
+
+        /* ノルマゲージ高さ */
+        #game-screen #norma-top-bar { height: 54px !important; }
+        #game-screen .nseg.pre-norma { height: 22px !important; }
+        #game-screen .nseg.at-norma  { height: 36px !important; }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
@@ -667,10 +701,6 @@ function injectConfirmScreen() {
                 <input type="checkbox" id="cb-automode">
                 オートモード（自動入力）
             </label>
-            <label class="confirm-automode">
-                <input type="checkbox" id="cb-record" onchange="onRecordCheckChange(this)">
-                画面録画
-            </label>
             <label class="confirm-automode" id="speed-row" style="flex-direction:column;gap:6px;">
                 <span style="display:flex;align-items:center;gap:8px;">
                     <input type="checkbox" id="cb-speed" onchange="onSpeedCheckChange(this)">
@@ -710,23 +740,8 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ===== 録画UI注入 =====
+// ===== ゲーム情報オーバーレイ注入 =====
 function injectRecordUI() {
-    // 録画ボタン（確認画面チェックボックスに移行したため非表示）
-    const btn = document.createElement('button');
-    btn.id = 'record-btn';
-    btn.title = '画面録画';
-    btn.innerHTML = '⏺';
-    btn.onclick = toggleRecording;
-    document.body.appendChild(btn);
-
-    // REC インジケーター
-    const ind = document.createElement('div');
-    ind.id = 'record-indicator';
-    ind.innerHTML = '<div id="rec-dot"></div>REC';
-    document.body.appendChild(ind);
-
-    // 右上ゲーム情報オーバーレイ
     const gio = document.createElement('div');
     gio.id = 'game-info-overlay';
     gio.innerHTML = `
@@ -742,16 +757,6 @@ function injectRecordUI() {
         </div>
     `;
     document.body.appendChild(gio);
-}
-
-// 録画チェックボックス
-async function onRecordCheckChange(cb) {
-    if (cb.checked) {
-        await startRecording();
-        if (!recordingActive) cb.checked = false; // キャンセルされたら戻す
-    } else {
-        stopRecording();
-    }
 }
 
 // 倍速チェックボックス
@@ -827,100 +832,6 @@ function updateGameInfoOverlay(show) {
 
     document.getElementById('gio-title').textContent = currentSong.title || '';
     gio.classList.add('visible');
-}
-
-async function toggleRecording() {
-    if (recordingActive) {
-        stopRecording();
-    } else {
-        await startRecording();
-    }
-}
-
-async function startRecording() {
-    try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-                frameRate: { ideal: 60, max: 60 },
-                width:     { ideal: 1920 },
-                height:    { ideal: 1080 },
-            },
-            audio: {
-                echoCancellation: false,
-                noiseSuppression: false,
-                sampleRate: 48000,
-                sampleSize: 16,
-            },
-            preferCurrentTab: true,
-            selfBrowserSurface: 'include',
-            surfaceSwitching: 'exclude',
-            monitorTypeSurfaces: 'exclude',
-        });
-
-        recordedChunks = [];
-
-        // 最高画質のコーデックを選ぶ
-        const mimeTypes = [
-            'video/webm;codecs=vp9,opus',
-            'video/webm;codecs=vp8,opus',
-            'video/webm',
-            'video/mp4',
-        ];
-        const mimeType = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
-
-        mediaRecorder = new MediaRecorder(stream, {
-            mimeType,
-            videoBitsPerSecond: 12_000_000,  // 12 Mbps
-            audioBitsPerSecond:    320_000,  // 320 kbps
-        });
-        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-        mediaRecorder.onstop = onRecordingStop;
-        stream.getVideoTracks()[0].onended = stopRecording;
-
-        mediaRecorder.start(100);
-        recordingActive = true;
-        document.body.classList.add('sharing-active');
-
-        document.getElementById('record-btn').classList.add('recording');
-        document.getElementById('record-btn').innerHTML = '⏹';
-        document.getElementById('record-indicator').classList.add('on');
-    } catch (e) {
-        console.warn('録画開始失敗:', e);
-    }
-}
-
-function stopRecording() {
-    if (!mediaRecorder || !recordingActive) return;
-    recordingActive = false;
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    document.body.classList.remove('sharing-active');
-
-    document.getElementById('record-btn').classList.remove('recording');
-    document.getElementById('record-btn').innerHTML = '⏺';
-    document.getElementById('record-indicator').classList.remove('on');
-}
-
-function onRecordingStop() {
-    if (recordedChunks.length === 0) return;
-    const mimeType = mediaRecorder.mimeType || 'video/webm';
-    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-    const blob = new Blob(recordedChunks, { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const songName = currentSong?.title || 'recording';
-    const filename = `${songName}.${ext}`;
-
-    // リザルト画面にダウンロードボタンを出す（または即ダウンロード）
-    let wrap = document.getElementById('result-download-wrap');
-    if (!wrap) {
-        wrap = document.createElement('div');
-        wrap.id = 'result-download-wrap';
-        const rc = document.querySelector('.result-buttons');
-        if (rc) rc.parentNode.insertBefore(wrap, rc);
-        else document.querySelector('.result-content')?.appendChild(wrap);
-    }
-    wrap.innerHTML = `<a id="result-download-btn" href="${url}" download="${filename}">⬇ 録画をダウンロード（${ext.toUpperCase()}）</a>`;
-    recordedChunks = [];
 }
 
 function onYouTubeIframeAPIReady() {
@@ -1090,10 +1001,6 @@ function showTitleScreen() { switchScreen('title-screen'); }
 function showSongSelect() {
     if (player) { try { player.pauseVideo(); } catch(e){} }
     updateGameInfoOverlay(false);
-    // 録画チェックを外して停止
-    const cbRec = document.getElementById('cb-record');
-    if (cbRec) cbRec.checked = false;
-    if (recordingActive) stopRecording();
     switchScreen('song-select-screen');
 }
 
@@ -1759,8 +1666,6 @@ function endGame() {
     if (updateInterval) { clearInterval(updateInterval); updateInterval = null; }
     autoTypeTimers.forEach(t => clearTimeout(t));
     autoTypeTimers = [];
-    // 録画中なら自動停止
-    if (recordingActive) stopRecording();
 
     if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
         gameState.score = 1010000;
