@@ -9,6 +9,11 @@ let songSortOrder = 'default'; // 'default' | 'difficulty'
 let autoMode = false;
 let autoTypeTimers = [];
 
+// 録画
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingActive = false;
+
 // サウンドエフェクト
 let typingSound = null;
 let missSound = null;
@@ -148,6 +153,7 @@ function formatDuration(sec) {
         }
 
         /* ===== Spotifyスタイル 歌詞スクロールパネル ===== */
+        /* 歌詞パネルは動画の上に重なるため白系を維持 */
         #lyrics-scroll-panel {
             width: 100vw;
             margin-left: calc(-50vw + 50%);
@@ -187,11 +193,11 @@ function formatDuration(sec) {
             color: #fff;
             -webkit-text-stroke: 3px rgba(255,255,255,0.9);
             paint-order: stroke fill;
-        }        .lyric-scroll-line.near {
+        }
+        .lyric-scroll-line.near {
             font-size: clamp(1rem, 2.3vw, 1.7rem);
             color: rgba(255,255,255,0.55);
         }
-
         #lyrics-prelude-label {
             position: absolute;
             inset: 0;
@@ -209,33 +215,18 @@ function formatDuration(sec) {
         }
 
         /* ===== レスポンシブ ===== */
-        #game-screen {
-            font-size: clamp(11px, 1.3vw, 16px);
-        }
-        #romaji-line {
-            font-size: clamp(1rem, 2.4vw, 1.8rem) !important;
-        }
-        #input-field {
-            font-size: clamp(0.9rem, 1.8vw, 1.3rem) !important;
-            width: 100% !important;
-        }
-        #score, #correct-count, #miss-count {
-            font-size: clamp(0.8rem, 1.4vw, 1rem) !important;
-        }
-        #norma-gauge-text {
-            font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important;
-        }
+        #game-screen { font-size: clamp(11px, 1.3vw, 16px); }
+        #romaji-line { font-size: clamp(1rem, 2.4vw, 1.8rem) !important; }
+        #input-field { font-size: clamp(0.9rem, 1.8vw, 1.3rem) !important; width: 100% !important; }
+        #score, #correct-count, #miss-count { font-size: clamp(0.8rem, 1.4vw, 1rem) !important; }
+        #norma-gauge-text { font-size: clamp(0.7rem, 1.1vw, 0.9rem) !important; }
 
-        /* ===== ノルマゲージ（新） ===== */
-        #norma-gauge-wrapper {
-            position: relative;
-            margin: 0 auto 10px;
-        }
-        /* トップバー 90px */
+        /* ===== ノルマゲージ ===== */
+        #norma-gauge-wrapper { position: relative; margin: 0 auto 10px; }
         #norma-top-bar {
             position: relative;
-            height: 90px;
-            background: rgba(0,0,0,0.5);
+            height: 90px !important;
+            background: var(--gauge-bg, rgba(0,0,0,0.5));
             overflow: hidden;
             margin-bottom: 3px;
         }
@@ -247,39 +238,28 @@ function formatDuration(sec) {
             transition: width 0.12s ease-out, background 0.3s ease;
             z-index: 1;
         }
-        /* 五線譜（トップバー内、黒） */
         #norma-top-staff {
             position: absolute;
             inset: 0;
             pointer-events: none;
             z-index: 2;
         }
-        /* セグメント行 */
-        #norma-segs-row {
-            display: flex;
-            gap: 2px;
-            align-items: flex-end;
-        }
+        #norma-segs-row { display: flex; gap: 2px; align-items: flex-end; }
         .nseg {
             flex: 1;
             background: #474911;
             transform: skewX(-12deg);
             transition: background 0.25s ease;
         }
-        .nseg.pre-norma  { height: 40px; }
-        .nseg.at-norma   { height: 63px; }
+        .nseg.pre-norma { height: 40px !important; }
+        .nseg.at-norma  { height: 63px !important; }
         #norma-segs-row .nseg:first-child { margin-left: 4px; }
         #norma-segs-row .nseg:last-child  { margin-right: 4px; }
 
-        /* ===== スマホ：上半分に詰める ===== */
+        /* ===== スマホ ===== */
         @media (max-width: 768px) {
-            .youtube-container {
-                padding-bottom: 30% !important;
-                max-width: 100% !important;
-            }
-            #lyrics-scroll-panel {
-                height: clamp(100px, 18vh, 160px);
-            }
+            .youtube-container { padding-bottom: 30% !important; max-width: 100% !important; }
+            #lyrics-scroll-panel { height: clamp(100px, 18vh, 160px); }
             .lyric-scroll-line       { font-size: 0.78rem; }
             .lyric-scroll-line.near  { font-size: 0.95rem; }
             .lyric-scroll-line.active { font-size: clamp(1.2rem, 5vw, 2rem); }
@@ -290,270 +270,254 @@ function formatDuration(sec) {
             .lyrics-display { margin: 8px auto !important; }
         }
 
-        /* 確認画面レスポンシブ */
-        .confirm-box {
-            padding: clamp(20px, 4vw, 44px) clamp(18px, 4vw, 48px) !important;
-        }
-        .confirm-diff-name {
-            font-size: clamp(1.4rem, 3.5vw, 2.2rem) !important;
-        }
-        .confirm-stat-value {
-            font-size: clamp(1.1rem, 2.5vw, 1.5rem) !important;
-        }
-        /* 曲選択レスポンシブ */
-        .song-item {
-            font-size: clamp(0.82rem, 1.3vw, 1rem) !important;
-        }
+        /* ===== 確認画面レスポンシブ ===== */
+        .confirm-box { padding: clamp(20px, 4vw, 44px) clamp(18px, 4vw, 48px) !important; }
+        .confirm-diff-name { font-size: clamp(1.4rem, 3.5vw, 2.2rem) !important; }
+        .confirm-stat-value { font-size: clamp(1.1rem, 2.5vw, 1.5rem) !important; }
+        .song-item { font-size: clamp(0.82rem, 1.3vw, 1rem) !important; }
 
-        /* ===== ALL JUSTICE アニメーション ===== */
+        /* ===== ALL JUSTICE ===== */
         #all-justice-overlay {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0;
+            position: fixed; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none; z-index: 9999; opacity: 0;
         }
         #all-justice-text {
-            font-style: italic;
-            font-weight: 900;
+            font-style: italic; font-weight: 900;
             font-size: clamp(2rem, 6vw, 5rem);
-            white-space: nowrap;
-            letter-spacing: 0em;
+            white-space: nowrap; letter-spacing: 0em;
         }
-        @keyframes aj-appear {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
-        @keyframes aj-fadeout {
-            from { opacity: 1; }
-            to   { opacity: 0; }
-        }
+        @keyframes aj-appear  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes aj-fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+        /* ===== ソートUI ===== */
         .sort-bar {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
+            display: flex; gap: 6px; align-items: center;
+            margin-bottom: 10px; flex-wrap: wrap;
         }
-        .sort-label {
-            font-size: 0.8em;
-            color: #888;
-            margin-right: 2px;
-        }
+        .sort-label { font-size: 0.8em; color: var(--text3); margin-right: 2px; }
         .sort-btn {
-            font-size: 0.78em;
-            padding: 4px 14px;
+            font-size: 0.78em; padding: 4px 14px;
             border-radius: 20px;
-            border: 1px solid #aaa;
+            border: 1px solid var(--border);
             background: transparent;
-            color: #aaa;
-            cursor: pointer;
-            transition: all 0.18s;
-            font-weight: bold;
+            color: var(--text3);
+            cursor: pointer; transition: all 0.18s; font-weight: bold;
+            font-family: inherit;
         }
-        .sort-btn:hover { border-color: #ccc; color: #eee; }
+        .sort-btn:hover { border-color: var(--text2); color: var(--text); }
         .sort-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--text);
             border-color: transparent;
-            color: #fff;
+            color: var(--bg);
         }
 
-        /* 曲選択バッジ */
+        /* ===== 曲選択バッジ ===== */
         .song-item {
             display: flex !important;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
+            align-items: center; justify-content: space-between; gap: 8px;
         }
         .song-item-title {
-            flex: 1;
-            min-width: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            flex: 1; min-width: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .diff-badge {
-            font-size: 0.68em;
-            font-weight: 800;
-            padding: 3px 10px;
-            border-radius: 6px;
-            color: #fff;
-            white-space: nowrap;
-            letter-spacing: 0.04em;
-            flex-shrink: 0;
+            font-size: 0.68em; font-weight: 800;
+            padding: 3px 10px; border-radius: 6px;
+            color: #fff; white-space: nowrap;
+            letter-spacing: 0.04em; flex-shrink: 0;
         }
-        .diff-badge-ultima {
-            background: #1a1a1a !important;
-            border: 1px solid #666;
-        }
-        .diff-badge-inst { background: #1e90ff; }
-        .diff-badge-we {
-            background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
-        }
+        .diff-badge-ultima { background: #222 !important; border: 1px solid #555; color: #ccc; }
+        .diff-badge-inst   { background: #1e90ff; }
+        .diff-badge-we     { background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa); }
 
-        /* 確認画面 */
+        /* ===== 確認画面 ===== */
         #confirm-screen {
-            background: rgba(6, 6, 18, 0.97);
-            display: none;
-            align-items: center;
-            justify-content: center;
+            background: var(--confirm-overlay, rgba(0,0,0,0.82));
+            display: none; align-items: center; justify-content: center;
         }
-        #confirm-screen.active {
-            display: flex !important;
-        }
+        #confirm-screen.active { display: flex !important; }
         .confirm-box {
-            background: linear-gradient(150deg, #10102a 0%, #1c1c38 100%);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--surface, rgba(255,255,255,0.7));
+            border: 1px solid var(--border);
             border-radius: 22px;
             padding: 44px 48px 40px;
-            max-width: 500px;
-            width: 90%;
+            max-width: 500px; width: 90%;
             text-align: center;
-            color: #fff;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+            color: var(--text);
+            box-shadow: 0 30px 80px var(--shadow, rgba(0,0,0,0.5));
+            backdrop-filter: blur(16px);
         }
         .confirm-song-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #dde;
-            margin-bottom: 20px;
-            line-height: 1.45;
+            font-size: 1.3rem; font-weight: bold;
+            color: var(--text); margin-bottom: 20px; line-height: 1.45;
         }
         .confirm-diff-name {
-            display: block;
-            font-size: 2.2rem;
-            font-weight: 900;
-            letter-spacing: 0.13em;
-            margin-bottom: 4px;
+            display: block; font-size: 2.2rem; font-weight: 900;
+            letter-spacing: 0.13em; margin-bottom: 4px;
         }
         .confirm-diff-we {
             background: linear-gradient(90deg, #ff0000, #ff7700, #ffee00, #00cc00, #0099ff, #8800cc, #ff00aa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .confirm-diff-level {
-            font-size: 1rem;
-            color: #888;
-            margin-bottom: 24px;
-        }
+        .confirm-diff-level { font-size: 1rem; color: var(--text3); margin-bottom: 24px; }
         .confirm-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-bottom: 30px;
         }
         .confirm-stat {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 14px 10px;
+            background: var(--surface2, rgba(0,0,0,0.04));
+            border: 1px solid var(--border2);
+            border-radius: 12px; padding: 14px 10px;
         }
-        .confirm-stat-label {
-            font-size: 0.74rem;
-            color: #777;
-            margin-bottom: 7px;
-        }
-        .confirm-stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        .confirm-stat-unit {
-            font-size: 0.8rem;
-            color: #999;
-            margin-left: 2px;
-        }
-        .confirm-btns {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
+        .confirm-stat-label { font-size: 0.74rem; color: var(--text3); margin-bottom: 7px; }
+        .confirm-stat-value { font-size: 1.5rem; font-weight: bold; color: var(--text); }
+        .confirm-stat-unit  { font-size: 0.8rem; color: var(--text3); margin-left: 2px; }
+        .confirm-btns { display: flex; gap: 10px; justify-content: center; }
         #btn-confirm-start {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            border: none;
-            padding: 13px 42px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.25s;
-            letter-spacing: 0.05em;
+            background: var(--text);
+            color: var(--bg);
+            border: none; padding: 13px 42px;
+            border-radius: 50px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer;
+            transition: all 0.25s; letter-spacing: 0.05em;
+            font-family: inherit;
         }
         #btn-confirm-start:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 22px rgba(102,126,234,0.55);
+            opacity: 0.85;
         }
-        #btn-confirm-start:disabled { opacity: 0.38; cursor: not-allowed; }
+        #btn-confirm-start:disabled { opacity: 0.3; cursor: not-allowed; }
         #btn-confirm-back {
-            background: rgba(255,255,255,0.07);
-            color: #aaa;
-            border: 1px solid rgba(255,255,255,0.15);
-            padding: 13px 22px;
-            border-radius: 50px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.25s;
+            background: transparent;
+            color: var(--text3);
+            border: 1px solid var(--border);
+            padding: 13px 22px; border-radius: 50px;
+            font-size: 0.95rem; cursor: pointer;
+            transition: all 0.25s; font-family: inherit;
         }
-        #btn-confirm-back:hover { background: rgba(255,255,255,0.13); color: #fff; }
-        .confirm-loading {
-            font-size: 0.78rem;
-            color: #555;
-            margin-top: 14px;
-        }
-        /* オートモード */
+        #btn-confirm-back:hover { background: var(--surface2); color: var(--text); }
+        .confirm-loading { font-size: 0.78rem; color: var(--text3); margin-top: 14px; }
+
+        /* ===== オートモード ===== */
         .confirm-automode {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 18px;
-            font-size: 0.9rem;
-            color: #aaa;
-            cursor: pointer;
-            user-select: none;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; margin-bottom: 18px; font-size: 0.9rem;
+            color: var(--text3); cursor: pointer; user-select: none;
         }
         .confirm-automode input[type=checkbox] {
             width: 16px; height: 16px;
-            accent-color: #764ba2;
-            cursor: pointer;
+            accent-color: var(--text); cursor: pointer;
         }
-        .confirm-automode:hover { color: #ddd; }
-        /* CLEARラベル */
+        .confirm-automode:hover { color: var(--text); }
+
+        /* ===== CLEARラベル ===== */
         #norma-clear-label {
-            position: absolute;
-            right: 8px;
-            top: 50%;
+            position: absolute; right: 8px; top: 50%;
             transform: translateY(-50%);
-            font-size: 1.4rem;
-            font-weight: 900;
+            font-size: 1.4rem; font-weight: 900;
             color: #ffe600;
             text-shadow: 0 0 12px #ffaa00, 0 0 24px #ff8800;
-            letter-spacing: 0.12em;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 5;
+            letter-spacing: 0.12em; pointer-events: none;
+            opacity: 0; transition: opacity 0.4s ease; z-index: 5;
         }
-        /* リザルト画像 */
+
+        /* ===== リザルト画像 ===== */
         #result-badges {
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin: 12px 0; width: 100%;
+        }
+        #result-badges img {
+            height: auto; max-height: 120px; max-width: 200px;
+            width: auto; object-fit: contain;
+        }
+
+        /* ===== 録画ボタン ===== */
+        #record-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text2);
+            font-size: 1.3rem;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            margin: 12px 0;
-            width: 100%;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px var(--shadow);
         }
-        #result-badges img {
-            height: auto;
-            max-height: 120px;
-            max-width: 200px;
-            width: auto;
-            object-fit: contain;
+        #record-btn:hover { transform: scale(1.1); color: var(--text); }
+        #record-btn.recording {
+            background: #e03030;
+            border-color: #ff5555;
+            color: #fff;
+            animation: rec-pulse 1.2s ease-in-out infinite;
         }
+        @keyframes rec-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(224,48,48,0.5); }
+            50%       { box-shadow: 0 0 0 10px rgba(224,48,48,0); }
+        }
+        #record-indicator {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(6px);
+            letter-spacing: 0.06em;
+        }
+        #record-indicator.on { display: flex; }
+        #rec-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: rec-pulse 1.2s ease-in-out infinite;
+        }
+        #result-download-wrap {
+            margin-top: 16px;
+        }
+        #result-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 28px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        #result-download-btn:hover {
+            background: var(--surface2);
+            transform: translateY(-2px);
+        }
+        .btn-edit {
+            background: var(--surface2); color: var(--text2);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 2px 10px; font-size: 0.78em; cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-edit:hover { background: var(--surface); color: var(--text); }
     `;
     document.head.appendChild(style);
 })();
@@ -617,6 +581,7 @@ window.addEventListener('DOMContentLoaded', () => {
     injectConfirmScreen();
     injectSortUI();
     injectAllJusticeOverlay();
+    injectRecordUI();
     setupAudio();
     setupEventListeners();
     createSongList();
@@ -630,6 +595,95 @@ window.addEventListener('DOMContentLoaded', () => {
         drawNormaStaff();
     });
 });
+
+// ===== 録画UI注入 =====
+function injectRecordUI() {
+    // 録画ボタン（常時表示）
+    const btn = document.createElement('button');
+    btn.id = 'record-btn';
+    btn.title = '画面録画';
+    btn.innerHTML = '⏺';
+    btn.onclick = toggleRecording;
+    document.body.appendChild(btn);
+
+    // REC インジケーター
+    const ind = document.createElement('div');
+    ind.id = 'record-indicator';
+    ind.innerHTML = '<div id="rec-dot"></div>REC';
+    document.body.appendChild(ind);
+}
+
+async function toggleRecording() {
+    if (recordingActive) {
+        stopRecording();
+    } else {
+        await startRecording();
+    }
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 60 },
+            audio: true,
+            preferCurrentTab: true
+        });
+
+        recordedChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+            ? 'video/webm;codecs=vp9,opus'
+            : MediaRecorder.isTypeSupported('video/webm')
+            ? 'video/webm'
+            : 'video/mp4';
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = onRecordingStop;
+        stream.getVideoTracks()[0].onended = stopRecording; // ユーザーがブラウザUIで停止したとき
+
+        mediaRecorder.start(200);
+        recordingActive = true;
+
+        document.getElementById('record-btn').classList.add('recording');
+        document.getElementById('record-btn').innerHTML = '⏹';
+        document.getElementById('record-indicator').classList.add('on');
+    } catch (e) {
+        console.warn('録画開始失敗:', e);
+    }
+}
+
+function stopRecording() {
+    if (!mediaRecorder || !recordingActive) return;
+    recordingActive = false;
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+    document.getElementById('record-btn').classList.remove('recording');
+    document.getElementById('record-btn').innerHTML = '⏺';
+    document.getElementById('record-indicator').classList.remove('on');
+}
+
+function onRecordingStop() {
+    if (recordedChunks.length === 0) return;
+    const mimeType = mediaRecorder.mimeType || 'video/webm';
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(recordedChunks, { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const songName = currentSong?.title || 'recording';
+    const filename = `${songName}.${ext}`;
+
+    // リザルト画面にダウンロードボタンを出す（または即ダウンロード）
+    let wrap = document.getElementById('result-download-wrap');
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'result-download-wrap';
+        const rc = document.querySelector('.result-buttons');
+        if (rc) rc.parentNode.insertBefore(wrap, rc);
+        else document.querySelector('.result-content')?.appendChild(wrap);
+    }
+    wrap.innerHTML = `<a id="result-download-btn" href="${url}" download="${filename}">⬇ 録画をダウンロード（${ext.toUpperCase()}）</a>`;
+    recordedChunks = [];
+}
 
 function onYouTubeIframeAPIReady() {
     console.log('YouTube API 準備完了');
@@ -1451,6 +1505,8 @@ function endGame() {
     if (updateInterval) { clearInterval(updateInterval); updateInterval = null; }
     autoTypeTimers.forEach(t => clearTimeout(t));
     autoTypeTimers = [];
+    // 録画中なら自動停止
+    if (recordingActive) stopRecording();
 
     if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
         gameState.score = 1010000;
