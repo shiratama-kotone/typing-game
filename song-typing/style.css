@@ -50,24 +50,62 @@ body {
     transition: background 0.3s, color 0.3s, padding-bottom 0.3s;
 }
 
-/* ===== ゲーム画面だけ縮小 ===== */
-#game-screen.active {
-    transform: scale(0.82);
-    transform-origin: top center;
-    margin-top: calc(-9vh);  /* scale で空く上の隙間を詰める */
+/* ===== ゲーム画面だけコンパクト ===== */
+#game-screen .youtube-container {
+    max-width: 640px;
+    padding-bottom: 36%;
+    margin-bottom: 6px;
+}
+#game-screen .combo-gauge-container {
+    max-width: 640px;
+    padding: 4px 8px;
+    margin-bottom: 5px;
+}
+#game-screen .score-display {
+    max-width: 640px;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    font-size: 0.78rem;
+}
+#game-screen #score {
+    font-size: 1.1rem;
+}
+#game-screen .lyrics-display {
+    max-width: 640px;
+    margin: 4px auto 4px;
+}
+#game-screen .japanese-line {
+    font-size: clamp(0.95rem, 2.2vw, 1.55rem);
+    margin-bottom: 4px;
+    min-height: 28px;
+}
+#game-screen .romaji-line {
+    font-size: clamp(0.72rem, 1.6vw, 1.1rem);
+    min-height: 22px;
+}
+#game-screen .input-field {
+    padding: 5px 10px;
+    margin: 5px auto;
+    font-size: clamp(0.78rem, 1.4vw, 1rem);
+}
+#game-screen #norma-top-bar {
+    height: 60px !important;
+}
+#game-screen .nseg.pre-norma { height: 26px !important; }
+#game-screen .nseg.at-norma  { height: 42px !important; }
+#game-screen #lyrics-scroll-panel {
+    height: clamp(100px, 18vh, 180px);
 }
 
-/* 録画中：共有バナー分さらに縮小 */
-body.sharing-active #game-screen.active {
-    transform: scale(0.74);
-    margin-top: calc(-14vh);
-}
+/* 録画中：共有バナー分さらにコンパクト */
+body.sharing-active #game-screen .youtube-container { padding-bottom: 30%; }
+body.sharing-active #game-screen #lyrics-scroll-panel { height: clamp(80px, 14vh, 140px); }
 
 .screen {
     display: none;
     width: 100%;
-    max-width: 960px;
-    padding: clamp(6px, 1.5vw, 14px);
+    max-width: 100vw;
+    padding: clamp(24px, 5vw, 60px) clamp(16px, 5vw, 80px);
     text-align: center;
 }
 .screen.active { display: block; animation: fadeIn 0.22s ease; }
@@ -78,9 +116,9 @@ body.sharing-active #game-screen.active {
 
 /* タイトル */
 .game-title {
-    font-size: clamp(1.2rem, 3.2vw, 2.2rem);
+    font-size: clamp(2rem, 5vw, 4rem);
     color: var(--text);
-    margin-bottom: clamp(12px, 3vh, 26px);
+    margin-bottom: clamp(24px, 6vh, 56px);
     animation: titlePulse 2.5s ease-in-out infinite;
     letter-spacing: 0.06em;
     font-weight: 800;
@@ -90,13 +128,13 @@ body.sharing-active #game-screen.active {
     50%       { transform: scale(1.03); }
 }
 
-.menu { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vh, 12px); }
+.menu { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vh, 20px); }
 
 .menu-button {
     background: var(--surface);
     border: 1px solid var(--border);
-    padding: clamp(6px, 1vh, 10px) clamp(18px, 3.5vw, 34px);
-    font-size: clamp(0.82rem, 1.4vw, 1.1rem);
+    padding: clamp(10px, 1.8vh, 18px) clamp(28px, 5vw, 60px);
+    font-size: clamp(1rem, 2vw, 1.5rem);
     color: var(--text);
     border-radius: 50px;
     cursor: pointer;
@@ -112,17 +150,18 @@ body.sharing-active #game-screen.active {
 
 h2 {
     color: var(--text);
-    font-size: clamp(1rem, 2.4vw, 1.7rem);
-    margin-bottom: clamp(8px, 2vh, 18px);
+    font-size: clamp(1.3rem, 3vw, 2.4rem);
+    margin-bottom: clamp(12px, 3vh, 28px);
     font-weight: 700;
 }
 
 /* 曲選択 */
 .song-list {
     display: flex; flex-direction: column;
-    gap: 6px; margin-bottom: 14px;
-    max-height: clamp(220px, 48vh, 400px);
+    gap: 8px; margin-bottom: 20px;
+    max-height: clamp(300px, 62vh, 700px);
     overflow-y: auto; padding: 4px;
+    max-width: 800px; margin-left: auto; margin-right: auto;
 }
 .song-list::-webkit-scrollbar { width: 3px; }
 .song-list::-webkit-scrollbar-track { background: transparent; }
@@ -131,14 +170,14 @@ h2 {
 .song-item {
     background: var(--surface);
     border: 1px solid var(--border);
-    padding: clamp(7px, 1.2vh, 11px) clamp(9px, 1.4vw, 14px);
-    border-radius: 8px; cursor: pointer;
+    padding: clamp(10px, 1.8vh, 16px) clamp(14px, 2vw, 22px);
+    border-radius: 10px; cursor: pointer;
     transition: all 0.16s;
     color: var(--text2);
-    font-size: clamp(0.75rem, 1.1vw, 0.92rem);
+    font-size: clamp(0.88rem, 1.4vw, 1.1rem);
     font-weight: 500; backdrop-filter: blur(6px);
 }
-.song-item:hover { background: var(--surface2); transform: translateX(5px); color: var(--text); }
+.song-item:hover { background: var(--surface2); transform: translateX(6px); color: var(--text); }
 
 .back-btn { margin-top: 10px; }
 
@@ -209,15 +248,15 @@ h2 {
 .result-content {
     background: var(--surface);
     border: 1px solid var(--border);
-    padding: clamp(14px, 3vh, 28px) clamp(12px, 3vw, 30px);
-    border-radius: 16px; backdrop-filter: blur(12px);
-    max-width: 480px; margin: 0 auto;
+    padding: clamp(24px, 5vh, 52px) clamp(20px, 5vw, 64px);
+    border-radius: 20px; backdrop-filter: blur(12px);
+    max-width: 640px; margin: 0 auto;
     box-shadow: 0 5px 26px var(--shadow);
 }
-.result-details { color: var(--text2); font-size: clamp(0.75rem, 1.3vw, 1rem); margin: 12px 0; }
-.result-details p { margin: 8px 0; }
-.result-details span { font-weight: 700; font-size: clamp(0.85rem, 1.5vw, 1.15rem); color: var(--text); }
-.result-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.result-details { color: var(--text2); font-size: clamp(0.9rem, 1.6vw, 1.2rem); margin: 16px 0; }
+.result-details p { margin: 10px 0; }
+.result-details span { font-weight: 700; font-size: clamp(1rem, 1.8vw, 1.35rem); color: var(--text); }
+.result-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
 
 /* ノルマゲージ固定サイズ */
 #norma-top-bar { flex-shrink: 0 !important; height: 72px !important; }
