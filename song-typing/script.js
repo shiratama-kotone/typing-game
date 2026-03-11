@@ -1131,7 +1131,7 @@ function loadLyric(lyric) {
             const windowEnd = nextLyric
                 ? nextLyric.time
                 : (gameState.totalDuration || lyric.time + 3);
-            const windowMs = Math.max(200, (windowEnd - lyric.time) * 0.75 * 1000);
+            const windowMs = Math.min(10000, Math.max(200, (windowEnd - lyric.time) * 0.75 * 1000));
 
             // 総キーストローク数を計算
             const totalKeys = gameState.currentRomaji.reduce((s, c) => s + c.current.length, 0);
@@ -1476,9 +1476,9 @@ function endGame() {
     set('final-kps', kps);
 
     // ランク・CLEAR・コンボ画像
-    const BASE = 'https://github.com/shiratama-kotone/typing-game/blob/main/assets/';
+    const BASE = '../assets/';
     const rankLabel = rank.label + rank.sup; // e.g. "SSS+", "S+", "D"
-    const rankImgUrl = `${BASE}${encodeURIComponent(rankLabel)}.png?raw=true`;
+    const rankImgUrl = `${BASE}${encodeURIComponent(rankLabel)}.png`;
 
     const normaCleared = gameState.totalTypedChars >= gameState.totalNorma && gameState.totalNorma > 0;
     const allTyped = gameState.completedUnits >= gameState.totalUnits && gameState.totalUnits > 0;
@@ -1487,7 +1487,6 @@ function endGame() {
 
     const fr = document.getElementById('final-rank');
     if (fr) {
-        // #final-rank の親に badges エリアを注入（初回のみ）
         let badges = document.getElementById('result-badges');
         if (!badges) {
             badges = document.createElement('div');
@@ -1495,19 +1494,18 @@ function endGame() {
             fr.parentNode.insertBefore(badges, fr);
         }
 
-        // badges HTML
         let badgesHtml = '';
         if (normaCleared) {
-            badgesHtml += `<img src="${BASE}clear.png?raw=true" alt="CLEAR" title="CLEAR">`;
+            badgesHtml += `<img src="${BASE}clear.png" alt="CLEAR">`;
         }
-        badgesHtml += `<img src="${rankImgUrl}" alt="${rankLabel}" title="${rankLabel}">`;
+        badgesHtml += `<img src="${rankImgUrl}" alt="${rankLabel}">`;
         if (allJustice) {
-            badgesHtml += `<img src="${BASE}ALL%20JUSTICE.png?raw=true" alt="ALL JUSTICE">`;
+            badgesHtml += `<img src="${BASE}ALL JUSTICE.png" alt="ALL JUSTICE">`;
         } else if (fullCombo) {
-            badgesHtml += `<img src="${BASE}FULL%20COMBO.png?raw=true" alt="FULL COMBO">`;
+            badgesHtml += `<img src="${BASE}FULL COMBO.png" alt="FULL COMBO">`;
         }
         badges.innerHTML = badgesHtml;
-        fr.innerHTML = ''; // テキストランクは非表示
+        fr.innerHTML = '';
     }
 
     switchScreen('result-screen');
