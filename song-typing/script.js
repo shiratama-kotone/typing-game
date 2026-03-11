@@ -611,7 +611,7 @@ function formatDuration(sec) {
         #game-screen #lyrics-scroll-panel {
             width: 100%;
             margin: 0;
-            height: clamp(90px, 14vh, 160px);
+            height: clamp(160px, 28vh, 260px);
         }
 
         /* ローマ字・歌詞表示 */
