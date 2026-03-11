@@ -228,7 +228,7 @@ function formatDuration(sec) {
         #norma-gauge-wrapper { position: relative; margin: 0 auto 10px; }
         #norma-top-bar {
             position: relative;
-            height: 90px !important;
+            height: 72px !important;
             background: var(--gauge-bg, rgba(0,0,0,0.5));
             overflow: hidden;
             margin-bottom: 3px;
@@ -254,8 +254,8 @@ function formatDuration(sec) {
             transform: skewX(-12deg);
             transition: background 0.25s ease;
         }
-        .nseg.pre-norma { height: 40px !important; }
-        .nseg.at-norma  { height: 63px !important; }
+        .nseg.pre-norma { height: 32px !important; }
+        .nseg.at-norma  { height: 50px !important; }
         #norma-segs-row .nseg:first-child { margin-left: 4px; }
         #norma-segs-row .nseg:last-child  { margin-right: 4px; }
 
@@ -447,9 +447,9 @@ function formatDuration(sec) {
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0,0,0,0.65);
             font-family: 'M PLUS 1p', sans-serif;
-            min-width: 300px;
-            max-width: 440px;
-            height: 80px;
+            min-width: 360px;
+            max-width: 520px;
+            height: 100px;
         }
         #game-info-overlay.visible { display: flex; }
 
@@ -459,8 +459,8 @@ function formatDuration(sec) {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 22px;
-            min-width: 130px;
+            padding: 8px 26px;
+            min-width: 155px;
             color: #fff;
             position: relative;
             overflow: hidden;
@@ -481,32 +481,32 @@ function formatDuration(sec) {
                 );
         }
         #gio-diff-label {
-            font-size: 0.62rem;
+            font-size: 0.66rem;
             font-weight: 800;
             letter-spacing: 0.14em;
             opacity: 0.9;
             text-transform: uppercase;
             line-height: 1;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
         #gio-diff-name {
-            font-size: 1.3rem;
+            font-size: 1.55rem;
             font-weight: 900;
             letter-spacing: 0.05em;
             line-height: 1.1;
             text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
         #gio-diff-name.we-text {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             letter-spacing: 0.02em;
         }
         #gio-speed-badge {
-            font-size: 0.7rem;
+            font-size: 0.78rem;
             font-weight: 900;
             opacity: 0.92;
             letter-spacing: 0.05em;
-            margin-top: 2px;
+            margin-top: 3px;
             line-height: 1;
             text-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
@@ -516,8 +516,8 @@ function formatDuration(sec) {
             flex: 1;
             background: rgba(0,0,0,0.82);
             color: #fff;
-            padding: 0 14px;
-            font-size: 0.9rem;
+            padding: 0 16px;
+            font-size: 1rem;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
@@ -534,13 +534,13 @@ function formatDuration(sec) {
             justify-content: center;
             background: #111;
             color: #fff;
-            padding: 4px 16px;
-            min-width: 64px;
+            padding: 4px 18px;
+            min-width: 72px;
             border-left: 1px solid rgba(255,255,255,0.1);
             flex-shrink: 0;
         }
         #gio-level-label {
-            font-size: 0.52rem;
+            font-size: 0.54rem;
             letter-spacing: 0.1em;
             opacity: 0.65;
             text-transform: uppercase;
@@ -548,7 +548,7 @@ function formatDuration(sec) {
             margin-bottom: 2px;
         }
         #gio-level-num {
-            font-size: 1.7rem;
+            font-size: 2rem;
             font-weight: 900;
             line-height: 1;
         }
@@ -733,6 +733,7 @@ function injectRecordUI() {
         <div id="gio-diff">
             <div id="gio-diff-label">DIFFICULTY</div>
             <div id="gio-diff-name">MASTER</div>
+            <div id="gio-speed-badge" style="display:none"></div>
         </div>
         <div id="gio-title">曲名</div>
         <div id="gio-level">
@@ -878,6 +879,7 @@ async function startRecording() {
 
         mediaRecorder.start(100);
         recordingActive = true;
+        document.body.classList.add('sharing-active');
 
         document.getElementById('record-btn').classList.add('recording');
         document.getElementById('record-btn').innerHTML = '⏹';
@@ -892,6 +894,7 @@ function stopRecording() {
     recordingActive = false;
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    document.body.classList.remove('sharing-active');
 
     document.getElementById('record-btn').classList.remove('recording');
     document.getElementById('record-btn').innerHTML = '⏺';
