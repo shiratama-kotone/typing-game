@@ -1339,7 +1339,6 @@ function buildLyricScrollPanel() {
     const jl = document.getElementById('japanese-line');
     if (!jl) return;
 
-    // パネルを japanese-line の親に挿入
     const panel = document.createElement('div');
     panel.id = 'lyrics-scroll-panel';
     const inner = document.createElement('div');
