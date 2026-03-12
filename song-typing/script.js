@@ -684,7 +684,7 @@ function injectConfirmScreen() {
                     <input type="checkbox" id="cb-speed" onchange="onSpeedCheckChange(this)">
                     倍速モード
                 </span>
-                <select id="speed-select" style="display:none;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:inherit;font-size:0.9rem;cursor:pointer;">
+                <select id="speed-select" onchange="playbackSpeed=parseFloat(this.value);updateGameInfoOverlay(true);" style="display:none;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:inherit;font-size:0.9rem;cursor:pointer;">
                     ${Array.from({length:36},(_,i)=>{ const v=(0.25+i*0.05).toFixed(2); return `<option value="${v}"${v==='1.00'?' selected':''}>${v}x</option>`; }).join('')}
                 </select>
             </label>
@@ -732,10 +732,12 @@ function injectRecordUI() {
     document.body.appendChild(gio);
 }
 
-// 倍速チェックボックス
 function onSpeedCheckChange(cb) {
     const sel = document.getElementById('speed-select');
     if (sel) sel.style.display = cb.checked ? 'block' : 'none';
+    if (!cb.checked) playbackSpeed = 1.0;
+    else playbackSpeed = parseFloat(sel?.value || '1.0');
+    updateGameInfoOverlay(true);
 }
 
 // ゲーム情報オーバーレイ更新
