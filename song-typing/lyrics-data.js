@@ -2808,9 +2808,9 @@ const SONGS = [
     title: 'Verse X',
     youtubeId: 'RDDbK6twErgUg',
 },
-    {
+{
     id: 'bug_25_1ban',
-    title: 'バグ / 25時、ナイトコードで。 × 鏡音レン(一番のみ)',
+    title: 'バグ / 25時、ナイトコードで。 × 鏡音レン(1番のみ)',
     youtubeId: '2Ii7UBMxWVw',
     lyrics: [
         { time: 13.87, text: '迷子', kana: ['ま','い','ご'] },
@@ -2853,8 +2853,8 @@ const SONGS = [
         { time: 35.22, text: 'バグさ', kana: ['ば','ぐ','さ'] },
         { time: 36.10, text: 'バグ', kana: ['ば','ぐ'] },
         { time: 36.40, text: 'バグ', kana: ['ば','ぐ'] },
-        { time: 37.34, text: 'タ', kana: ['た'] },
-        { time: 37.44, text: 'タ', kana: ['た'] },
+        { time: 37.23, text: 'タ', kana: ['た'] },
+        { time: 37.54, text: 'タ', kana: ['た'] },
         { time: 38.03, text: 'タグ', kana: ['た','ぐ'] },
         { time: 38.28, text: '才能の', kana: ['さ','い','の','う','の'] },
         { time: 38.95, text: 'タグ', kana: ['た','ぐ'] },
