@@ -465,7 +465,8 @@ const SINGLE_MAP = {
     'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
     'や':'ya','ゆ':'yu','よ':'yo',
     'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-    'わ':'wa','を':'wo','ん':'n','っ':'っ','ー':'-'
+    'わ':'wa','を':'wo','ん':'n','っ':'ltu','ー':'-',
+    'ゔ':'vu'
 };
 const COMBO_MAP = {
     'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
@@ -479,7 +480,19 @@ const COMBO_MAP = {
     'じゃ':'ja','じゅ':'ju','じょ':'jo',
     'びゃ':'bya','びゅ':'byu','びょ':'byo',
     'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
-    'ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo'
+    'ふぁ':'fa','ふぃ':'fi','ふぇ':'fe','ふぉ':'fo',
+    'うぃ':'wi','うぇ':'we',
+    'てぃ':'thi','でぃ':'dhi',
+    'ゔぁ':'va','ゔぃ':'vi','ゔぇ':'ve','ゔぉ':'vo',
+    'ゔゃ':'vya','ゔゅ':'vyu','ゔょ':'vyo',
+    'つぁ':'tsa','つぃ':'tsi','つぇ':'tse','つぉ':'tso',
+    'てぇ':'the','てゅ':'thu',
+    'でぁ':'dha','でぇ':'dhe','でゅ':'dhu',
+    'とぁ':'twa','とぃ':'twi','とぅ':'twu','とぇ':'twe','とぉ':'two',
+    'どぁ':'dwa','どぃ':'dwi','どぅ':'dwu','どぇ':'dwe','どぉ':'dwo',
+    'くぁ':'kwa','ぐぁ':'gwa',
+    'うぁ':'wha','うぉ':'who',
+    'いぇ':'ye'
 };
 
 function toRomaji(kanaArray) {
@@ -488,8 +501,11 @@ function toRomaji(kanaArray) {
         if (i + 1 < kanaArray.length && COMBO_MAP[kanaArray[i] + kanaArray[i+1]]) {
             result += COMBO_MAP[kanaArray[i] + kanaArray[i+1]]; i += 2; continue;
         }
-        if (kanaArray[i] === 'っ' && i + 1 < kanaArray.length && SINGLE_MAP[kanaArray[i+1]]) {
-            result += SINGLE_MAP[kanaArray[i+1]][0]; i++; continue;
+        if (kanaArray[i] === 'っ') {
+            if (i + 1 < kanaArray.length && SINGLE_MAP[kanaArray[i+1]]) {
+                result += SINGLE_MAP[kanaArray[i+1]][0]; i++; continue; // 次の子音を重ねる
+            }
+            result += 'ltu'; i++; continue; // 末尾または後が不明な場合
         }
         result += SINGLE_MAP[kanaArray[i]] || kanaArray[i]; i++;
     }
@@ -500,9 +516,12 @@ function toRomaji(kanaArray) {
 function countKeystrokes(kanaArray) {
     let total = 0, i = 0;
     while (i < kanaArray.length) {
-        if (kanaArray[i] === 'っ' && i + 1 < kanaArray.length) {
-            const nxt = SINGLE_MAP[kanaArray[i+1]];
-            if (nxt) { total += 1; i++; continue; } // っ → 次の子音1文字だけ
+        if (kanaArray[i] === 'っ') {
+            if (i + 1 < kanaArray.length) {
+                const nxt = SINGLE_MAP[kanaArray[i+1]];
+                if (nxt) { total += 1; i++; continue; } // っ → 次の子音1文字だけ
+            }
+            total += 3; i++; continue; // 末尾っ → ltu
         }
         if (i + 1 < kanaArray.length && COMBO_MAP[kanaArray[i] + kanaArray[i+1]]) {
             total += COMBO_MAP[kanaArray[i] + kanaArray[i+1]].length; i += 2; continue;
