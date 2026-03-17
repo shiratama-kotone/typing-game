@@ -294,9 +294,9 @@
             </div>
         </div>
         <div class="input-group">
-            <label>YouTube動画ID</label>
-            <input type="text" id="youtube-id" placeholder="例: dQw4w9WgXcQ">
-            <p class="hint">YouTubeのURLの「v=」の後ろの部分</p>
+            <label>YouTube動画ID または 動画URL</label>
+            <input type="text" id="youtube-id" placeholder="例: dQw4w9WgXcQ　または　https://example.com/movie.mp4">
+            <p class="hint">YouTube URL の「v=」後ろ、または mp4/webm などの直リンクURL</p>
         </div>
         <button class="btn" onclick="startSetup()">作成開始</button>
 
@@ -443,7 +443,7 @@ let previewPlayer = null;
 let currentTime = 0;
 let previewCurrentTime = 0;
 let lyricsData = [];
-let songId = '', songTitle = '', youtubeId = '';
+let songId = '', songTitle = '', youtubeId = '', videoUrl = '';
 let isWorldsEnd = false, worldsEndChar = '';
 let isInst = false;
 let updateInterval = null;
@@ -588,14 +588,27 @@ function updateColorPreview() {
     }
 }
 
+function isDirectVideoUrl(str) {
+    if (!str) return false;
+    return /^https?:\/\/.+\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(str) ||
+           (str.startsWith('http') && !str.includes('youtube.com') && !str.includes('youtu.be'));
+}
+
 function onYouTubeIframeAPIReady() {}
 
 // ===== セットアップ =====
 function startSetup() {
     songId    = document.getElementById('song-id').value.trim();
     songTitle = document.getElementById('song-title').value.trim();
-    youtubeId = document.getElementById('youtube-id').value.trim();
-    if (!songId || !songTitle || !youtubeId) { alert('全ての項目を入力してください'); return; }
+    const input = document.getElementById('youtube-id').value.trim();
+    if (!songId || !songTitle || !input) { alert('全ての項目を入力してください'); return; }
+    if (isDirectVideoUrl(input)) {
+        videoUrl  = input;
+        youtubeId = '';
+    } else {
+        youtubeId = input;
+        videoUrl  = '';
+    }
     lyricsData = [];
     isWorldsEnd = false; worldsEndChar = ''; isInst = false;
     createPlayer();
@@ -606,11 +619,12 @@ function importAndStart() {
     if (!code) { alert('インポートするコードを入力してください'); return; }
     try {
         const data = eval('(' + code + ')');
-        if (!data.id || !data.title || !data.youtubeId) throw new Error('不正なフォーマットです');
-        songId       = data.id;
-        songTitle    = data.title;
-        youtubeId    = data.youtubeId;
-        isWorldsEnd  = !!(data.worldsEnd);
+        if (!data.id || !data.title || (!data.youtubeId && !data.videoUrl)) throw new Error('不正なフォーマットです');
+        songId        = data.id;
+        songTitle     = data.title;
+        youtubeId     = data.youtubeId || '';
+        videoUrl      = data.videoUrl  || '';
+        isWorldsEnd   = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
         isInst = !data.lyrics || data.lyrics.length === 0;
         lyricsData = (data.lyrics || []).map(l => ({
@@ -624,14 +638,38 @@ function importAndStart() {
 
 // ===== プレイヤー =====
 function createPlayer() {
-    player = new YT.Player('youtube-player', {
-        height: '500', width: '100%', videoId: youtubeId,
-        host: 'https://www.youtube.com',
-        playerVars: { autoplay: 0, enablejsapi: 1, origin: window.location.origin },
-        events: { onReady: onPlayerReady }
-    });
     document.getElementById('setup-section').style.display = 'none';
     document.getElementById('main-content').classList.add('active');
+
+    if (isDirectVideoUrl(videoUrl)) {
+        const container = document.getElementById('youtube-player');
+        container.innerHTML = '';
+        const vid = document.createElement('video');
+        vid.src = videoUrl;
+        vid.controls = true;
+        vid.style.cssText = 'width:100%;height:500px;background:#000;';
+        vid.preload = 'metadata';
+        container.appendChild(vid);
+        // player互換APIラップ
+        player = {
+            getCurrentTime: () => vid.currentTime,
+            getDuration:    () => isFinite(vid.duration) ? vid.duration : 0,
+            seekTo:         (t) => { vid.currentTime = t; },
+            playVideo:      () => vid.play(),
+            pauseVideo:     () => vid.pause(),
+            setPlaybackRate:(r) => { vid.playbackRate = r; },
+            destroy:        () => { vid.pause(); vid.src = ''; },
+            loadVideoById:  () => {},
+        };
+        vid.addEventListener('loadedmetadata', onPlayerReady);
+    } else {
+        player = new YT.Player('youtube-player', {
+            height: '500', width: '100%', videoId: youtubeId,
+            host: 'https://www.youtube.com',
+            playerVars: { autoplay: 0, enablejsapi: 1, origin: window.location.origin },
+            events: { onReady: onPlayerReady }
+        });
+    }
 }
 function onPlayerReady() {
     updateInterval = setInterval(() => {
@@ -819,10 +857,11 @@ function editSelectedSong() {
     const song = _loadedSongs[idx];
     const code = JSON.stringify(song).replace(/"([^"]+)":/g, '$1:').replace(/"/g, "'");
     // importAndStart と同じ処理をオブジェクトから直接実行
-    songId       = song.id;
-    songTitle    = song.title;
-    youtubeId    = song.youtubeId;
-    isWorldsEnd  = !!(song.worldsEnd);
+    songId        = song.id;
+    songTitle     = song.title;
+    youtubeId     = song.youtubeId || '';
+    videoUrl      = song.videoUrl  || '';
+    isWorldsEnd   = !!(song.worldsEnd);
     worldsEndChar = song.worldsEnd || '';
     isInst = !song.lyrics || song.lyrics.length === 0;
     lyricsData = (song.lyrics || []).map(l => ({
@@ -839,7 +878,12 @@ function generateCode() {
         alert('歌詞を1つ以上追加するか、インスト曲またはWORLD\'S ENDを設定してください'); return;
     }
     const weChar = document.getElementById('worlds-end-char') ? document.getElementById('worlds-end-char').value.trim() : worldsEndChar;
-    let code = `{\n    id: '${songId}',\n    title: '${songTitle}',\n    youtubeId: '${youtubeId}',\n`;
+    let code = `{\n    id: '${songId}',\n    title: '${songTitle}',\n`;
+    if (videoUrl) {
+        code += `    videoUrl: '${videoUrl}',\n`;
+    } else {
+        code += `    youtubeId: '${youtubeId}',\n`;
+    }
     if (isWorldsEnd && weChar) {
         code += `    worldsEnd: '${weChar}',\n`;
     }
@@ -873,11 +917,12 @@ function importCode() {
     if (!code) { alert('コードを貼り付けてください'); return; }
     try {
         const data = eval('(' + code + ')');
-        if (!data.id || !data.title || !data.youtubeId) throw new Error('不正なフォーマットです');
-        songId       = data.id;
-        songTitle    = data.title;
-        youtubeId    = data.youtubeId;
-        isWorldsEnd  = !!(data.worldsEnd);
+        if (!data.id || !data.title || (!data.youtubeId && !data.videoUrl)) throw new Error('不正なフォーマットです');
+        songId        = data.id;
+        songTitle     = data.title;
+        youtubeId     = data.youtubeId || '';
+        videoUrl      = data.videoUrl  || '';
+        isWorldsEnd   = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
         isInst = !data.lyrics || data.lyrics.length === 0;
         lyricsData = (data.lyrics || []).map(l => ({
@@ -894,7 +939,14 @@ function importCode() {
         if (weChar)   weChar.value      = worldsEndChar;
         if (instCheck) instCheck.checked = isInst;
         if (lyricsArea) lyricsArea.style.display = isInst ? 'none' : '';
-        if (player) player.loadVideoById(youtubeId);
+        if (player) {
+            if (videoUrl && isDirectVideoUrl(videoUrl)) {
+                player.destroy?.();
+                createPlayer();
+            } else {
+                player.loadVideoById(youtubeId);
+            }
+        }
         renderLyricsList();
         showMessage('import-success');
         let info = `インポート完了！\n曲: ${songTitle}`;
@@ -970,21 +1022,39 @@ function openPreview() {
     document.getElementById('preview-overlay').classList.add('active');
     buildPreviewScrollPanel();
     document.getElementById('preview-romaji').textContent = '';
-    previewPlayer = new YT.Player('preview-player', {
-        height: '100%', width: '100%', videoId: youtubeId,
-        host: 'https://www.youtube.com',
-        playerVars: {
-            autoplay: 1, controls: 0, disablekb: 1,
-            fs: 0, modestbranding: 1, rel: 0,
-            enablejsapi: 1, origin: window.location.origin
-        },
-        events: {
-            onReady: (e) => {
-                e.target.playVideo();
-                previewUpdateInterval = setInterval(updatePreviewLyric, 50);
+
+    if (isDirectVideoUrl(videoUrl)) {
+        const container = document.getElementById('preview-player');
+        container.innerHTML = '';
+        const vid = document.createElement('video');
+        vid.src = videoUrl;
+        vid.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+        vid.playsInline = true;
+        container.appendChild(vid);
+        previewPlayer = {
+            getCurrentTime: () => vid.currentTime,
+            pauseVideo: () => vid.pause(),
+            destroy: () => { vid.pause(); vid.src = ''; vid.remove(); },
+        };
+        vid.play();
+        previewUpdateInterval = setInterval(updatePreviewLyric, 50);
+    } else {
+        previewPlayer = new YT.Player('preview-player', {
+            height: '100%', width: '100%', videoId: youtubeId,
+            host: 'https://www.youtube.com',
+            playerVars: {
+                autoplay: 1, controls: 0, disablekb: 1,
+                fs: 0, modestbranding: 1, rel: 0,
+                enablejsapi: 1, origin: window.location.origin
+            },
+            events: {
+                onReady: (e) => {
+                    e.target.playVideo();
+                    previewUpdateInterval = setInterval(updatePreviewLyric, 50);
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 let _prevPreviewIdx = -1;
