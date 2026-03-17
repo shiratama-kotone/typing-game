@@ -10,6 +10,40 @@ let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
 
+// ===== 直リンク動画ヘルパー =====
+function isDirectVideoUrl(str) {
+    if (!str) return false;
+    return /^https?:\/\/.+\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(str) ||
+           (str.startsWith('http') && !str.includes('youtube.com') && !str.includes('youtu.be'));
+}
+
+// HTML5 <video> を YT.Player 互換APIでラップ
+function makeHtmlVideoPlayer(container, url, { onReady, onEnded } = {}) {
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+    vid.playsInline = true;
+    vid.preload = 'metadata';
+    container.innerHTML = '';
+    container.appendChild(vid);
+
+    const api = {
+        getCurrentTime: () => vid.currentTime,
+        getDuration:    () => isFinite(vid.duration) ? vid.duration : 0,
+        seekTo:         (t) => { vid.currentTime = t; },
+        playVideo:      () => vid.play(),
+        pauseVideo:     () => vid.pause(),
+        setPlaybackRate:(r) => { vid.playbackRate = r; },
+        destroy:        () => { vid.pause(); vid.src = ''; vid.remove(); },
+    };
+
+    vid.addEventListener('loadedmetadata', () => { if (onReady) onReady({ target: api }); });
+    vid.addEventListener('ended', () => { if (onEnded) onEnded(); });
+    vid.addEventListener('error', () => console.warn('動画読み込みエラー:', url));
+
+    return api;
+}
+
 // サウンドエフェクト
 let typingSound = null;
 let missSound = null;
@@ -1032,21 +1066,30 @@ function showConfirmScreen(song) {
 
     // YT プレイヤーを confirm-yt-player（画面外）に生成して duration を取得
     if (player) { try { player.destroy(); } catch(e){} player = null; }
-    player = new YT.Player('confirm-yt-player', {
-        height: '100%', width: '100%',
-        videoId: song.youtubeId,
-        host: 'https://www.youtube.com',
-        playerVars: {
-            autoplay: 0, controls: 0, disablekb: 1, fs: 0,
-            modestbranding: 1, rel: 0, iv_load_policy: 3,
-            cc_load_policy: 0, playsinline: 1, enablejsapi: 1,
-            origin: window.location.origin
-        },
-        events: {
+
+    if (isDirectVideoUrl(song.videoUrl)) {
+        // 直リンク動画：HTMLビデオで duration 取得（再生はしない）
+        const container = document.getElementById('confirm-yt-player');
+        player = makeHtmlVideoPlayer(container, song.videoUrl, {
             onReady: onConfirmPlayerReady,
-            onStateChange: onPlayerStateChange
-        }
-    });
+        });
+    } else {
+        player = new YT.Player('confirm-yt-player', {
+            height: '100%', width: '100%',
+            videoId: song.youtubeId,
+            host: 'https://www.youtube.com',
+            playerVars: {
+                autoplay: 0, controls: 0, disablekb: 1, fs: 0,
+                modestbranding: 1, rel: 0, iv_load_policy: 3,
+                cc_load_policy: 0, playsinline: 1, enablejsapi: 1,
+                origin: window.location.origin
+            },
+            events: {
+                onReady: onConfirmPlayerReady,
+                onStateChange: onPlayerStateChange
+            }
+        });
+    }
 }
 
 function onConfirmPlayerReady(event) {
@@ -1091,27 +1134,40 @@ function startGameFromConfirm() {
     const inp = document.getElementById('input-field');
     if (inp) inp.style.display = autoMode ? 'none' : '';
 
-    // game-screen が visible になったので youtube-player に新規作成
-    player = new YT.Player('youtube-player', {
-        height: '100%', width: '100%',
-        videoId: currentSong.youtubeId,
-        host: 'https://www.youtube.com',
-        playerVars: {
-            autoplay: 1, controls: 0, disablekb: 1, fs: 0,
-            modestbranding: 1, rel: 0, iv_load_policy: 3,
-            cc_load_policy: 0, playsinline: 1, enablejsapi: 1,
-            origin: window.location.origin
-        },
-        events: {
+    // game-screen が visible になったのでプレイヤー作成
+    if (isDirectVideoUrl(currentSong.videoUrl)) {
+        const container = document.getElementById('youtube-player');
+        player = makeHtmlVideoPlayer(container, currentSong.videoUrl, {
             onReady: (e) => {
                 e.target.seekTo(0);
                 e.target.setPlaybackRate(playbackSpeed);
                 e.target.playVideo();
                 startTracking();
             },
-            onStateChange: onPlayerStateChange
-        }
-    });
+            onEnded: endGame,
+        });
+    } else {
+        player = new YT.Player('youtube-player', {
+            height: '100%', width: '100%',
+            videoId: currentSong.youtubeId,
+            host: 'https://www.youtube.com',
+            playerVars: {
+                autoplay: 1, controls: 0, disablekb: 1, fs: 0,
+                modestbranding: 1, rel: 0, iv_load_policy: 3,
+                cc_load_policy: 0, playsinline: 1, enablejsapi: 1,
+                origin: window.location.origin
+            },
+            events: {
+                onReady: (e) => {
+                    e.target.seekTo(0);
+                    e.target.setPlaybackRate(playbackSpeed);
+                    e.target.playVideo();
+                    startTracking();
+                },
+                onStateChange: onPlayerStateChange
+            }
+        });
+    }
 }
 
 // ===== ゲーム初期化 =====
