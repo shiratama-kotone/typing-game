@@ -88,6 +88,7 @@ const ROMAJI_TABLE = {
     'や':['ya'],'ゆ':['yu'],'よ':['yo'],
     'ら':['ra'],'り':['ri'],'る':['ru'],'れ':['re'],'ろ':['ro'],
     'わ':['wa'],'を':['wo'],'ん':['nn','n'],'ー':['-'],
+    'ゔ':['vu'],
     'a':['a'],'b':['b'],'c':['c'],'d':['d'],'e':['e'],
     'f':['f'],'g':['g'],'h':['h'],'i':['i'],'j':['j'],
     'k':['k'],'l':['l'],'m':['m'],'n':['n'],'o':['o'],
@@ -111,7 +112,17 @@ const COMBO_ROMAJI = {
     'ぴゃ':['pya'],'ぴゅ':['pyu'],'ぴょ':['pyo'],
     'ふぁ':['fa'],'ふぃ':['fi'],'ふぇ':['fe'],'ふぉ':['fo'],
     'うぃ':['wi'],'うぇ':['we'],
-    'てぃ':['thi'],'でぃ':['dhi']
+    'てぃ':['thi'],'でぃ':['dhi'],
+    'ゔぁ':['va'],'ゔぃ':['vi'],'ゔぇ':['ve'],'ゔぉ':['vo'],
+    'ゔゃ':['vya'],'ゔゅ':['vyu'],'ゔょ':['vyo'],
+    'つぁ':['tsa'],'つぃ':['tsi'],'つぇ':['tse'],'つぉ':['tso'],
+    'てぇ':['the'],'てゅ':['thu'],
+    'でぁ':['dha'],'でぇ':['dhe'],'でゅ':['dhu'],
+    'とぁ':['twa'],'とぃ':['twi'],'とぅ':['twu'],'とぇ':['twe'],'とぉ':['two'],
+    'どぁ':['dwa'],'どぃ':['dwi'],'どぅ':['dwu'],'どぇ':['dwe'],'どぉ':['dwo'],
+    'くぁ':['kwa'],'ぐぁ':['gwa'],
+    'うぁ':['wha'],'うぉ':['who'],
+    'いぇ':['ye']
 };
 
 // ===== 難易度計算 =====
@@ -1436,12 +1447,17 @@ function convertToRomaji(kana) {
     const result = [];
     let i = 0;
     while (i < kana.length) {
-        if (kana[i] === 'っ' && i + 1 < kana.length) {
-            const nxt = ROMAJI_TABLE[kana[i + 1]];
-            if (nxt && nxt[0]) {
-                result.push({ options: [nxt[0][0], 'xtu', 'ltu'], current: nxt[0][0] });
-                i++; continue;
+        if (kana[i] === 'っ') {
+            if (i + 1 < kana.length) {
+                const nxt = ROMAJI_TABLE[kana[i + 1]];
+                if (nxt && nxt[0]) {
+                    result.push({ options: [nxt[0][0], 'xtu', 'ltu'], current: nxt[0][0] });
+                    i++; continue;
+                }
             }
+            // 末尾っ または後続が変換不能
+            result.push({ options: ['ltu', 'xtu'], current: 'ltu' });
+            i++; continue;
         }
         if (i + 1 < kana.length) {
             const combo = kana[i] + kana[i + 1];
