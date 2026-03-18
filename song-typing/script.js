@@ -669,49 +669,6 @@ function formatDuration(sec) {
         #game-screen #norma-top-bar   { height: 60px !important; }
         #game-screen .nseg.pre-norma  { height: 26px !important; }
         #game-screen .nseg.at-norma   { height: 42px !important; }
-        /* ===== COMBOパネル ===== */
-        #combo-panel {
-            position: fixed;
-            right: clamp(12px, 3vw, 40px);
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-            flex-direction: column;
-            align-items: flex-end;
-            pointer-events: none;
-            z-index: 100;
-        }
-        /* 横幅に余裕があるときだけ表示 */
-        @media (min-width: 1100px) {
-            #combo-panel { display: flex; }
-        }
-        #combo-panel.hidden { opacity: 0; transition: opacity 0.3s; }
-        #combo-panel.visible { opacity: 1; transition: opacity 0.3s; }
-        #combo-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.18em;
-            color: var(--text3);
-            margin-bottom: 2px;
-            align-self: flex-end;
-        }
-        #combo-number {
-            font-size: clamp(3rem, 6vw, 5rem);
-            font-weight: 900;
-            line-height: 1;
-            letter-spacing: -0.02em;
-            /* デフォルト: ノーミス虹色 */
-            background: linear-gradient(90deg, #f87 0%, #fc6 20%, #ff6 40%, #6f6 60%, #6cf 80%, #d6f 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        #combo-number.missed {
-            background: linear-gradient(180deg, #fff2f3 0%, #fbddfd 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
@@ -838,12 +795,6 @@ function injectRecordUI() {
         </div>
     `;
     document.body.appendChild(gio);
-
-    // COMBOパネル
-    const cp = document.createElement('div');
-    cp.id = 'combo-panel';
-    cp.innerHTML = `<div id="combo-label">COMBO</div><div id="combo-number">0</div>`;
-    document.body.appendChild(cp);
 }
 
 function onSpeedCheckChange(cb) {
@@ -1268,7 +1219,7 @@ function initGame() {
         totalLyricChars: 0, totalNorma: 0, totalTypedChars: 0,
         completedCurrentLine: false, completedUnits: 0, totalUnits: 0,
         totalDuration: savedDuration,
-        currentCombo: 0, everMissed: false, comboVisible: false
+        currentCombo: 0, everMissed: false, comboVisible: false,
     };
     activeColor = null;
     currentLyricIndex = 0;
@@ -1297,16 +1248,6 @@ function initGame() {
 
     updateScore();
     updateNormaGauge();
-
-    // COMBOパネル初期化（ノーミスなので虹色・表示）
-    const panel = document.getElementById('combo-panel');
-    const numEl = document.getElementById('combo-number');
-    if (panel && numEl) {
-        numEl.textContent = '0';
-        numEl.classList.remove('missed');
-        panel.classList.remove('hidden');
-        panel.classList.add('visible');
-    }
 
     const inp = document.getElementById('input-field');
     if (inp) { inp.value = ''; inp.disabled = true; }
@@ -1647,7 +1588,6 @@ function handleInput(e) {
     if (matched) {
         e.target.value = '';
         updateScore();
-        updateCombo(true);
         updateNormaGauge();
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             gameState.completedCurrentLine = true;
@@ -1666,7 +1606,6 @@ function handleInput(e) {
         playMissSound();
         e.target.value = '';
         updateScore();
-        updateCombo(false);
         updateNormaGauge();
     }
 }
@@ -1680,36 +1619,6 @@ function updateScore() {
 }
 
 // ===== COMBOパネル更新 =====
-function updateCombo(hit) {
-    const panel  = document.getElementById('combo-panel');
-    const numEl  = document.getElementById('combo-number');
-    if (!panel || !numEl) return;
-
-    if (hit) {
-        gameState.currentCombo++;
-        // ミス後5COMBO達成で再表示
-        if (!gameState.comboVisible && gameState.currentCombo >= 5) {
-            gameState.comboVisible = true;
-            panel.classList.remove('hidden');
-            panel.classList.add('visible');
-        }
-    } else {
-        gameState.everMissed = true;
-        gameState.currentCombo = 0;
-        gameState.comboVisible = false;
-        panel.classList.remove('visible');
-        panel.classList.add('hidden');
-    }
-
-    numEl.textContent = gameState.currentCombo;
-    // 色: ノーミス=虹色, ミス経験あり=グラデーション
-    if (gameState.everMissed) {
-        numEl.classList.add('missed');
-    } else {
-        numEl.classList.remove('missed');
-    }
-}
-
 // ===== ノルマゲージ構築 =====
 function buildNormaGauge() {
     const container = document.querySelector('.combo-gauge-container');
