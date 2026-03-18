@@ -9,6 +9,7 @@ let songSortOrder = 'difficulty'; // 'default' | 'difficulty'
 let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
+let comboPopTimer = null;
 
 // ===== 直リンク動画ヘルパー =====
 function isDirectVideoUrl(str) {
@@ -669,6 +670,47 @@ function formatDuration(sec) {
         #game-screen #norma-top-bar   { height: 60px !important; }
         #game-screen .nseg.pre-norma  { height: 26px !important; }
         #game-screen .nseg.at-norma   { height: 42px !important; }
+
+        /* ===== COMBOパネル ===== */
+        #combo-panel {
+            position: fixed;
+            right: clamp(12px, 3vw, 40px);
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            flex-direction: column;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 100;
+        }
+        @media (min-width: 1100px) {
+            #combo-panel { display: flex; }
+        }
+        #combo-panel.hidden { opacity: 0; transition: opacity 0.3s; }
+        #combo-panel.visible { opacity: 1; transition: opacity 0.3s; }
+        #combo-label-text {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--text3);
+            margin-bottom: 2px;
+            align-self: flex-end;
+        }
+        #combo-number {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(180deg, #fff2f3 0%, #fbddfd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: transform 0.1s ease-out;
+            display: inline-block;
+        }
+        #combo-number.pop {
+            transform: scale(0.75);
+        }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
             border: 1px solid var(--border); border-radius: 6px;
@@ -803,6 +845,12 @@ function injectRecordUI() {
         </div>
     `;
     document.body.appendChild(gio);
+
+    // COMBOパネル
+    const cp = document.createElement('div');
+    cp.id = 'combo-panel';
+    cp.innerHTML = `<div id="combo-label-text">COMBO</div><div id="combo-number">0</div>`;
+    document.body.appendChild(cp);
 }
 
 function onSpeedCheckChange(cb) {
@@ -1057,6 +1105,8 @@ function showTitleScreen() { switchScreen('title-screen'); }
 function showSongSelect() {
     if (player) { try { player.pauseVideo(); } catch(e){} }
     updateGameInfoOverlay(false);
+    const cp = document.getElementById('combo-panel');
+    if (cp) { cp.classList.remove('visible'); cp.classList.add('hidden'); }
     switchScreen('song-select-screen');
 }
 
@@ -1227,7 +1277,7 @@ function initGame() {
         totalLyricChars: 0, totalNorma: 0, totalTypedChars: 0,
         completedCurrentLine: false, completedUnits: 0, totalUnits: 0,
         totalDuration: savedDuration,
-        currentCombo: 0, everMissed: false, comboVisible: false,
+        currentCombo: 0, maxCombo: 0, everMissed: false, comboVisible: false,
     };
     activeColor = null;
     currentLyricIndex = 0;
@@ -1256,6 +1306,15 @@ function initGame() {
 
     updateScore();
     updateNormaGauge();
+
+    // COMBOパネル初期化（ゲーム開始時は非表示）
+    const comboPanel = document.getElementById('combo-panel');
+    const comboNum   = document.getElementById('combo-number');
+    if (comboPanel && comboNum) {
+        comboNum.textContent = '0';
+        comboPanel.classList.remove('visible');
+        comboPanel.classList.add('hidden');
+    }
 
     const inp = document.getElementById('input-field');
     if (inp) { inp.value = ''; inp.disabled = true; }
@@ -1596,6 +1655,7 @@ function handleInput(e) {
     if (matched) {
         e.target.value = '';
         updateScore();
+        updateCombo(true);
         updateNormaGauge();
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             gameState.completedCurrentLine = true;
@@ -1614,6 +1674,7 @@ function handleInput(e) {
         playMissSound();
         e.target.value = '';
         updateScore();
+        updateCombo(false);
         updateNormaGauge();
     }
 }
@@ -1624,6 +1685,33 @@ function updateScore() {
     set('score', gameState.score);
     set('correct-count', gameState.correctCount);
     set('miss-count', gameState.missCount);
+}
+
+function updateCombo(hit) {
+    const panel = document.getElementById('combo-panel');
+    const numEl = document.getElementById('combo-number');
+    if (!panel || !numEl) return;
+    if (hit) {
+        gameState.currentCombo++;
+        if (gameState.currentCombo > gameState.maxCombo) gameState.maxCombo = gameState.currentCombo;
+        if (!gameState.comboVisible && gameState.currentCombo >= 5) {
+            gameState.comboVisible = true;
+            panel.classList.remove('hidden');
+            panel.classList.add('visible');
+        }
+        // ポップアニメーション
+        if (comboPopTimer) { clearTimeout(comboPopTimer); comboPopTimer = null; numEl.classList.remove('pop'); }
+        void numEl.offsetWidth;
+        numEl.classList.add('pop');
+        comboPopTimer = setTimeout(() => { numEl.classList.remove('pop'); comboPopTimer = null; }, 100);
+    } else {
+        gameState.everMissed = true;
+        gameState.currentCombo = 0;
+        gameState.comboVisible = false;
+        panel.classList.remove('visible');
+        panel.classList.add('hidden');
+    }
+    numEl.textContent = gameState.currentCombo;
 }
 
 // ===== COMBOパネル更新 =====
@@ -1827,6 +1915,21 @@ function endGame() {
 
     switchScreen('result-screen');
     updateGameInfoOverlay(true);
+
+    // COMBOパネルを非表示
+    const cp = document.getElementById('combo-panel');
+    if (cp) { cp.classList.remove('visible'); cp.classList.add('hidden'); }
+
+    // 最大COMBO数をリザルトに表示
+    let maxComboEl = document.getElementById('result-max-combo');
+    if (!maxComboEl) {
+        maxComboEl = document.createElement('p');
+        maxComboEl.id = 'result-max-combo';
+        const kpsEl = document.getElementById('final-kps')?.parentElement;
+        if (kpsEl) kpsEl.parentNode.insertBefore(maxComboEl, kpsEl.nextSibling);
+        else document.querySelector('.result-details')?.appendChild(maxComboEl);
+    }
+    maxComboEl.textContent = `最大コンボ数: ${gameState.maxCombo}`;
 }
 
 // ===== もう一度（確認画面から再スタート） =====
