@@ -679,22 +679,24 @@ function formatDuration(sec) {
             transform: translateY(-50%);
             display: none;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
             pointer-events: none;
             z-index: 100;
+            opacity: 0;
+            pointer-events: none;
         }
         @media (min-width: 1100px) {
             #combo-panel { display: flex; }
         }
-        #combo-panel.hidden { opacity: 0; transition: opacity 0.3s; }
-        #combo-panel.visible { opacity: 1; transition: opacity 0.3s; }
+        #combo-panel.hidden { opacity: 0; }
+        #combo-panel.visible { opacity: 1; }
         #combo-label-text {
             font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.18em;
             color: var(--text3);
             margin-bottom: 2px;
-            align-self: flex-end;
+            text-align: center;
         }
         #combo-number {
             font-size: clamp(3rem, 6vw, 5rem);
@@ -705,9 +707,8 @@ function formatDuration(sec) {
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            transition: transform 0.1s ease-out;
             display: inline-block;
-            /* ライトモード時のみ枠線（text-shadowで擬似outline） */
+            text-align: center;
             filter: drop-shadow(0 0 2px rgba(180,100,180,0.5)) drop-shadow(0 0 6px rgba(180,100,180,0.3));
         }
         @media (prefers-color-scheme: dark) {
@@ -1105,7 +1106,11 @@ function switchScreen(id) {
     if (t) t.classList.add('active');
 }
 
-function showTitleScreen() { switchScreen('title-screen'); }
+function showTitleScreen() {
+    const cp = document.getElementById('combo-panel');
+    if (cp) { cp.classList.remove('visible'); cp.classList.add('hidden'); }
+    switchScreen('title-screen');
+}
 
 function showSongSelect() {
     if (player) { try { player.pauseVideo(); } catch(e){} }
@@ -1524,6 +1529,7 @@ function scheduleAutoType(keyIndex, interval) {
         gameState.totalTypedChars++;
         gameState.lineTypedChars++;
         playTypingSound();
+        updateCombo(true);
 
         if (gameState.currentCharPosition >= cur.current.length) {
             gameState.completedUnits++;
@@ -1531,7 +1537,6 @@ function scheduleAutoType(keyIndex, interval) {
                 ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits) : 0;
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
-            updateCombo(true);
         }
 
         updateScore();
@@ -1669,7 +1674,7 @@ function handleInput(e) {
     if (matched) {
         e.target.value = '';
         updateScore();
-        updateCombo(true);
+        for (let i = 0; i < input.length; i++) updateCombo(true);
         updateNormaGauge();
         if (gameState.currentCharIndex >= gameState.currentRomaji.length) {
             gameState.completedCurrentLine = true;
