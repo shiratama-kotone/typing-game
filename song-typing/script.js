@@ -1015,8 +1015,14 @@ function createSongList() {
     if (!songList) return;
     songList.innerHTML = '';
 
+    const allSongs = (typeof SONGS !== 'undefined') ? SONGS : [];
+    if (allSongs.length === 0) {
+        songList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">lyrics-data.js が読み込まれていないか、曲が登録されていません。</p>';
+        return;
+    }
+
     // ソート
-    let songs = [...SONGS];
+    let songs = [...allSongs];
     if (songSortOrder === 'difficulty') {
         songs.sort((a, b) => {
             const da = getDifficultyInfo(a);
