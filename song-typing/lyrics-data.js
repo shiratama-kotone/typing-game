@@ -1,7 +1,7 @@
 // 歌詞データ専用ファイル
 // 曲を追加する時はここに追記してください
 
-const SONGS = [
+ver SONGS = [
     {
     id: 'iris_out',
     title: 'IRIS OUT',
