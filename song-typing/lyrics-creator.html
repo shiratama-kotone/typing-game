@@ -502,10 +502,16 @@ function toRomaji(kanaArray) {
             result += COMBO_MAP[kanaArray[i] + kanaArray[i+1]]; i += 2; continue;
         }
         if (kanaArray[i] === 'っ') {
-            if (i + 1 < kanaArray.length && SINGLE_MAP[kanaArray[i+1]]) {
-                result += SINGLE_MAP[kanaArray[i+1]][0]; i++; continue; // 次の子音を重ねる
+            if (i + 1 < kanaArray.length) {
+                // っ+コンボ
+                if (i + 2 < kanaArray.length && COMBO_MAP[kanaArray[i+1] + kanaArray[i+2]]) {
+                    result += COMBO_MAP[kanaArray[i+1] + kanaArray[i+2]][0]; i++; continue;
+                }
+                // っ+単体
+                const nxt = SINGLE_MAP[kanaArray[i+1]];
+                if (nxt) { result += nxt[0]; i++; continue; }
             }
-            result += 'ltu'; i++; continue; // 末尾または後が不明な場合
+            result += 'ltu'; i++; continue; // 末尾
         }
         result += SINGLE_MAP[kanaArray[i]] || kanaArray[i]; i++;
     }
@@ -518,8 +524,12 @@ function countKeystrokes(kanaArray) {
     while (i < kanaArray.length) {
         if (kanaArray[i] === 'っ') {
             if (i + 1 < kanaArray.length) {
+                // っ+コンボ
+                if (i + 2 < kanaArray.length && COMBO_MAP[kanaArray[i+1] + kanaArray[i+2]]) {
+                    total += 1; i++; continue;
+                }
                 const nxt = SINGLE_MAP[kanaArray[i+1]];
-                if (nxt) { total += 1; i++; continue; } // っ → 次の子音1文字だけ
+                if (nxt) { total += 1; i++; continue; }
             }
             total += 3; i++; continue; // 末尾っ → ltu
         }
@@ -720,8 +730,8 @@ function addLyric() {
     const colorEnd = document.getElementById('lyrics-color-end').checked;
 
     if (!text) { alert('歌詞を入力してください'); return; }
-    if (kana && !/^[ぁ-んーa-z0-9 ]+$/.test(kana)) {
-        alert('読みはひらがな、長音記号（ー）、小文字英数字のみで入力してください'); return;
+    if (kana && !/^[ぁ-んゔーa-z0-9 ]+$/.test(kana)) {
+        alert('読みはひらがな、ゔ、長音記号（ー）、小文字英数字のみで入力してください'); return;
     }
 
     const entry = {
@@ -849,7 +859,8 @@ function loadFromLyricsDataJs() {
             return r.text();
         })
         .then(text => {
-            const match = text.match(/const\s+SONGS\s*=\s*(\[[\s\S]*?\]);/);
+            const match = text.match(/const\s+SONGS\s*=\s*(\[[\s\S]*\])\s*;?\s*$/m)
+                       || text.match(/const\s+SONGS\s*=\s*(\[[\s\S]*\])/);
             if (!match) throw new Error('SONGS配列が見つかりません');
             _loadedSongs = eval(match[1]);
             const sel = document.getElementById('lyricsdata-song-select');
