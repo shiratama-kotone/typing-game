@@ -1,7 +1,7 @@
 // 歌詞データ専用ファイル
 // 曲を追加する時はここに追記してください
 
-ver SONGS = [
+window.SONGS = [
     {
     id: 'iris_out',
     title: 'IRIS OUT',
