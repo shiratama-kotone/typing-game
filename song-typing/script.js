@@ -1307,13 +1307,20 @@ function initGame() {
     updateScore();
     updateNormaGauge();
 
-    // COMBOパネル初期化（ゲーム開始時は非表示）
+    // COMBOパネル初期化（Inst以外は常に表示）
     const comboPanel = document.getElementById('combo-panel');
     const comboNum   = document.getElementById('combo-number');
+    const isInstSong = getDifficultyInfo(currentSong).isInst;
     if (comboPanel && comboNum) {
         comboNum.textContent = '0';
-        comboPanel.classList.remove('visible');
-        comboPanel.classList.add('hidden');
+        if (isInstSong) {
+            comboPanel.classList.remove('visible');
+            comboPanel.classList.add('hidden');
+        } else {
+            gameState.comboVisible = true;
+            comboPanel.classList.remove('hidden');
+            comboPanel.classList.add('visible');
+        }
     }
 
     const inp = document.getElementById('input-field');
@@ -1366,6 +1373,7 @@ function checkLyricTiming(t) {
                     gameState.completedCurrentLine = true;
                 } else {
                     gameState.missedLines++;
+                    updateCombo(false);
                 }
             }
             loadLyric(lyric);
@@ -1694,11 +1702,6 @@ function updateCombo(hit) {
     if (hit) {
         gameState.currentCombo++;
         if (gameState.currentCombo > gameState.maxCombo) gameState.maxCombo = gameState.currentCombo;
-        if (!gameState.comboVisible && gameState.currentCombo >= 5) {
-            gameState.comboVisible = true;
-            panel.classList.remove('hidden');
-            panel.classList.add('visible');
-        }
         // ポップアニメーション
         if (comboPopTimer) { clearTimeout(comboPopTimer); comboPopTimer = null; numEl.classList.remove('pop'); }
         void numEl.offsetWidth;
@@ -1708,8 +1711,6 @@ function updateCombo(hit) {
         gameState.everMissed = true;
         gameState.currentCombo = 0;
         gameState.comboVisible = false;
-        panel.classList.remove('visible');
-        panel.classList.add('hidden');
     }
     numEl.textContent = gameState.currentCombo;
 }
