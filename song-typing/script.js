@@ -716,6 +716,10 @@ function formatDuration(sec) {
         }
         #combo-number.pop {
             transform: scale(0.75);
+            transition: none;
+        }
+        #combo-number:not(.pop) {
+            transition: transform 0.1s ease-out;
         }
         .btn-edit {
             background: var(--surface2); color: var(--text2);
@@ -1367,6 +1371,7 @@ function checkLyricTiming(t) {
                     // オートモード：未打鍵分を全部強制完了
                     autoTypeTimers.forEach(t => clearTimeout(t));
                     autoTypeTimers = [];
+                    let forcedKeys = 0;
                     while (gameState.currentCharIndex < gameState.currentRomaji.length) {
                         const cur = gameState.currentRomaji[gameState.currentCharIndex];
                         const remaining = cur.current.length - gameState.currentCharPosition;
@@ -1374,12 +1379,14 @@ function checkLyricTiming(t) {
                         gameState.totalKeystrokes     += remaining;
                         gameState.totalTypedChars     += remaining;
                         gameState.lineTypedChars      += remaining;
+                        forcedKeys                   += remaining;
                         gameState.completedUnits++;
                         gameState.score = gameState.totalUnits > 0
                             ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits) : 0;
                         gameState.currentCharIndex++;
                         gameState.currentCharPosition = 0;
                     }
+                    for (let i = 0; i < forcedKeys; i++) updateCombo(true);
                     gameState.completedCurrentLine = true;
                 } else {
                     gameState.missedLines++;
