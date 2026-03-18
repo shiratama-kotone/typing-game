@@ -800,7 +800,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     // SONGS が既にあればそのまま使う、なければ fetch で読み込む
-    if (typeof window.SONGS !== 'undefined' && Array.isArray(window.SONGS) && window.SONGS.length > 0) {
+    if (typeof SONGS !== 'undefined' && Array.isArray(SONGS) && SONGS.length > 0) {
         createSongList();
         return;
     }
@@ -1032,14 +1032,9 @@ function createSongList() {
     if (!songList) return;
     songList.innerHTML = '';
 
-    const allSongs = (typeof window.SONGS !== 'undefined' && Array.isArray(window.SONGS)) ? window.SONGS
-                   : (typeof SONGS !== 'undefined' && Array.isArray(SONGS)) ? SONGS
-                   : [];
+    const allSongs = (typeof SONGS !== 'undefined' && Array.isArray(SONGS)) ? SONGS : [];
     if (allSongs.length === 0) {
-        const hasSongs = typeof window.SONGS !== 'undefined';
-        songList.innerHTML = `<p style="color:var(--text3);text-align:center;padding:20px;">
-            ${hasSongs ? 'SONGS配列が空です。' : 'lyrics-data.js が読み込まれていません。<br>index.html に &lt;script src="./lyrics-data.js"&gt; があるか確認してください。'}
-        </p>`;
+        songList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">曲が見つかりません。lyrics-data.js を確認してください。</p>';
         return;
     }
 
