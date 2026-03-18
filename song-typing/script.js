@@ -794,11 +794,28 @@ window.addEventListener('DOMContentLoaded', () => {
     injectRecordUI();
     setupAudio();
     setupEventListeners();
-    createSongList();
 
     window.addEventListener('resize', () => {
         drawNormaStaff();
     });
+
+    // SONGS が既にあればそのまま使う、なければ fetch で読み込む
+    if (typeof window.SONGS !== 'undefined' && Array.isArray(window.SONGS) && window.SONGS.length > 0) {
+        createSongList();
+        return;
+    }
+    fetch('./lyrics-data.js')
+        .then(r => {
+            if (!r.ok) throw new Error(r.status);
+            return r.text();
+        })
+        .then(text => {
+            const s = document.createElement('script');
+            s.textContent = text;
+            document.head.appendChild(s);
+            createSongList();
+        })
+        .catch(() => createSongList());
 });
 
 // ===== ゲーム情報オーバーレイ注入 =====
@@ -1015,9 +1032,14 @@ function createSongList() {
     if (!songList) return;
     songList.innerHTML = '';
 
-    const allSongs = (typeof SONGS !== 'undefined') ? SONGS : [];
+    const allSongs = (typeof window.SONGS !== 'undefined' && Array.isArray(window.SONGS)) ? window.SONGS
+                   : (typeof SONGS !== 'undefined' && Array.isArray(SONGS)) ? SONGS
+                   : [];
     if (allSongs.length === 0) {
-        songList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">lyrics-data.js が読み込まれていないか、曲が登録されていません。</p>';
+        const hasSongs = typeof window.SONGS !== 'undefined';
+        songList.innerHTML = `<p style="color:var(--text3);text-align:center;padding:20px;">
+            ${hasSongs ? 'SONGS配列が空です。' : 'lyrics-data.js が読み込まれていません。<br>index.html に &lt;script src="./lyrics-data.js"&gt; があるか確認してください。'}
+        </p>`;
         return;
     }
 
