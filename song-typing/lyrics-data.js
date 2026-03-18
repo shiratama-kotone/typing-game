@@ -2678,7 +2678,7 @@ const SONGS = [
         { time: 106.15, text: '僕を', kana: ['ぼ','く','を'] },
         { time: 106.94, text: '指差してたー。', kana: ['ゆ','び','さ','し','て','た','ー'] }
     ]
-}
+},
     {
     id: 'internet_yamero',
     title: 'INTERNET YAMERO',
