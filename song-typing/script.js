@@ -769,10 +769,19 @@ window.addEventListener('DOMContentLoaded', () => {
                     .replace(/^\s*const\s+SONGS\s*=/m, 'window.SONGS =')
                     .replace(/^\s*var\s+SONGS\s*=/m, 'window.SONGS =')
                     .replace(/^\s*window\.SONGS\s*=/m, 'window.SONGS =');
-                try { eval(patched); } catch(e) {}
+                try { eval(patched); } catch(e) {
+                    const msg = 'eval error: ' + e;
+                    alert(msg);
+                    navigator.clipboard?.writeText(msg);
+                }
                 createSongList();
             })
-            .catch(() => createSongList());
+            .catch(e => {
+                const msg = 'fetch error: ' + e + '\nSONGS type: ' + typeof SONGS + '\nURL: ' + location.href;
+                alert(msg);
+                navigator.clipboard?.writeText(msg);
+                createSongList();
+            });
     }
 });
 
