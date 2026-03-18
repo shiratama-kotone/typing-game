@@ -707,6 +707,11 @@ function formatDuration(sec) {
             background-clip: text;
             transition: transform 0.1s ease-out;
             display: inline-block;
+            /* ライトモード時のみ枠線（text-shadowで擬似outline） */
+            filter: drop-shadow(0 0 2px rgba(180,100,180,0.5)) drop-shadow(0 0 6px rgba(180,100,180,0.3));
+        }
+        @media (prefers-color-scheme: dark) {
+            #combo-number { filter: none; }
         }
         #combo-number.pop {
             transform: scale(0.75);
@@ -1526,6 +1531,7 @@ function scheduleAutoType(keyIndex, interval) {
                 ? Math.floor(gameState.completedUnits * 1010000 / gameState.totalUnits) : 0;
             gameState.currentCharIndex++;
             gameState.currentCharPosition = 0;
+            updateCombo(true);
         }
 
         updateScore();
