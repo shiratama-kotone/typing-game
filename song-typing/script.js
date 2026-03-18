@@ -804,18 +804,23 @@ window.addEventListener('DOMContentLoaded', () => {
         createSongList();
         return;
     }
+    // デバッグ: どこで失敗しているか確認
+    alert('SONGS未検出。fetchを試みます: ' + location.href);
     fetch('./lyrics-data.js')
         .then(r => {
+            alert('fetch結果: ' + r.status + ' ' + r.url);
             if (!r.ok) throw new Error(r.status);
             return r.text();
         })
         .then(text => {
+            alert('取得成功 ' + text.length + '文字');
             const s = document.createElement('script');
             s.textContent = text;
             document.head.appendChild(s);
+            alert('SONGS after inject: ' + (typeof SONGS !== 'undefined' ? SONGS.length + '曲' : '未定義'));
             createSongList();
         })
-        .catch(() => createSongList());
+        .catch(e => { alert('fetchエラー: ' + e); createSongList(); });
 });
 
 // ===== ゲーム情報オーバーレイ注入 =====
