@@ -756,26 +756,24 @@ window.addEventListener('DOMContentLoaded', () => {
         drawNormaStaff();
     });
 
-    // SONGS が既にあればそのまま使う、なければ fetch で読み込む
+    // lyrics-data.js は index.html の <script> で読み込み済み
+    // const SONGS はグローバルスコープで参照可能
     if (typeof SONGS !== 'undefined' && Array.isArray(SONGS) && SONGS.length > 0) {
         createSongList();
-        return;
+    } else {
+        // フォールバック: fetch して eval
+        fetch('./lyrics-data.js')
+            .then(r => r.text())
+            .then(text => {
+                const patched = text
+                    .replace(/^\s*const\s+SONGS\s*=/m, 'window.SONGS =')
+                    .replace(/^\s*var\s+SONGS\s*=/m, 'window.SONGS =')
+                    .replace(/^\s*window\.SONGS\s*=/m, 'window.SONGS =');
+                try { eval(patched); } catch(e) {}
+                createSongList();
+            })
+            .catch(() => createSongList());
     }
-    fetch('./lyrics-data.js')
-        .then(r => {
-            if (!r.ok) throw new Error(r.status);
-            return r.text();
-        })
-        .then(text => {
-            // window.SONGS = [...] の部分を抽出して直接パース
-            const m = text.match(/window\.SONGS\s*=\s*(\[[\s\S]*\])\s*;?/) ||
-                      text.match(/(?:var|const|let)\s+SONGS\s*=\s*(\[[\s\S]*\])\s*;?/);
-            if (m) {
-                try { window.SONGS = eval(m[1]); } catch(e) { console.error(e); }
-            }
-            createSongList();
-        })
-        .catch(e => { console.error(e); createSongList(); });
 });
 
 // ===== ゲーム情報オーバーレイ注入 =====
@@ -986,8 +984,8 @@ function createSongList() {
     if (!songList) return;
     songList.innerHTML = '';
 
-    const allSongs = (typeof window.SONGS !== 'undefined' && Array.isArray(window.SONGS)) ? window.SONGS
-                   : (typeof SONGS !== 'undefined' && Array.isArray(SONGS)) ? SONGS
+    const allSongs = typeof SONGS !== 'undefined' ? SONGS
+                   : typeof window.SONGS !== 'undefined' ? window.SONGS
                    : [];
     if (allSongs.length === 0) {
         songList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">曲が見つかりません。lyrics-data.js を確認してください。</p>';
