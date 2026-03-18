@@ -765,11 +765,12 @@ window.addEventListener('DOMContentLoaded', () => {
         fetch('./lyrics-data.js')
             .then(r => r.text())
             .then(text => {
-                const patched = text
-                    .replace(/^\s*const\s+SONGS\s*=/m, 'window.SONGS =')
-                    .replace(/^\s*var\s+SONGS\s*=/m, 'window.SONGS =')
-                    .replace(/^\s*window\.SONGS\s*=/m, 'window.SONGS =');
-                try { eval(patched); } catch(e) {
+                try {
+                    // Functionコンストラクタで実行し、戻り値でSONGSを取得
+                    const getSongs = new Function(text + '\n; return typeof SONGS !== "undefined" ? SONGS : null;');
+                    const result = getSongs();
+                    if (result) window.SONGS = result;
+                } catch(e) {
                     const msg = 'eval error: ' + e;
                     alert(msg);
                     navigator.clipboard?.writeText(msg);
