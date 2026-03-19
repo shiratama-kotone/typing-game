@@ -2082,7 +2082,7 @@ const SONGS = [
 },
     {
     id: 'matsuken_samba2',
-    title: '(9.0) マツケンサンバⅡ [WORLD'S END 狂☆☆] (譜面確認) [CHUNITHM チュウニズム]',
+    title: "(9.0) マツケンサンバⅡ [WORLD'S END 狂☆☆] (譜面確認) [CHUNITHM チュウニズム]",
     youtubeId: 'FQpP0LAkQmc',
     worldsEnd: '狂',
     lyrics: [
@@ -2343,7 +2343,7 @@ const SONGS = [
 },
     {
     id: 'flower_snow_dnb',
-    title: '(9.0) 花と、雪と、ドラムンベース。 [WORLD’S END 撃☆☆☆☆] (譜面確認) [CHUNITHM チュウニズム]',
+    title: "(9.0) 花と、雪と、ドラムンベース。 [WORLD’S END 撃☆☆☆☆] (譜面確認) [CHUNITHM チュウニズム]",
     youtubeId: 'uhTqn2xAaIw',
     worldsEnd: '撃',
     lyrics: [
