@@ -2938,7 +2938,6 @@ const SONGS = [
     {
     id: 'koitsunanimiterunda',
     title: '「こいつ何見てるんだ？」と困惑させるための動画.mp4',
-    title: 'テトリス',
     yomi: 'こいつなにみてるんだ？とこんわくさせるためのどうがえむぴーふぉー',
     youtubeId: 'HRaqMxo7YeM',
     worldsEnd: '変',
@@ -3341,7 +3340,7 @@ const SONGS = [
     {
     "id": "lavie",
     "title": "ラヴィ",
-    "yomi: "らゔぃ",
+    "yomi": "らゔぃ",
     "genre": "vocaloid",
     "genre2": "pops",
     "youtubeId": "mq88yUFdVng",
