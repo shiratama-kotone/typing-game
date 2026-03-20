@@ -1940,21 +1940,20 @@ function updateNormaGauge() {
     const totalChars = gameState.totalLyricChars;
     if (totalChars <= 0) return;
 
-    // インスト曲：ratio をそのままトップバーに反映
+    // インスト曲：scoreに合わせてトップバー・セグメント更新
     if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) {
-        const ratio = gameState.totalNorma > 0
-            ? Math.min(gameState.totalTypedChars / gameState.totalNorma, 1) : 0;
-        const cleared = ratio >= 1;
-        topFill.style.width = (ratio * 100).toFixed(2) + '%';
+        const charsPerSegI = totalChars / 10;
+        const normasegsI   = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSegI)));
+        const typed        = gameState.totalTypedChars;
+        const cleared      = typed >= gameState.totalNorma;
+        const completedI   = Math.min(10, Math.floor(typed / charsPerSegI));
+        const segProgress  = (typed % charsPerSegI) / charsPerSegI;
+        topFill.style.width = (segProgress * 100).toFixed(2) + '%';
         topFill.style.background = cleared
             ? 'linear-gradient(to right, #ffff75 0%, #ffd040 40%, #f07802 100%)'
             : 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
         const clearLabel = document.getElementById('norma-clear-label');
         if (clearLabel) clearLabel.style.opacity = cleared ? '1' : '0';
-        // セグメント更新
-        const charsPerSegI = totalChars / 10;
-        const normasegsI   = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSegI)));
-        const completedI   = Math.min(10, Math.floor(gameState.totalTypedChars / charsPerSegI));
         for (let i = 0; i < 10; i++) {
             const seg = document.getElementById('nseg-' + i);
             if (!seg) continue;
