@@ -1074,12 +1074,12 @@ const GENRES = [
 
 function getGenreIds(song) {
     const diff = getDifficultyInfo(song);
-    // WE曲は強制的にworlds_endジャンル
-    if (diff.isWorldsEnd) return ['worlds_end'];
     const ids = [];
     if (song.genre)  ids.push(song.genre);
     if (song.genre2) ids.push(song.genre2);
     if (song.genre3) ids.push(song.genre3);
+    // WE曲は必ずworlds_endジャンルに追加（他ジャンルも維持）
+    if (diff.isWorldsEnd && !ids.includes('worlds_end')) ids.unshift('worlds_end');
     return ids.length > 0 ? ids : ['uncategorized'];
 }
 
