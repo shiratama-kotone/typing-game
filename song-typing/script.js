@@ -1449,8 +1449,8 @@ function initGame() {
         gameState.totalUnits = totalUnits;
     } else {
         // Inst曲：仮のtotalNormaを設定してゲージが時間比例で動くようにする
-        gameState.totalNorma = 1010000;
-        gameState.totalLyricChars = 1010000;
+        gameState.totalNorma = 101000;
+        gameState.totalLyricChars = 101000;
     }
 
     const jl = document.getElementById('japanese-line');
