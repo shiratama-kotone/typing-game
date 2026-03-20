@@ -10,6 +10,8 @@ let autoMode = false;
 let autoTypeTimers = [];
 let playbackSpeed = 1.0;
 let comboPopTimer = null;
+let allJusticeActive = false;
+let pendingEndGame = false;
 
 // ===== 直リンク動画ヘルパー =====
 function isDirectVideoUrl(str) {
@@ -352,6 +354,27 @@ function formatDuration(sec) {
             border-color: transparent;
             color: var(--bg);
         }
+
+        /* ジャンル折りたたみ */
+        .genre-section { margin-bottom: 6px; }
+        .genre-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px; border-radius: 10px;
+            cursor: pointer; user-select: none;
+            font-weight: 700; font-size: 0.88rem;
+            transition: opacity 0.15s;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        @media (prefers-color-scheme: dark) {
+            .genre-header { border-color: rgba(255,255,255,0.1); }
+        }
+        .genre-header:hover { opacity: 0.85; }
+        .genre-arrow { font-size: 0.7rem; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); display: inline-block; }
+        .genre-section.open .genre-arrow { transform: rotate(90deg); }
+        .genre-count { font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-left: auto; }
+        .genre-body { overflow: hidden; max-height: 0; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1); }
+        .genre-section.open .genre-body { max-height: 2000px; }
+        .genre-songs { padding: 4px 0 4px 8px; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 
         /* ===== 曲選択バッジ ===== */
         .song-item {
@@ -997,6 +1020,8 @@ function showAllJustice() {
     const txt = document.getElementById('all-justice-text');
     if (!overlay || !txt) return;
 
+    allJusticeActive = true;
+
     // リセット
     overlay.style.animation = 'none';
     txt.style.letterSpacing = '0em';
@@ -1019,12 +1044,45 @@ function showAllJustice() {
         } else {
             // 4秒後に0.1秒でフェードアウト
             overlay.style.animation = 'aj-fadeout 0.1s ease forwards';
+            overlay.addEventListener('animationend', () => {
+                allJusticeActive = false;
+                if (pendingEndGame) { pendingEndGame = false; endGame(); }
+            }, { once: true });
         }
     };
     rafId = requestAnimationFrame(expand);
 }
 
 // ===== ソートUI注入 =====
+// ===== ジャンル定義 =====
+const GENRES = [
+    { id: 'pops',        label: 'ポップス',          color: '#49d5eb' },
+    { id: 'kids',        label: 'キッズ',            color: '#fcd000' },
+    { id: 'anime',       label: 'アニメ',            color: '#fe90d2' },
+    { id: 'vocaloid',    label: 'ボーカロイド™曲',   color: '#cbcfde' },
+    { id: 'game',        label: 'ゲームミュージック', color: '#cc8aeb' },
+    { id: 'variety',     label: 'バラエティ',         color: '#0acc2a' },
+    { id: 'classic',     label: 'クラシック',         color: '#ded523' },
+    { id: 'namco',       label: 'ナムコオリジナル',   color: '#ff7028' },
+    { id: 'pjsk',        label: 'プロジェクトセカイ', color: '#abe1fa' },
+    { id: 'chunithm',    label: 'CHUNITHM',           color: '#fffa25' },
+    { id: 'maimai',      label: 'maimai',              color: '#ff66ce' },
+    { id: 'ongeki',      label: 'オンゲキ',            color: '#51e06e' },
+    { id: 'worlds_end',  label: "WORLD'S END",         color: null }, // WEの色は動的
+    { id: 'uncategorized', label: '未分類',            color: '#888888' },
+];
+
+function getGenreIds(song) {
+    const diff = getDifficultyInfo(song);
+    // WE曲は強制的にworlds_endジャンル
+    if (diff.isWorldsEnd) return ['worlds_end'];
+    const ids = [];
+    if (song.genre)  ids.push(song.genre);
+    if (song.genre2) ids.push(song.genre2);
+    if (song.genre3) ids.push(song.genre3);
+    return ids.length > 0 ? ids : ['uncategorized'];
+}
+
 function injectSortUI() {
     const songList = document.getElementById('song-list');
     if (!songList || document.getElementById('sort-bar')) return;
@@ -1035,14 +1093,18 @@ function injectSortUI() {
         <span class="sort-label">並び替え:</span>
         <button class="sort-btn"        id="sort-btn-default" onclick="setSortOrder('default')">追加順</button>
         <button class="sort-btn active" id="sort-btn-diff"    onclick="setSortOrder('difficulty')">難易度順</button>
+        <button class="sort-btn"        id="sort-btn-yomi"    onclick="setSortOrder('yomi')">五十音順</button>
+        <button class="sort-btn"        id="sort-btn-genre"   onclick="setSortOrder('genre')">ジャンル別</button>
     `;
     songList.parentNode.insertBefore(bar, songList);
 }
 
 function setSortOrder(order) {
     songSortOrder = order;
-    document.getElementById('sort-btn-default').classList.toggle('active', order === 'default');
-    document.getElementById('sort-btn-diff').classList.toggle('active',    order === 'difficulty');
+    ['default','diff','yomi','genre'].forEach(k => {
+        const el = document.getElementById(`sort-btn-${k}`);
+        if (el) el.classList.toggle('active', order === (k === 'diff' ? 'difficulty' : k));
+    });
     createSongList();
 }
 
@@ -1066,41 +1128,117 @@ function createSongList() {
         songs.sort((a, b) => {
             const da = getDifficultyInfo(a);
             const db = getDifficultyInfo(b);
-            // WE → 末尾、Inst → その前
             const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.over15 ? 9997 : (d.level ?? 0));
             return rank(da) - rank(db);
         });
+    } else if (songSortOrder === 'yomi') {
+        songs.sort((a, b) => {
+            const ya = a.yomi || a.title || '';
+            const yb = b.yomi || b.title || '';
+            return ya.localeCompare(yb, 'ja');
+        });
     }
 
+    if (songSortOrder === 'genre') {
+        renderGenreList(songs, songList);
+        return;
+    }
+
+    songs.forEach(song => songList.appendChild(makeSongItem(song)));
+}
+
+function makeSongItem(song) {
+    const diff = getDifficultyInfo(song);
+    const item = document.createElement('div');
+    item.className = 'song-item';
+    item.onclick = () => selectSong(song);
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'song-item-title';
+    titleSpan.textContent = song.title;
+
+    const badge = document.createElement('span');
+    badge.className = 'diff-badge';
+    if (diff.isWorldsEnd) {
+        badge.classList.add('diff-badge-we');
+        badge.textContent = `WORLD'S END 「${diff.weChar}」`;
+    } else if (diff.isInst) {
+        badge.classList.add('diff-badge-inst');
+        badge.textContent = 'Inst';
+    } else {
+        badge.style.background = diff.color;
+        if (diff.name === 'ULTIMA') badge.classList.add('diff-badge-ultima');
+        const lvLabel = diff.over15 ? '15+' : diff.level;
+        badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
+    }
+
+    item.appendChild(titleSpan);
+    item.appendChild(badge);
+    return item;
+}
+
+function renderGenreList(songs, container) {
+    // ジャンルごとに曲を振り分け
+    const map = new Map();
+    GENRES.forEach(g => map.set(g.id, []));
+
     songs.forEach(song => {
-        const diff = getDifficultyInfo(song);
-        const item = document.createElement('div');
-        item.className = 'song-item';
-        item.onclick = () => selectSong(song);
-
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'song-item-title';
-        titleSpan.textContent = song.title;
-
-        const badge = document.createElement('span');
-        badge.className = 'diff-badge';
-        if (diff.isWorldsEnd) {
-            badge.classList.add('diff-badge-we');
-            badge.textContent = `WORLD'S END 「${diff.weChar}」`;
-        } else if (diff.isInst) {
-            badge.classList.add('diff-badge-inst');
-            badge.textContent = 'Inst';
-        } else {
-            badge.style.background = diff.color;
-            if (diff.name === 'ULTIMA') badge.classList.add('diff-badge-ultima');
-            const lvLabel = diff.over15 ? '15+' : diff.level;
-            badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
-        }
-
-        item.appendChild(titleSpan);
-        item.appendChild(badge);
-        songList.appendChild(item);
+        const ids = getGenreIds(song);
+        ids.forEach(id => {
+            if (!map.has(id)) map.set(id, []);
+            map.get(id).push(song);
+        });
     });
+
+    GENRES.forEach(g => {
+        const list = map.get(g.id) || [];
+        if (list.length === 0) return;
+
+        // WE用色（グラデーション文字）
+        const isWE = g.id === 'worlds_end';
+        const bgColor = isWE ? 'linear-gradient(90deg,#ff0000,#ff7700,#ffee00,#00cc00,#0099ff,#8800cc)' : g.color;
+        const textColor = isWE ? '#fff' : (isLight(g.color) ? '#222' : '#fff');
+
+        const section = document.createElement('div');
+        section.className = 'genre-section';
+        section.dataset.genreId = g.id;
+
+        const header = document.createElement('div');
+        header.className = 'genre-header';
+        header.style.background = isWE ? 'linear-gradient(90deg,rgba(255,0,0,0.15),rgba(136,0,204,0.15))' : hexToRgba(g.color, 0.2);
+        header.style.color = g.color || '#fff';
+        header.innerHTML = `<span class="genre-arrow">▶</span><span>${g.label}</span><span class="genre-count">${list.length}曲</span>`;
+        header.onclick = () => {
+            section.classList.toggle('open');
+        };
+
+        const body = document.createElement('div');
+        body.className = 'genre-body';
+        const inner = document.createElement('div');
+        inner.className = 'genre-songs';
+        list.forEach(song => inner.appendChild(makeSongItem(song)));
+        body.appendChild(inner);
+
+        section.appendChild(header);
+        section.appendChild(body);
+        container.appendChild(section);
+    });
+}
+
+function hexToRgba(hex, alpha) {
+    if (!hex || !hex.startsWith('#')) return `rgba(128,128,128,${alpha})`;
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function isLight(hex) {
+    if (!hex || !hex.startsWith('#')) return false;
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return (r*299 + g*587 + b*114) / 1000 > 160;
 }
 
 // ===== 画面切り替え =====
@@ -1283,6 +1421,8 @@ function startGameFromConfirm() {
 
 // ===== ゲーム初期化 =====
 function initGame() {
+    allJusticeActive = false;
+    pendingEndGame = false;
     const savedDuration = gameState.totalDuration;
     gameState = {
         score: 0, correctCount: 0, missCount: 0, missedLines: 0,
@@ -1307,6 +1447,10 @@ function initGame() {
         gameState.totalLyricChars = totalChars;
         gameState.totalNorma = Math.ceil(totalChars * 0.4);
         gameState.totalUnits = totalUnits;
+    } else {
+        // Inst曲：仮のtotalNormaを設定してゲージが時間比例で動くようにする
+        gameState.totalNorma = 100;
+        gameState.totalLyricChars = 100;
     }
 
     const jl = document.getElementById('japanese-line');
@@ -1350,10 +1494,14 @@ function startTracking() {
 
         if (!currentSong.lyrics || currentSong.lyrics.length === 0) {
             if (gameState.totalDuration > 0) {
-                gameState.score = Math.floor((t / gameState.totalDuration) * 1010000);
+                const ratio = Math.min(t / gameState.totalDuration, 1);
+                gameState.score = Math.floor(ratio * 1010000);
+                // ノルマゲージをtime比例で更新
+                gameState.totalTypedChars = Math.floor(ratio * gameState.totalNorma);
                 updateScore();
+                updateNormaGauge();
                 const jl = document.getElementById('japanese-line');
-                if (jl) jl.textContent = '歌詞無し';
+                if (jl) jl.textContent = '歌詞なし';
             }
             return;
         }
@@ -1419,7 +1567,8 @@ function buildLyricScrollPanel() {
     // 前奏ラベル
     const prelude = document.createElement('div');
     prelude.id = 'lyrics-prelude-label';
-    prelude.textContent = '前奏';
+    const isInstSong2 = currentSong && getDifficultyInfo(currentSong).isInst;
+    prelude.textContent = isInstSong2 ? '歌詞なし' : '前奏';
     panel.appendChild(prelude);
 
     if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) return;
@@ -1859,6 +2008,7 @@ function onPlayerStateChange(event) {
 
 // ===== ゲーム終了 =====
 function endGame() {
+    if (allJusticeActive) { pendingEndGame = true; return; }
     if (updateInterval) { clearInterval(updateInterval); updateInterval = null; }
     autoTypeTimers.forEach(t => clearTimeout(t));
     autoTypeTimers = [];
