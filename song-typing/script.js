@@ -1449,8 +1449,8 @@ function initGame() {
         gameState.totalUnits = totalUnits;
     } else {
         // Inst曲：仮のtotalNormaを設定してゲージが時間比例で動くようにする
-        gameState.totalNorma = 101000;
-        gameState.totalLyricChars = 101000;
+        gameState.totalNorma = 1010000;
+        gameState.totalLyricChars = 1010000;
     }
 
     const jl = document.getElementById('japanese-line');
@@ -1951,6 +1951,21 @@ function updateNormaGauge() {
             : 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
         const clearLabel = document.getElementById('norma-clear-label');
         if (clearLabel) clearLabel.style.opacity = cleared ? '1' : '0';
+        // セグメント更新
+        const charsPerSegI = totalChars / 10;
+        const normasegsI   = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSegI)));
+        const completedI   = Math.min(10, Math.floor(gameState.totalTypedChars / charsPerSegI));
+        for (let i = 0; i < 10; i++) {
+            const seg = document.getElementById('nseg-' + i);
+            if (!seg) continue;
+            if (i < completedI) {
+                seg.style.background = i < normasegsI - 1
+                    ? 'linear-gradient(to bottom, #4bffff 0%, #3df5ea 50%, #3decde 100%)'
+                    : 'linear-gradient(to bottom, #e67606 0%, #f0a020 50%, #ebba30 100%)';
+            } else {
+                seg.style.background = '#474911';
+            }
+        }
         return;
     }
 
