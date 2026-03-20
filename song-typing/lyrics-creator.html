@@ -528,6 +528,8 @@ function loadDraft(draftId) {
     renderDraftList();
     syncYomiGenreUI();
 }
+
+function deleteDraft(draftId, e) {
     e.stopPropagation();
     if (!confirm('この下書きを削除しますか？')) return;
     const drafts = getDrafts().filter(d => d._draftId !== draftId);
