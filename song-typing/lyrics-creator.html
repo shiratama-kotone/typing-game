@@ -277,7 +277,10 @@
 
         <div class="setup-divider"><span>または</span></div>
 
-        <h3>lyrics-data.js から読み込む</h3>
+        <h3>保存済みの下書きから再開</h3>
+        <div id="setup-draft-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+            <span class="draft-empty">下書きなし</span>
+        </div>
         <p class="hint" style="margin-bottom:10px;">同じ階層の lyrics-data.js を読み込んで曲を選択できます。</p>
         <button class="btn btn-small" onclick="loadFromLyricsDataJs()">📂 lyrics-data.js を読み込む</button>
         <select id="lyricsdata-song-select" style="display:none;margin-left:10px;padding:8px;border-radius:8px;border:2px solid #ddd;font-size:1rem;">
@@ -515,15 +518,18 @@ function newDraft() {
 }
 
 function renderDraftList() {
-    const el = document.getElementById('draft-list');
-    if (!el) return;
     const drafts = getDrafts();
-    if (drafts.length === 0) { el.innerHTML = '<span class="draft-empty">下書きなし</span>'; return; }
-    el.innerHTML = drafts.map(d => `
-        <div class="draft-item${d._draftId === _currentDraftId ? ' active' : ''}" onclick="loadDraft('${d._draftId}')">
-            <span>${d.title || '(無題)'}</span>
-            <span class="draft-item-del" onclick="deleteDraft('${d._draftId}', event)">✕</span>
-        </div>`).join('');
+    const html = drafts.length === 0
+        ? '<span class="draft-empty">下書きなし</span>'
+        : drafts.map(d => `
+            <div class="draft-item${d._draftId === _currentDraftId ? ' active' : ''}" onclick="loadDraft('${d._draftId}')">
+                <span>${d.title || '(無題)'}</span>
+                <span class="draft-item-del" onclick="deleteDraft('${d._draftId}', event)">✕</span>
+            </div>`).join('');
+    const el = document.getElementById('draft-list');
+    if (el) el.innerHTML = html;
+    const el2 = document.getElementById('setup-draft-list');
+    if (el2) el2.innerHTML = html;
 }
 
 function confirmUnsaved() {
