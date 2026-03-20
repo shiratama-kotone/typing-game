@@ -13,6 +13,62 @@ let comboPopTimer = null;
 let allJusticeActive = false;
 let pendingEndGame = false;
 
+// ===== API設定 =====
+const API_BASE = 'https://typing-game-api.onrender.com'; // ← RenderのURLに変更
+let authToken    = localStorage.getItem('tg_token')    || null;
+let authUsername = localStorage.getItem('tg_username') || null;
+
+async function apiRequest(method, path, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const res = await fetch(API_BASE + path, {
+        method, headers,
+        body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'エラー');
+    return data;
+}
+
+async function doRegister(username, password) {
+    const data = await apiRequest('POST', '/auth/register', { username, password });
+    authToken    = data.token;
+    authUsername = data.username;
+    localStorage.setItem('tg_token', authToken);
+    localStorage.setItem('tg_username', authUsername);
+    return data;
+}
+
+async function doLogin(username, password) {
+    const data = await apiRequest('POST', '/auth/login', { username, password });
+    authToken    = data.token;
+    authUsername = data.username;
+    localStorage.setItem('tg_token', authToken);
+    localStorage.setItem('tg_username', authUsername);
+    return data;
+}
+
+function doLogout() {
+    authToken = null; authUsername = null;
+    localStorage.removeItem('tg_token');
+    localStorage.removeItem('tg_username');
+    renderAuthBar();
+}
+
+async function submitScore(song, score, missCount, maxCombo) {
+    if (!authToken) return;
+    try {
+        await apiRequest('POST', '/scores', {
+            song_id: song.id, song_title: song.title,
+            score, miss_count: missCount, max_combo: maxCombo
+        });
+    } catch(e) { console.warn('スコア送信失敗:', e.message); }
+}
+
+async function fetchRanking(songId) {
+    return await apiRequest('GET', `/ranking/${encodeURIComponent(songId)}`);
+}
+
 // ===== 直リンク動画ヘルパー =====
 function isDirectVideoUrl(str) {
     if (!str) return false;
@@ -751,6 +807,76 @@ function formatDuration(sec) {
             font-family: inherit;
         }
         .btn-edit:hover { background: var(--surface); color: var(--text); }
+
+        /* ===== 認証・ランキング ===== */
+        #auth-bar {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 8px 12px; margin-bottom: 10px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; font-size: 0.85rem;
+        }
+        #auth-bar input {
+            padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg); color: var(--text); font-size: 0.85rem;
+            font-family: inherit; width: 130px;
+        }
+        #auth-bar input:focus { outline: none; border-color: var(--text2); }
+        .auth-btn {
+            padding: 5px 14px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--surface2); color: var(--text); font-size: 0.82rem;
+            cursor: pointer; font-family: inherit; font-weight: 600;
+            transition: background 0.15s;
+        }
+        .auth-btn:hover { background: var(--border); }
+        .auth-btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .auth-btn.primary:hover { opacity: 0.85; }
+        #auth-status { font-size: 0.82rem; color: var(--text2); }
+        #auth-msg { font-size: 0.78rem; color: #e05; min-width: 0; }
+
+        /* ランキングモーダル */
+        #ranking-modal {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+        }
+        #ranking-modal.active { display: flex; }
+        #ranking-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; width: min(480px, 92vw);
+            max-height: 80vh; display: flex; flex-direction: column; gap: 10px;
+        }
+        #ranking-box h2 { font-size: 1rem; color: var(--text); margin: 0; }
+        #ranking-list { overflow-y: auto; flex: 1; }
+        .ranking-row {
+            display: grid; grid-template-columns: 28px 1fr 90px 60px;
+            gap: 6px; align-items: center; padding: 6px 4px;
+            border-bottom: 1px solid var(--border); font-size: 0.82rem;
+        }
+        .ranking-row:last-child { border-bottom: none; }
+        .rank-num { font-weight: 700; color: var(--text2); text-align: center; }
+        .rank-num.gold   { color: #f0a020; }
+        .rank-num.silver { color: #a0a8b8; }
+        .rank-num.bronze { color: #c07840; }
+        .rank-me { background: rgba(128,128,255,0.08); border-radius: 4px; }
+        .rank-score { font-weight: 700; text-align: right; color: var(--text); }
+        .rank-miss  { font-size: 0.75rem; color: var(--text3); text-align: right; }
+        .ranking-close-btn {
+            align-self: flex-end; padding: 6px 18px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+            color: var(--text); font-family: inherit;
+        }
+        .ranking-close-btn:hover { background: var(--border); }
+        .song-item-rank-btn {
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text3); cursor: pointer; font-family: inherit;
+            white-space: nowrap; transition: all 0.15s;
+        }
+        .song-item-rank-btn:hover { background: var(--surface2); color: var(--text); }
+
+        /* リザルトランキング */
+        #result-ranking { margin-top: 14px; }
+        #result-ranking h3 { font-size: 0.88rem; color: var(--text2); margin-bottom: 6px; }
     `;
     document.head.appendChild(style);
 })();
@@ -821,6 +947,8 @@ function injectConfirmScreen() {
 // ===== 初期化 =====
 window.addEventListener('DOMContentLoaded', () => {
     injectConfirmScreen();
+    injectAuthBar();
+    injectRankingModal();
     injectSortUI();
     injectAllJusticeOverlay();
     injectRecordUI();
@@ -860,6 +988,115 @@ window.addEventListener('DOMContentLoaded', () => {
             });
     }
 });
+
+// ===== 認証バー注入 =====
+function injectAuthBar() {
+    const songList = document.getElementById('song-list');
+    if (!songList) return;
+    const bar = document.createElement('div');
+    bar.id = 'auth-bar';
+    songList.parentNode.insertBefore(bar, songList);
+    renderAuthBar();
+}
+
+function renderAuthBar() {
+    const bar = document.getElementById('auth-bar');
+    if (!bar) return;
+    if (authUsername) {
+        bar.innerHTML = `
+            <span id="auth-status">👤 ${authUsername}</span>
+            <button class="auth-btn" onclick="doLogout()">ログアウト</button>
+            <span id="auth-msg"></span>
+        `;
+    } else {
+        bar.innerHTML = `
+            <input type="text"     id="auth-user" placeholder="ユーザー名">
+            <input type="password" id="auth-pass" placeholder="パスワード">
+            <button class="auth-btn primary" onclick="handleLogin()">ログイン</button>
+            <button class="auth-btn"         onclick="handleRegister()">新規登録</button>
+            <span id="auth-msg"></span>
+        `;
+        // Enterキー対応
+        bar.querySelectorAll('input').forEach(inp => {
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+        });
+    }
+}
+
+function setAuthMsg(msg, isError = true) {
+    const el = document.getElementById('auth-msg');
+    if (el) { el.textContent = msg; el.style.color = isError ? '#e05' : 'var(--text2)'; }
+}
+
+async function handleLogin() {
+    const user = document.getElementById('auth-user')?.value.trim();
+    const pass = document.getElementById('auth-pass')?.value;
+    if (!user || !pass) { setAuthMsg('入力してください'); return; }
+    setAuthMsg('...', false);
+    try {
+        await doLogin(user, pass);
+        renderAuthBar();
+    } catch(e) { setAuthMsg(e.message); }
+}
+
+async function handleRegister() {
+    const user = document.getElementById('auth-user')?.value.trim();
+    const pass = document.getElementById('auth-pass')?.value;
+    if (!user || !pass) { setAuthMsg('入力してください'); return; }
+    setAuthMsg('...', false);
+    try {
+        await doRegister(user, pass);
+        renderAuthBar();
+    } catch(e) { setAuthMsg(e.message); }
+}
+
+// ===== ランキングモーダル注入 =====
+function injectRankingModal() {
+    const modal = document.createElement('div');
+    modal.id = 'ranking-modal';
+    modal.innerHTML = `
+        <div id="ranking-box">
+            <h2 id="ranking-title">ランキング</h2>
+            <div id="ranking-list"><p style="color:var(--text3);text-align:center;padding:20px;">読み込み中...</p></div>
+            <button class="ranking-close-btn" onclick="closeRankingModal()">閉じる</button>
+        </div>
+    `;
+    modal.addEventListener('click', e => { if (e.target === modal) closeRankingModal(); });
+    document.body.appendChild(modal);
+}
+
+async function showRankingModal(song) {
+    const modal = document.getElementById('ranking-modal');
+    const title = document.getElementById('ranking-title');
+    const list  = document.getElementById('ranking-list');
+    if (!modal) return;
+    title.textContent = `🏆 ${song.title}`;
+    list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">読み込み中...</p>';
+    modal.classList.add('active');
+    try {
+        const data = await fetchRanking(song.id);
+        if (!data.ranking || data.ranking.length === 0) {
+            list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">まだスコアがありません</p>';
+            return;
+        }
+        list.innerHTML = data.ranking.map((r, i) => {
+            const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const meClass  = r.username === authUsername ? 'rank-me' : '';
+            return `<div class="ranking-row ${meClass}">
+                <span class="rank-num ${numClass}">${i + 1}</span>
+                <span>${r.username}</span>
+                <span class="rank-score">${r.score.toLocaleString()}</span>
+                <span class="rank-miss">${r.miss_count}miss</span>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        list.innerHTML = `<p style="color:#e05;text-align:center;padding:20px;">${e.message}</p>`;
+    }
+}
+
+function closeRankingModal() {
+    document.getElementById('ranking-modal')?.classList.remove('active');
+}
 
 // ===== ゲーム情報オーバーレイ注入 =====
 function injectRecordUI() {
@@ -1151,7 +1388,10 @@ function makeSongItem(song) {
     const diff = getDifficultyInfo(song);
     const item = document.createElement('div');
     item.className = 'song-item';
-    item.onclick = () => selectSong(song);
+    item.onclick = () => {
+        if (!authToken) { setAuthMsg('ログインしてください'); return; }
+        selectSong(song);
+    };
 
     const titleSpan = document.createElement('span');
     titleSpan.className = 'song-item-title';
@@ -1172,8 +1412,15 @@ function makeSongItem(song) {
         badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
     }
 
+    const rankBtn = document.createElement('button');
+    rankBtn.className = 'song-item-rank-btn';
+    rankBtn.textContent = '🏆';
+    rankBtn.title = 'ランキングを見る';
+    rankBtn.onclick = e => { e.stopPropagation(); showRankingModal(song); };
+
     item.appendChild(titleSpan);
     item.appendChild(badge);
+    item.appendChild(rankBtn);
     return item;
 }
 
@@ -2126,6 +2373,50 @@ function endGame() {
         else document.querySelector('.result-details')?.appendChild(maxComboEl);
     }
     maxComboEl.textContent = `最大コンボ数: ${gameState.maxCombo}`;
+
+    // スコア送信 & リザルトランキング表示
+    if (authToken && currentSong) {
+        submitScore(currentSong, gameState.score, gameState.missCount, gameState.maxCombo);
+        showResultRanking(currentSong);
+    }
+}
+
+async function showResultRanking(song) {
+    // コンテナ作成または再利用
+    let el = document.getElementById('result-ranking');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'result-ranking';
+        const rc = document.querySelector('.result-content') || document.querySelector('.result-details');
+        if (rc) rc.appendChild(el);
+    }
+    el.innerHTML = '<h3>🏆 このスコアのランキング</h3><p style="color:var(--text3);font-size:0.82rem;">読み込み中...</p>';
+
+    // スコア送信後に取得するため少し待つ
+    await new Promise(r => setTimeout(r, 600));
+    try {
+        const data = await fetchRanking(song.id);
+        if (!data.ranking || data.ranking.length === 0) {
+            el.innerHTML = '<h3>🏆 このスコアのランキング</h3><p style="color:var(--text3);font-size:0.82rem;">まだスコアがありません</p>';
+            return;
+        }
+        const rows = data.ranking.slice(0, 10).map((r, i) => {
+            const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const meClass  = r.username === authUsername ? 'rank-me' : '';
+            return `<div class="ranking-row ${meClass}">
+                <span class="rank-num ${numClass}">${i + 1}</span>
+                <span>${r.username}</span>
+                <span class="rank-score">${r.score.toLocaleString()}</span>
+                <span class="rank-miss">${r.miss_count}miss</span>
+            </div>`;
+        }).join('');
+        el.innerHTML = `<h3>🏆 このスコアのランキング（上位10位）</h3>
+            <div id="ranking-list">${rows}</div>
+            <button class="ranking-close-btn" style="margin-top:8px;" onclick="showRankingModal(window._currentSongForRanking)">全部見る</button>`;
+        window._currentSongForRanking = song;
+    } catch(e) {
+        el.innerHTML = `<h3>🏆 ランキング</h3><p style="color:#e05;font-size:0.82rem;">${e.message}</p>`;
+    }
 }
 
 // ===== もう一度（確認画面から再スタート） =====
