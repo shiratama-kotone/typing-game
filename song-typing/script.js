@@ -1449,8 +1449,8 @@ function initGame() {
         gameState.totalUnits = totalUnits;
     } else {
         // Inst曲：仮のtotalNormaを設定してゲージが時間比例で動くようにする
-        gameState.totalNorma = 100;
-        gameState.totalLyricChars = 100;
+        gameState.totalNorma = 1010000;
+        gameState.totalLyricChars = 1010000;
     }
 
     const jl = document.getElementById('japanese-line');
@@ -1496,8 +1496,7 @@ function startTracking() {
             if (gameState.totalDuration > 0) {
                 const ratio = Math.min(t / gameState.totalDuration, 1);
                 gameState.score = Math.floor(ratio * 1010000);
-                // ノルマゲージをtime比例で更新
-                gameState.totalTypedChars = Math.floor(ratio * gameState.totalNorma);
+                gameState.totalTypedChars = gameState.score;
                 updateScore();
                 updateNormaGauge();
                 const jl = document.getElementById('japanese-line');
@@ -1940,6 +1939,20 @@ function updateNormaGauge() {
 
     const totalChars = gameState.totalLyricChars;
     if (totalChars <= 0) return;
+
+    // インスト曲：ratio をそのままトップバーに反映
+    if (!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0) {
+        const ratio = gameState.totalNorma > 0
+            ? Math.min(gameState.totalTypedChars / gameState.totalNorma, 1) : 0;
+        const cleared = ratio >= 1;
+        topFill.style.width = (ratio * 100).toFixed(2) + '%';
+        topFill.style.background = cleared
+            ? 'linear-gradient(to right, #ffff75 0%, #ffd040 40%, #f07802 100%)'
+            : 'linear-gradient(to right, #164dac 0%, #164dac 55%, #1efdc6 85%, #ffffff 100%)';
+        const clearLabel = document.getElementById('norma-clear-label');
+        if (clearLabel) clearLabel.style.opacity = cleared ? '1' : '0';
+        return;
+    }
 
     const charsPerSeg   = totalChars / 10;
     const normaSegs     = Math.max(1, Math.min(10, Math.round(gameState.totalNorma / charsPerSeg)));
