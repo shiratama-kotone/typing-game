@@ -484,7 +484,13 @@ function loadDraft(draftId) {
     const ic = document.getElementById('inst-check'); if (ic) ic.checked = isInst;
     const la = document.getElementById('lyrics-input-area'); if (la) la.style.display = isInst ? 'none' : '';
     document.getElementById('output-textarea').value = '';
-    if (player) { if (isDirectVideoUrl(videoUrl)) { player.destroy?.(); createPlayer(); } else { player.loadVideoById?.(youtubeId || ''); } }
+    if (!player) {
+        createPlayer();
+    } else if (isDirectVideoUrl(videoUrl)) {
+        player.destroy?.(); createPlayer();
+    } else {
+        player.loadVideoById?.(youtubeId || '');
+    }
     renderLyricsList();
     renderDraftList();
 }
