@@ -350,6 +350,34 @@
 
             <div style="margin: 16px 0 12px; border-top: 2px solid #ddd;"></div>
 
+            <!-- 曲の読み・ジャンル -->
+            <div class="input-row-2" style="margin-bottom:10px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>曲名の読み（五十音ソート用）</label>
+                    <input type="text" id="song-yomi" placeholder="例: てれぱしー" oninput="songYomi=this.value">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>ジャンル1</label>
+                    <select id="song-genre" onchange="songGenre=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">未分類</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-row-2" style="margin-bottom:10px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>ジャンル2（任意）</label>
+                    <select id="song-genre2" onchange="songGenre2=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">なし</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>ジャンル3（任意）</label>
+                    <select id="song-genre3" onchange="songGenre3=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">なし</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- 歌詞入力エリア（Inst時は非表示） -->
             <div id="lyrics-input-area">
                 <div class="lyrics-input-row">
@@ -429,6 +457,7 @@ let lyricsData = [];
 let songId = '', songTitle = '', youtubeId = '', videoUrl = '';
 let isWorldsEnd = false, worldsEndChar = '';
 let isInst = false;
+let songYomi = '', songGenre = '', songGenre2 = '', songGenre3 = '';
 let updateInterval = null;
 let previewUpdateInterval = null;
 let _currentDraftId = null;
@@ -445,7 +474,7 @@ function saveDraftsRaw(arr) {
 }
 
 function getCurrentState() {
-    return { id: songId, title: songTitle, youtubeId, videoUrl, isWorldsEnd, worldsEnd: worldsEndChar, isInst, lyrics: lyricsData };
+    return { id: songId, title: songTitle, youtubeId, videoUrl, isWorldsEnd, worldsEnd: worldsEndChar, isInst, yomi: songYomi, genre: songGenre, genre2: songGenre2, genre3: songGenre3, lyrics: lyricsData };
 }
 
 function saveDraft(quiet = false) {
@@ -476,6 +505,10 @@ function loadDraft(draftId) {
     youtubeId = d.youtubeId || ''; videoUrl = d.videoUrl || '';
     isWorldsEnd = !!d.isWorldsEnd; worldsEndChar = d.worldsEnd || '';
     isInst = !!d.isInst;
+    songYomi   = d.yomi   || '';
+    songGenre  = d.genre  || '';
+    songGenre2 = d.genre2 || '';
+    songGenre3 = d.genre3 || '';
     lyricsData = (d.lyrics || []).map(l => ({ time: l.time, text: l.text, kana: l.kana || [], colorStart: l.colorStart || null, colorEnd: l.colorEnd || false }));
     _lastSavedJSON = JSON.stringify(getCurrentState());
     // UI復元
@@ -493,9 +526,8 @@ function loadDraft(draftId) {
     }
     renderLyricsList();
     renderDraftList();
+    syncYomiGenreUI();
 }
-
-function deleteDraft(draftId, e) {
     e.stopPropagation();
     if (!confirm('この下書きを削除しますか？')) return;
     const drafts = getDrafts().filter(d => d._draftId !== draftId);
@@ -770,6 +802,10 @@ function importAndStart() {
         isWorldsEnd   = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
         isInst = !data.lyrics || data.lyrics.length === 0;
+        songYomi   = data.yomi   || '';
+        songGenre  = data.genre  || '';
+        songGenre2 = data.genre2 || '';
+        songGenre3 = data.genre3 || '';
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
@@ -777,6 +813,7 @@ function importAndStart() {
         }));
         createPlayer();
         document.getElementById('import-textarea').value = '';
+        syncYomiGenreUI();
     } catch (e) { alert('インポートに失敗しました。\n' + e.message); }
 }
 
@@ -1019,12 +1056,17 @@ function editSelectedSong() {
     isWorldsEnd   = !!(song.worldsEnd);
     worldsEndChar = song.worldsEnd || '';
     isInst = !song.lyrics || song.lyrics.length === 0;
+    songYomi   = song.yomi   || '';
+    songGenre  = song.genre  || '';
+    songGenre2 = song.genre2 || '';
+    songGenre3 = song.genre3 || '';
     lyricsData = (song.lyrics || []).map(l => ({
         time: l.time, text: l.text, kana: l.kana || [],
         colorStart: l.colorStart || null,
         colorEnd:   l.colorEnd   || false
     }));
     createPlayer();
+    syncYomiGenreUI();
 }
 
 // ===== コード生成 / コピー / インポート =====
@@ -1036,6 +1078,10 @@ function generateCode() {
     const escapedId    = songId.replace(/'/g, "\\'");
     const escapedTitle = songTitle.replace(/'/g, "\\'");
     let code = `{\n    id: '${escapedId}',\n    title: '${escapedTitle}',\n`;
+    if (songYomi)   code += `    yomi: '${songYomi.replace(/'/g,"\\'")}',\n`;
+    if (songGenre)  code += `    genre: '${songGenre}',\n`;
+    if (songGenre2) code += `    genre2: '${songGenre2}',\n`;
+    if (songGenre3) code += `    genre3: '${songGenre3}',\n`;
     if (videoUrl) {
         code += `    videoUrl: '${videoUrl}',\n`;
     } else {
@@ -1082,6 +1128,10 @@ function importCode() {
         isWorldsEnd   = !!(data.worldsEnd);
         worldsEndChar = data.worldsEnd || '';
         isInst = !data.lyrics || data.lyrics.length === 0;
+        songYomi   = data.yomi   || '';
+        songGenre  = data.genre  || '';
+        songGenre2 = data.genre2 || '';
+        songGenre3 = data.genre3 || '';
         lyricsData = (data.lyrics || []).map(l => ({
             time: l.time, text: l.text, kana: l.kana,
             colorStart: l.colorStart || null,
@@ -1096,6 +1146,7 @@ function importCode() {
         if (weChar)   weChar.value      = worldsEndChar;
         if (instCheck) instCheck.checked = isInst;
         if (lyricsArea) lyricsArea.style.display = isInst ? 'none' : '';
+        syncYomiGenreUI();
         if (player) {
             if (videoUrl && isDirectVideoUrl(videoUrl)) {
                 player.destroy?.();
@@ -1112,6 +1163,17 @@ function importCode() {
         else              info += `\n歌詞数: ${lyricsData.length}行`;
         alert(info);
     } catch (e) { alert('インポートに失敗しました。\n' + e.message); }
+}
+
+function syncYomiGenreUI() {
+    const y = document.getElementById('song-yomi');
+    if (y) y.value = songYomi;
+    const g1 = document.getElementById('song-genre');
+    if (g1) g1.value = songGenre;
+    const g2 = document.getElementById('song-genre2');
+    if (g2) g2.value = songGenre2;
+    const g3 = document.getElementById('song-genre3');
+    if (g3) g3.value = songGenre3;
 }
 
 function showMessage(id) {
@@ -1303,7 +1365,24 @@ function seekPreview(sec) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', renderDraftList);
+document.addEventListener('DOMContentLoaded', () => {
+    renderDraftList();
+    // ジャンルセレクト初期化
+    const GENRE_OPTIONS = [
+        {id:'pops',label:'ポップス'},{id:'kids',label:'キッズ'},{id:'anime',label:'アニメ'},
+        {id:'vocaloid',label:'ボーカロイド™曲'},{id:'game',label:'ゲームミュージック'},
+        {id:'variety',label:'バラエティ'},{id:'classic',label:'クラシック'},
+        {id:'namco',label:'ナムコオリジナル'},{id:'pjsk',label:'プロジェクトセカイ'},
+        {id:'chunithm',label:'CHUNITHM'},{id:'maimai',label:'maimai'},
+        {id:'ongeki',label:'オンゲキ'},
+    ];
+    ['song-genre','song-genre2','song-genre3'].forEach((selId, i) => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const blank = i === 0 ? '<option value="">未分類</option>' : '<option value="">なし</option>';
+        sel.innerHTML = blank + GENRE_OPTIONS.map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+    });
+});
 </script>
 </body>
 </html>
