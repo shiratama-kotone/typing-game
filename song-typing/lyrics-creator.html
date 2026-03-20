@@ -1087,8 +1087,6 @@ function updatePreviewLyric() {
     }
 
     if (idx !== _prevPreviewIdx) {
-        // 前の行が打ちきれなかった → COMBOリセット
-        if (_prevPreviewIdx >= 0) updatePreviewCombo(false);
         _prevPreviewIdx = idx;
         if (idx >= 0) {
             updatePreviewScroll(idx);
