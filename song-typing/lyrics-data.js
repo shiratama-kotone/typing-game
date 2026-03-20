@@ -5,6 +5,9 @@ const SONGS = [
     {
     id: 'iris_out',
     title: 'IRIS OUT',
+    yomi: 'あいりすあうと',
+    genre: 'pops',
+    genre2: 'anime',
     youtubeId: 'LmZD-TU96q4',
     lyrics: [
         { time: 18.13, text: '駄目駄目駄目', kana: ['だ','め','だ','め','だ','め'] },
@@ -69,6 +72,9 @@ const SONGS = [
     {
     id: 'iris_out',
     title: 'IRIS OUT - 紅白歌合戦Ver.',
+    yomi: 'あいりすあうと',
+    genre: 'pops',
+    genre2: 'anime',
     youtubeId: 'MJ70B_cwnPk',
     lyrics: [
         { time: 70.2, text: '駄目駄目駄目', kana: ['だ','め','だ','め','だ','め'] },
@@ -134,6 +140,9 @@ const SONGS = [
     {
     id: 'kimigayo',
     title: '君が代',
+    yomi: 'きみがよ',
+    genre: 'pops',
+    genre2: 'variety',
     youtubeId: '8iuYxdXFPbc',
     scorePerKey: 15781.25,
     lyrics: [
@@ -147,6 +156,10 @@ const SONGS = [
     {
     id: 'kimigayo',
     title: '君が代(一文字ずつ)',
+    youtubeId: '8iuYxdXFPbc',
+    yomi: 'きみがよ',
+    genre: 'pops',
+    genre2: 'variety',
     youtubeId: '8iuYxdXFPbc',
     lyrics: [
         { time: 13.21, text: 'き', kana: ['き'] },
@@ -186,6 +199,9 @@ const SONGS = [
     {
     id: 'mokugeki_teto31sei',
     title: '目撃！テト31世🎉🎃🧟',
+    yomi: 'もくげき！てと31せい',
+    genre: 'vocaloid',
+    genre2: 'pops',
     youtubeId: 'uWMr16O_Aso',
     lyrics: [
         { time: 6.5, text: '君の一番', kana: ['き','み','の','い','ち','ば','ん'] },
@@ -265,6 +281,10 @@ const SONGS = [
     {
     id: 'bakenohana',
     title: '化けの花',
+    yomi: 'ばけのはな',
+    genre: 'vocaloid',
+    genre2: 'pops',
+    genre3: 'pjsk',
     youtubeId: 'jaSJ4t2ITW8',
     lyrics: [
         { time: 13.4, text: 'なにその目', kana: ['な','に','そ','の','め'] },
@@ -322,6 +342,10 @@ const SONGS = [
     {
     id: 'bakenohana-sekai',
     title: '化けの花 / 25時、ナイトコードで。 × KAITO',
+    yomi: 'ばけのはな',
+    genre: 'vocaloid',
+    genre2: 'pops',
+    genre3: 'pjsk',
     youtubeId: 'UFRIsspP9UE',
     lyrics: [{ time: 14.4, text: 'なにその目', kana: ['な','に','そ','の','め'] },
         { time: 15.4, text: 'やっぱその目', kana: ['や','っ','ぱ','そ','の','め'] },
@@ -379,6 +403,10 @@ const SONGS = [
     {
     id: 'kaijuninaritai',
     title: '怪獣になりたい',
+    yomi: 'かいじゅうになりたい',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: 'TbakFPc4ZTw',
     lyrics: [
         { time: 4.1, text: '怪獣になりたい', kana: ['か','い','じ','ゅ','う','に','な','り','た','い'] },
@@ -430,6 +458,9 @@ const SONGS = [
     {
     id: 'Marshall Maximizer',
     title: 'マーシャル・マキシマイザー',
+    yomi: 'まーしゃる・まきしまいざー',
+    genre: 'vocaloid',
+    genre2: 'pops',
     youtubeId: 'jMKPYg0uhCI',
     lyrics: [
         { time: 14.0, text: '唖々、臨界実験に付き合う朝', kana: ['あ','あ','り','ん','か','い','じ','っ','け','ん','に','つ','き','あ','う','あ','さ'] },
@@ -503,6 +534,10 @@ const SONGS = [
     {
     id: 'kouonchu_onikitest',
     title: '高音厨音域テスト',
+    yomi: 'こうおんちゅうおんいきてすと',
+    genre: 'vocaloid',
+    genre2: 'pops',
+    genre3: 'variety',
     youtubeId: 'f91sM4rI76w',
     lyrics: [
         { time: 2.77, text: 'こんにちは', kana: ['こ','ん','に','ち','は'] },
@@ -567,6 +602,8 @@ const SONGS = [
     {
     id: 'hitomania',
     title: '人マニア',
+    yomi: 'ひとまにあ',
+    genre: 'pops',
     youtubeId: 'HTxwOxFt5d4',
     lyrics: [
         { time: 19.70, text: '興奮してきた', kana: ['こ','う','ふ','ん','し','て','き','た'] },
@@ -657,6 +694,8 @@ const SONGS = [
     {
     id: 'kyouikubangumi_theme',
     title: 'きょういくばんぐみのテーマ',
+    yomi: 'きょういくばんぐみのてーま',
+    genre: 'pops',
     youtubeId: 'Mtraoyi0dfE',
     lyrics: [
         { time: 3.43, text: 'まいにち', kana: ['ま','い','に','ち'] },
@@ -770,6 +809,8 @@ const SONGS = [
 {
     id: 'igaku',
     title: 'イガク (指破壊注意)',
+    yomi: 'いがく',
+    genre: 'pops',
     youtubeId: 'F38EuG2dAyM',
     worldsEnd: '医',
     lyrics: [
@@ -872,6 +913,8 @@ const SONGS = [
     {
     id: 'sisuta_nizangewo',
     title: 'シスターに懺悔を',
+    yomi: 'しすたーにざんげを',
+    genre: 'pops',
     youtubeId: 'h292Y5XKk4U',
     scorePerKey: 10,
     lyrics: [
@@ -971,6 +1014,10 @@ const SONGS = [
     {
     id: 'netsuijo',
     title: '熱異常 / 25時、ナイトコードで。 × KAITO',
+    yomi: 'ねついじょう',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: 'ToqKNyZi2NQ',
     scorePerKey: 10,
     lyrics: [
@@ -1076,6 +1123,8 @@ const SONGS = [
     {
     id: 'netsuijo',
     title: '熱異常',
+    yomi: 'ねついじょう',
+    genre: 'pops',
     youtubeId: 'b2NTglk9tvI',
     scorePerKey: 10,
     lyrics: [
@@ -1181,6 +1230,9 @@ const SONGS = [
 {
     id: 'noda',
     title: 'のだ',
+    yomi: 'のだ',
+    genre: 'vocaloid',
+    genre2: 'pops',
     youtubeId: 'vY8iwpN3GXQ',
     lyrics: [
         { time: 2.38, text: 'この姿', kana: ['こ','の','す','が','た'], colorStart: '#66ff00' },
@@ -1327,6 +1379,8 @@ const SONGS = [
 },{
     id: 'noda',
     title: 'のだ -Cover- 成人男性三人組',
+    yomi: 'のだ',
+    genre: 'pops',
     youtubeId: 'xOI-g6xXZHU',
     scorePerKey: 10,
     lyrics: [
@@ -1475,6 +1529,8 @@ const SONGS = [
     {
     id: 'noda',
     title: 'のだ（アカペラver.） -Cover- 成人男性三人組',
+    yomi: 'のだ',
+    genre: 'pops',
     youtubeId: 'j6kc1UFFdQ4',
     scorePerKey: 10,
     lyrics: [
@@ -1623,6 +1679,9 @@ const SONGS = [
 {
     id: 'lilac',
     title: 'ライラック',
+    yomi: 'らいらっく',
+    genre: 'pops',
+    genre2: 'anime',
     youtubeId: 'QjrkrVmC-8M',
     scorePerKey: 10,
     lyrics: [
@@ -1723,6 +1782,8 @@ const SONGS = [
     {
     id: 'mopemope',
     title: 'もぺもぺ',
+    yomi: 'もぺもぺ',
+    genre: 'variety',
     youtubeId: 'nC-bVtpIMd4',
     scorePerKey: 10,
     lyrics: [
@@ -1732,6 +1793,9 @@ const SONGS = [
     {
     id: 'pen_pineapple_apple_pen',
     title: 'ペンパイナッポーアッポーペン(PPAP)',
+    yomi: 'ぺんぱいなっぽーあっぽーぺん',
+    genre: 'variety',
+    genre2: 'kids',
     youtubeId: '0E00Zuayv9Q',
     scorePerKey: 10,
     lyrics: [
@@ -1754,6 +1818,8 @@ const SONGS = [
     {
     id: 'ka',
     title: '彁',
+    yomi: 'か',
+    genre: 'namco',
     youtubeId: 'EsOU0V2kpUI',
     scorePerKey: 10,
     lyrics: [
@@ -1763,6 +1829,9 @@ const SONGS = [
     {
     id: 'cho_night_of_nights',
     title: '超ナイト・オブ・ナイツ',
+    yomi: 'ちょうないとおぶないつ',
+    genre: 'game',
+    genre2: 'pops',
     youtubeId: 'yA_h7zM0bcU',
     scorePerKey: 10,
     lyrics: [
@@ -1772,6 +1841,9 @@ const SONGS = [
     {
     id: 'cho_saisyukitikuimouto_flandre_s',
     title: '超最終鬼畜妹フランドール・S',
+    yomi: 'ちょうさいしゅうきちくいもうとふらんどーる・えす',
+    genre: 'game',
+    genre2: 'pops',
     youtubeId: 'OhYxV0CL3r0',
     scorePerKey: 10,
     lyrics: [
@@ -1781,6 +1853,9 @@ const SONGS = [
     {
     id: 'baumkuchen_endroll',
     title: 'バゥムクゥヘン・エンドロゥル(韓国語字幕付き)',
+    yomi: 'ばぅむくぅへん・えんどろぅる',
+    genre: 'vocaloid',
+    genre2: 'pops',
     youtubeId: 'dd7WyM0dLbs',
     lyrics: [
         { time: 0.50, text: 'どうして', kana: ['ど','う','し','て'], colorStart: '#ff0000' },
@@ -1871,6 +1946,9 @@ const SONGS = [
     {
     id: 'happy_lucky_chappie',
     title: 'ハッピーラッキーチャッピー',
+    yomi: 'はっぴーらっきーちゃっぴー',
+    genre: 'anime',
+    genre2: 'pops',
     youtubeId: 's7FgdaGOw9s',
     lyrics: [
         { time: 0.67, text: '身に覚えのない', kana: ['み','に','お','ぼ','え','の','な','い'] },
@@ -1978,6 +2056,8 @@ const SONGS = [
     {
     id: 'now_20m',
     title: 'いますぐ20mシャトルラン',
+    yomi: 'いますぐにじゅうめーとるしゃとるらん',
+    genre: 'variety',
     youtubeId: 'TKasc3i6btE',
     worldsEnd: '20m',
     lyrics: [
@@ -2083,6 +2163,9 @@ const SONGS = [
     {
     id: 'matsuken_samba2',
     title: "(9.0) マツケンサンバⅡ [WORLD'S END 狂☆☆] (譜面確認) [CHUNITHM チュウニズム]",
+    yomi: 'まつけんさんばつー',
+    genre: 'chunithm',
+    genre2: 'variety',
     youtubeId: 'FQpP0LAkQmc',
     worldsEnd: '狂',
     lyrics: [
@@ -2176,6 +2259,9 @@ const SONGS = [
     {
     "id": "matsuken_samba2",
     "title": "マツケンサンバⅡ MASTER AP【maimaiでらっくす外部出力】",
+    "yomi": "まつけんさんばつー",
+    "genre": "maimai",
+    "genre2": "variety",
     "youtubeId": "w0bOmb7Gzic",
     "worldsEnd": "狂",
     "lyrics": [
@@ -2269,11 +2355,15 @@ const SONGS = [
     {
     id: 'vs_vigvangs',
     title: 'vs.VIGVANGS',
+    yomi: 'ぶいえすびっぐばんぐ',
+    genre: 'namco',
     youtubeId: 'ogGYZpKsz3M',
 },
     {
     id: 'dark_ex_machina',
     title: 'ダーク・エクス・マキナ♡',
+    yomi: 'だーくえくすまきな',
+    genre: 'namco',
     youtubeId: 'klv4FU8WTfk',
     "worldsEnd": "打",
     lyrics: [
@@ -2344,6 +2434,10 @@ const SONGS = [
     {
     id: 'flower_snow_dnb',
     title: "(9.0) 花と、雪と、ドラムンベース。 [WORLD’S END 撃☆☆☆☆] (譜面確認) [CHUNITHM チュウニズム]",
+    yomi: 'はなと、ゆきと、どらむんべーす。',
+    genre: 'maimai',
+    genre2: 'chunithm',
+    genre3: 'ongeki',
     youtubeId: 'uhTqn2xAaIw',
     worldsEnd: '撃',
     lyrics: [
@@ -2467,6 +2561,9 @@ const SONGS = [
     {
     id: 'syoujo_rei',
     title: '少女レイ',
+    yomi: 'しょうじょれい',
+    genre: 'vocaloid',
+    genre2: 'pops',
     youtubeId: 'JW3N-HvU0MA',
     lyrics: [
         { time: 25.42, text: '本能が狂い始める', kana: ['ほ','ん','の','う','が','く','る','い','は','じ','め','る'] },
@@ -2549,6 +2646,10 @@ const SONGS = [
     {
     id: 'syoujo_rei_more_jump',
     title: '少女レイ / MORE MORE JUMP！ × 初音ミク',
+    yomi: 'しょうじょれい',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: '3VT85q-E-UU',
     lyrics: [
         { time: 25.42, text: '本能が狂い始める', kana: ['ほ','ん','の','う','が','く','る','い','は','じ','め','る'] },
@@ -2631,6 +2732,10 @@ const SONGS = [
     {
     id: 'syoujo_rei_3dmv',
     title: '少女レイ / MORE MORE JUMP！ × 初音ミク【3DMV】',
+    yomi: 'しょうじょれい',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: 'NpOR2QwvjPk',
     lyrics: [
         { time: 17.05, text: '本能が狂い始める', kana: ['ほ','ん','の','う','が','く','る','い','は','じ','め','る'] },
@@ -2682,6 +2787,9 @@ const SONGS = [
     {
     id: 'internet_yamero',
     title: 'INTERNET YAMERO',
+    yomi: 'いんたーねっとやめろ',
+    genre: 'pops',
+    genre2: 'variety',
     youtubeId: 'Js_-gKm1RYI',
     lyrics: [
         { time: 4.46, text: 'インターネット・エンジェルという現象は', kana: ['い','ん','た','ー','ね','っ','と','え','ん','じ','ぇ','る','と','い','う','げ','ん','し','ょ','う','は'] },
@@ -2830,6 +2938,8 @@ const SONGS = [
     {
     id: 'koitsunanimiterunda',
     title: '「こいつ何見てるんだ？」と困惑させるための動画.mp4',
+    title: 'テトリス',
+    yomi: 'こいつなにみてるんだ？とこんわくさせるためのどうがえむぴーふぉー',
     youtubeId: 'HRaqMxo7YeM',
     worldsEnd: '変',
     lyrics: [
@@ -2857,11 +2967,17 @@ const SONGS = [
     {
     id: 'verse_x',
     title: 'Verse X',
-    youtubeId: 'RDDbK6twErgUg',
+    yomi: 'ばーせっくす',
+    genre: 'chunithm',
+    youtubeId: 'DbK6twErgUg',
 },
 {
     id: 'bug_25',
     title: 'バグ / 25時、ナイトコードで。 × 鏡音レン',
+    yomi: 'ばぐ',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: '2Ii7UBMxWVw',
     lyrics: [
         { time: 13.87, text: '迷子', kana: ['ま','い','ご'] },
@@ -3106,6 +3222,10 @@ const SONGS = [
     {
     id: 'd_n_a_25',
     title: 'D/N/A / 25時、ナイトコードで。 × 鏡音リン',
+    yomi: 'でぃーえぬえー',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: 'RyRfLSOewbU',
     lyrics: [
         { time: 13.52, text: '小石を', kana: ['こ','い','し','を'] },
@@ -3221,6 +3341,9 @@ const SONGS = [
     {
     "id": "lavie",
     "title": "ラヴィ",
+    "yomi: "らゔぃ",
+    "genre": "vocaloid",
+    "genre2": "pops",
     "youtubeId": "mq88yUFdVng",
     "lyrics": [
         { "time": 0.20, "text": "ラヴィ", "kana": ["ら","ゔ","ぃ"] },
@@ -3408,6 +3531,10 @@ const SONGS = [
     {
     id: 'Lavie_25',
     title: 'ラヴィ / 25時、ナイトコードで。 × 鏡音レン',
+    yomi: 'らゔぃ',
+    genre: 'vocaloid',
+    genre2: 'pjsk',
+    genre3: 'pops',
     youtubeId: 'UIWUx4qG0cE',
     lyrics: [
         { time: 2.44, text: 'ラヴィ', kana: ['ら','ゔ','ぃ'] },
@@ -3595,6 +3722,8 @@ const SONGS = [
     {
     id: 'tetris',
     title: 'テトリス',
+    yomi: 'てとりす',
+    genre: 'pops',
     youtubeId: 'Soy4jGPHr3g',
     lyrics: [
         { time: 1.28, text: 'どうしてすぐ知ってしまうの', kana: ['ど','う','し','て','す','ぐ','し','っ','て','し','ま','う','の'] },
