@@ -206,7 +206,25 @@
         .preview-close-btn { position:fixed; top:16px; right:16px; background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.3); padding:8px 18px; border-radius:50px; font-size:0.9rem; cursor:pointer; transition:all 0.2s ease; }
         .preview-close-btn:hover { background:rgba(255,255,255,0.28); }
 
-        /* プレビューCOMBO */
+        /* 下書きリスト */
+        .draft-bar {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px; margin-bottom: 16px;
+        }
+        .draft-bar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .draft-bar-header h3 { margin:0; font-size:0.9rem; }
+        .draft-list { display:flex; flex-wrap:wrap; gap:6px; }
+        .draft-item {
+            display:flex; align-items:center; gap:4px;
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:20px; padding:4px 10px; font-size:0.82rem;
+            cursor:pointer; transition:background 0.15s;
+        }
+        .draft-item:hover { background:var(--surface2); }
+        .draft-item.active { border-color:var(--accent); color:var(--accent); font-weight:700; }
+        .draft-item-del { color:var(--text3); font-size:0.9rem; line-height:1; padding:0 2px; cursor:pointer; }
+        .draft-item-del:hover { color:#f44336; }
+        .draft-empty { font-size:0.82rem; color:var(--text3); }
         #preview-combo {
             position: fixed; right: clamp(12px,3vw,40px); top: 50%; transform: translateY(-50%);
             display: flex; flex-direction: column; align-items: center;
@@ -269,6 +287,17 @@
     </div><!-- /setup-section -->
 
     <div id="main-content" class="main-content">
+        <!-- 下書きバー -->
+        <div class="draft-bar" id="draft-bar">
+            <div class="draft-bar-header">
+                <h3>📝 下書き</h3>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-tiny" onclick="saveDraft()">現在を保存</button>
+                    <button class="btn btn-tiny" onclick="newDraft()">＋ 新規</button>
+                </div>
+            </div>
+            <div class="draft-list" id="draft-list"></div>
+        </div>
         <div class="video-section"><div id="youtube-player"></div></div>
         <div class="controls">
             <div class="controls-row">
@@ -399,6 +428,121 @@ let isWorldsEnd = false, worldsEndChar = '';
 let isInst = false;
 let updateInterval = null;
 let previewUpdateInterval = null;
+let _currentDraftId = null;
+let _lastSavedJSON = null; // beforeunload 用
+
+// ===== 下書き管理 =====
+const DRAFT_KEY = 'typing_game_creator_drafts';
+
+function getDrafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveDraftsRaw(arr) {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(arr));
+}
+
+function getCurrentState() {
+    return { id: songId, title: songTitle, youtubeId, videoUrl, isWorldsEnd, worldsEnd: worldsEndChar, isInst, lyrics: lyricsData };
+}
+
+function saveDraft(quiet = false) {
+    const state = getCurrentState();
+    const stateJSON = JSON.stringify(state);
+    const drafts = getDrafts();
+    if (_currentDraftId) {
+        const i = drafts.findIndex(d => d._draftId === _currentDraftId);
+        if (i >= 0) { drafts[i] = { ...state, _draftId: _currentDraftId }; }
+        else { drafts.push({ ...state, _draftId: _currentDraftId }); }
+    } else {
+        _currentDraftId = Date.now().toString();
+        drafts.push({ ...state, _draftId: _currentDraftId });
+    }
+    saveDraftsRaw(drafts);
+    _lastSavedJSON = stateJSON;
+    renderDraftList();
+    if (!quiet) showMessage('copy-success');
+}
+
+function loadDraft(draftId) {
+    if (!confirmUnsaved()) return;
+    const drafts = getDrafts();
+    const d = drafts.find(d => d._draftId === draftId);
+    if (!d) return;
+    _currentDraftId = draftId;
+    songId = d.id || ''; songTitle = d.title || '';
+    youtubeId = d.youtubeId || ''; videoUrl = d.videoUrl || '';
+    isWorldsEnd = !!d.isWorldsEnd; worldsEndChar = d.worldsEnd || '';
+    isInst = !!d.isInst;
+    lyricsData = (d.lyrics || []).map(l => ({ time: l.time, text: l.text, kana: l.kana || [], colorStart: l.colorStart || null, colorEnd: l.colorEnd || false }));
+    _lastSavedJSON = JSON.stringify(getCurrentState());
+    // UI復元
+    const we = document.getElementById('worlds-end-check'); if (we) we.checked = isWorldsEnd;
+    const wec = document.getElementById('worlds-end-char'); if (wec) wec.value = worldsEndChar;
+    const ic = document.getElementById('inst-check'); if (ic) ic.checked = isInst;
+    const la = document.getElementById('lyrics-input-area'); if (la) la.style.display = isInst ? 'none' : '';
+    document.getElementById('output-textarea').value = '';
+    if (player) { if (isDirectVideoUrl(videoUrl)) { player.destroy?.(); createPlayer(); } else { player.loadVideoById?.(youtubeId || ''); } }
+    renderLyricsList();
+    renderDraftList();
+}
+
+function deleteDraft(draftId, e) {
+    e.stopPropagation();
+    if (!confirm('この下書きを削除しますか？')) return;
+    const drafts = getDrafts().filter(d => d._draftId !== draftId);
+    saveDraftsRaw(drafts);
+    if (_currentDraftId === draftId) _currentDraftId = null;
+    renderDraftList();
+}
+
+function newDraft() {
+    if (!confirmUnsaved()) return;
+    _currentDraftId = null;
+    _lastSavedJSON = null;
+    songId = ''; songTitle = ''; youtubeId = ''; videoUrl = '';
+    isWorldsEnd = false; worldsEndChar = ''; isInst = false;
+    lyricsData = [];
+    const we = document.getElementById('worlds-end-check'); if (we) we.checked = false;
+    const wec = document.getElementById('worlds-end-char'); if (wec) wec.value = '';
+    const ic = document.getElementById('inst-check'); if (ic) ic.checked = false;
+    const la = document.getElementById('lyrics-input-area'); if (la) la.style.display = '';
+    document.getElementById('output-textarea').value = '';
+    renderLyricsList();
+    renderDraftList();
+    // セットアップ画面に戻す
+    document.getElementById('setup-section').style.display = '';
+    document.getElementById('main-content').classList.remove('active');
+}
+
+function renderDraftList() {
+    const el = document.getElementById('draft-list');
+    if (!el) return;
+    const drafts = getDrafts();
+    if (drafts.length === 0) { el.innerHTML = '<span class="draft-empty">下書きなし</span>'; return; }
+    el.innerHTML = drafts.map(d => `
+        <div class="draft-item${d._draftId === _currentDraftId ? ' active' : ''}" onclick="loadDraft('${d._draftId}')">
+            <span>${d.title || '(無題)'}</span>
+            <span class="draft-item-del" onclick="deleteDraft('${d._draftId}', event)">✕</span>
+        </div>`).join('');
+}
+
+function confirmUnsaved() {
+    const cur = JSON.stringify(getCurrentState());
+    if (_lastSavedJSON !== null && cur !== _lastSavedJSON) {
+        return confirm('現在の下書きが保存されていません。\n続けると変更が失われます。よろしいですか？');
+    }
+    return true;
+}
+
+// ブラウザ再読み込み・タブ閉じ時の警告
+window.addEventListener('beforeunload', e => {
+    if (lyricsData.length === 0) return;
+    const cur = JSON.stringify(getCurrentState());
+    if (_lastSavedJSON === null || cur !== _lastSavedJSON) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 
 // ===== ローマ字変換（プレビュー & カウント用） =====
 const SINGLE_MAP = {
@@ -504,7 +648,14 @@ function toggleWorldsEnd() {
 }
 
 function toggleInst() {
-    isInst = document.getElementById('inst-check').checked;
+    const checked = document.getElementById('inst-check').checked;
+    if (checked && lyricsData.length > 0) {
+        if (!confirm(`歌詞が${lyricsData.length}件登録されています。\nインスト楽曲に変更すると歌詞がすべて削除されます。\nよろしいですか？`)) {
+            document.getElementById('inst-check').checked = false;
+            return;
+        }
+    }
+    isInst = checked;
     const area = document.getElementById('lyrics-input-area');
     const listEl = document.getElementById('lyrics-list');
     if (isInst) {
@@ -613,6 +764,7 @@ function importAndStart() {
             colorEnd:   l.colorEnd   || false
         }));
         createPlayer();
+        document.getElementById('import-textarea').value = '';
     } catch (e) { alert('インポートに失敗しました。\n' + e.message); }
 }
 
@@ -620,6 +772,8 @@ function importAndStart() {
 function createPlayer() {
     document.getElementById('setup-section').style.display = 'none';
     document.getElementById('main-content').classList.add('active');
+    renderDraftList();
+    _lastSavedJSON = null; // 新規作成時は未保存扱い
 
     if (isDirectVideoUrl(videoUrl)) {
         const container = document.getElementById('youtube-player');
@@ -695,6 +849,7 @@ function addLyric() {
 
     lyricsData.push(entry);
     lyricsData.sort((a, b) => a.time - b.time);
+    _lastSavedJSON = null;
     renderLyricsList();
 
     document.getElementById('lyrics-text').value = '';
@@ -704,6 +859,7 @@ function addLyric() {
 function deleteLyric(index) {
     if (confirm('この歌詞を削除しますか？')) {
         lyricsData.splice(index, 1);
+        _lastSavedJSON = null;
         renderLyricsList();
     }
 }
@@ -835,6 +991,12 @@ function editSelectedSong() {
     const sel = document.getElementById('lyricsdata-song-select');
     const idx = parseInt(sel.value);
     if (isNaN(idx) || !_loadedSongs[idx]) { alert('曲を選択してください'); return; }
+
+    // 歌詞があってコード生成されていない場合は確認
+    const outputCode = document.getElementById('output-textarea')?.value.trim() || '';
+    if (lyricsData.length > 0 && !outputCode) {
+        if (!confirm('現在の歌詞データのコードが生成されていません。\nこのまま別の曲の編集に移ると、現在の作業内容が失われます。\n続けますか？')) return;
+    }
     const song = _loadedSongs[idx];
     const code = JSON.stringify(song).replace(/"([^"]+)":/g, '$1:').replace(/"/g, "'");
     // importAndStart と同じ処理をオブジェクトから直接実行
@@ -1128,6 +1290,8 @@ function seekPreview(sec) {
         previewPlayer.seekTo(Math.max(0, previewCurrentTime + sec), true);
     }
 }
+
+document.addEventListener('DOMContentLoaded', renderDraftList);
 </script>
 </body>
 </html>
