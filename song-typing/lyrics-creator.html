@@ -886,8 +886,10 @@ function addLyric() {
     const colorEnd = document.getElementById('lyrics-color-end').checked;
 
     if (!text) { alert('歌詞を入力してください'); return; }
-    if (kana && !/^[ぁ-んゔーa-z0-9 ]+$/.test(kana)) {
-        alert('読みはひらがな、ゔ、長音記号（ー）、小文字英数字のみで入力してください'); return;
+
+    if (kana && !/^[\u3040-\u309F\u3099\u309Aーa-z0-9 　 ]+$/.test(kana)) {
+    alert('読みはひらがな（濁点含む）、長音記号（ー）、英数字、空白で入力してください');
+    return;
     }
 
     const entry = {
