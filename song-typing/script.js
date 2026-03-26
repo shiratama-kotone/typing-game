@@ -66,7 +66,7 @@ async function submitScore(song, score, missCount, maxCombo) {
 }
 
 async function fetchRanking(songId) {
-    return await apiRequest('GET', `/ranking/${encodeURIComponent(songId)}`);
+    return await apiRequest('GET', `/ranking/${encodeURIComponent(songId)}?_=${Date.now()}`);
 }
 
 // ===== 直リンク動画ヘルパー =====
@@ -2281,7 +2281,7 @@ function onPlayerStateChange(event) {
 }
 
 // ===== ゲーム終了 =====
-function endGame() {
+async function endGame() {
     if (allJusticeActive) { pendingEndGame = true; return; }
     if (updateInterval) { clearInterval(updateInterval); updateInterval = null; }
     autoTypeTimers.forEach(t => clearTimeout(t));
@@ -2375,8 +2375,19 @@ function endGame() {
     maxComboEl.textContent = `最大コンボ数: ${gameState.maxCombo}`;
 
     // スコア送信 & リザルトランキング表示
+    if (authToken && currentSong && !autoMode) {
+        // ベストスコアより高い場合のみ送信
+        try {
+            const best = await apiRequest('GET', `/scores/me/${encodeURIComponent(currentSong.id)}`);
+            if (!best.best || gameState.score > best.best.score) {
+                await submitScore(currentSong, gameState.score, gameState.missCount, gameState.maxCombo);
+            }
+        } catch(e) {
+            // 取得失敗時はとりあえず送信（サーバー側でも最高値のみ保持）
+            await submitScore(currentSong, gameState.score, gameState.missCount, gameState.maxCombo);
+        }
+    }
     if (authToken && currentSong) {
-        submitScore(currentSong, gameState.score, gameState.missCount, gameState.maxCombo);
         showResultRanking(currentSong);
     }
 }
