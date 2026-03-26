@@ -12,6 +12,48 @@ let playbackSpeed = 1.0;
 let comboPopTimer = null;
 let allJusticeActive = false;
 let pendingEndGame = false;
+let recordMode = false;
+let mediaStream = null;
+
+// ===== 録画モード =====
+async function enterRecordMode() {
+    try {
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 60, width: { ideal: 3840 }, height: { ideal: 2160 } },
+            audio: { echoCancellation: false, noiseSuppression: false, sampleRate: 48000 }
+        });
+    } catch(e) {
+        alert('画面共有がキャンセルされました');
+        return false;
+    }
+    // 16:9フレームを作成
+    let overlay = document.getElementById('rec-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'rec-overlay';
+        overlay.innerHTML = '<div id="rec-inner"><div id="rec-frame"></div></div>';
+        document.body.appendChild(overlay);
+    }
+    const frame = document.getElementById('rec-frame');
+    const gameScreen = document.getElementById('game-screen');
+    frame.appendChild(gameScreen);
+    overlay.classList.add('active');
+    // ストリーム終了時（共有停止）に録画モード終了
+    mediaStream.getVideoTracks()[0].addEventListener('ended', exitRecordMode);
+    return true;
+}
+
+function exitRecordMode() {
+    const overlay = document.getElementById('rec-overlay');
+    const frame   = document.getElementById('rec-frame');
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen && frame && gameScreen.parentElement === frame) {
+        document.body.appendChild(gameScreen);
+    }
+    if (overlay) overlay.classList.remove('active');
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+    recordMode = false;
+}
 
 // ===== API設定 =====
 const API_BASE = 'https://typing-game-api.onrender.com'; // ← RenderのURLに変更
@@ -195,25 +237,140 @@ function calcTotalChars(song) {
     return total;
 }
 
+// ===== 難易度自動判定 =====
+function analyzeDifficulty(song) {
+    if (!song.lyrics || song.lyrics.length === 0) return null;
+
+    // 総打数（kana配列の長さ合計）
+    const allKana = song.lyrics.flatMap(l => l.kana || []);
+    const totalChars = allKana.length;
+    if (totalChars === 0) return null;
+
+    // 曲の長さ（最後のtimeを使用）
+    const lastTime = song.lyrics[song.lyrics.length - 1].time;
+    const duration = lastTime > 0 ? lastTime : 1;
+
+    // 秒間打数
+    const kps = totalChars / duration;
+
+    // 拗音・促音率 (ゃゅょっ)
+    const smallCount = allKana.filter(k => 'ゃゅょっ'.includes(k)).length;
+    const smallRate = smallCount / totalChars;
+
+    // 連打率（同じ文字が連続）
+    let repeatCount = 0;
+    for (let i = 1; i < allKana.length; i++) {
+        if (allKana[i] === allKana[i - 1]) repeatCount++;
+    }
+    const repeatRate = repeatCount / totalChars;
+
+    // 総合スコア
+    const score = (totalChars * 0.3) + (kps * 0.4 * 100) + (smallRate * 0.2 * 100) + (repeatRate * 0.1 * 100);
+
+    // スコア→レベル変換
+    const scoreToLevel = (s) => {
+        if (s >= 90)  return { level: 15, plus: true  };
+        if (s >= 80)  return { level: 15, plus: false };
+        if (s >= 70)  return { level: 14, plus: true  };
+        if (s >= 60)  return { level: 14, plus: false };
+        if (s >= 50)  return { level: 13, plus: true  };
+        if (s >= 40)  return { level: 13, plus: false };
+        if (s >= 30)  return { level: 12, plus: true  };
+        if (s >= 20)  return { level: 12, plus: false };
+        if (s >= 15)  return { level: 11, plus: true  };
+        if (s >= 10)  return { level: 11, plus: false };
+        if (s >= 8)   return { level: 10, plus: true  };
+        if (s >= 6)   return { level: 10, plus: false };
+        if (s >= 5)   return { level: 9,  plus: true  };
+        if (s >= 4)   return { level: 9,  plus: false };
+        if (s >= 3)   return { level: 8,  plus: true  };
+        if (s >= 2)   return { level: 8,  plus: false };
+        if (s >= 1.5) return { level: 7,  plus: true  };
+        if (s >= 1.2) return { level: 7,  plus: false };
+        if (s >= 1.0) return { level: 6,  plus: false };
+        if (s >= 0.8) return { level: 5,  plus: false };
+        if (s >= 0.6) return { level: 4,  plus: false };
+        if (s >= 0.4) return { level: 3,  plus: false };
+        if (s >= 0.2) return { level: 2,  plus: false };
+        return          { level: 1,  plus: false };
+    };
+
+    // 難易度→譜面種別
+    const levelToName = (level, plus) => {
+        if (plus && level === 15) return 'ULTIMA';
+        if (level >= 14) return 'MASTER';
+        if (level >= 11 || (level === 10 && plus)) return 'EXPERT';
+        if (level >= 7)  return 'ADVANCED';
+        return 'BASIC';
+    };
+    const nameToColor = (name) => {
+        if (name === 'BASIC')    return '#00ac7e';
+        if (name === 'ADVANCED') return '#fc8207';
+        if (name === 'EXPERT')   return '#f22922';
+        if (name === 'MASTER')   return '#921cec';
+        return '#000000'; // ULTIMA
+    };
+
+    // 難易度名→ランク数値（補正用）
+    const nameRank = { 'BASIC': 0, 'ADVANCED': 1, 'EXPERT': 2, 'MASTER': 3, 'ULTIMA': 4 };
+    const clampName = (n) => ['BASIC','ADVANCED','EXPERT','MASTER','ULTIMA'][Math.max(0, Math.min(4, n))];
+
+    let { level, plus } = scoreToLevel(score);
+    let name = levelToName(level, plus);
+    let rank = nameRank[name];
+
+    // 例外補正
+    if (kps >= 7)        rank = Math.min(4, rank + 1);
+    if (smallRate >= 0.15) rank = Math.min(4, rank + 1);
+    if (totalChars > 300 && kps < 2 && smallRate < 0.05) rank = Math.max(0, rank - 1);
+
+    name = clampName(rank);
+
+    return { level, plus, over15: plus && level === 15, name, color: nameToColor(name), totalChars };
+}
+
 function getDifficultyInfo(song) {
+    // WORLD'S END
     if (song.worldsEnd !== undefined && song.worldsEnd !== null && song.worldsEnd !== '') {
         return { isWorldsEnd: true, isInst: false, weChar: song.worldsEnd, name: "WORLD'S END", color: null, level: null, over15: false, totalChars: 0 };
     }
-    const totalChars = calcTotalChars(song);
+
+    // 手動override
+    if (song.override) {
+        const o = song.override;
+        const name  = o.name  || 'BASIC';
+        const color = o.name === 'BASIC'    ? '#00ac7e'
+                    : o.name === 'ADVANCED' ? '#fc8207'
+                    : o.name === 'EXPERT'   ? '#f22922'
+                    : o.name === 'MASTER'   ? '#921cec'
+                    : '#000000';
+        const level  = o.level  ?? 1;
+        const over15 = o.over15 ?? false;
+        const totalChars = song.lyrics ? song.lyrics.reduce((s, l) => s + (l.kana?.length || 0), 0) : 0;
+        return { isWorldsEnd: false, isInst: false, name, color, level, over15, totalChars };
+    }
+
+    // Inst
+    const totalChars = song.lyrics ? song.lyrics.reduce((s, l) => s + (l.kana?.length || 0), 0) : 0;
     if (totalChars === 0) {
-        // 歌詞なし → Inst
         return { isWorldsEnd: false, isInst: true, name: 'Inst', color: '#1e90ff', level: null, over15: false, totalChars: 0 };
     }
-    const rawLevel = Math.max(1, Math.ceil(totalChars / 100));
-    const level    = Math.min(rawLevel, 15);
-    const over15   = rawLevel > 15;
-    let name, color;
-    if      (level <= 3)  { name = 'BASIC';    color = '#00ac7e'; }
-    else if (level <= 7)  { name = 'ADVANCED'; color = '#fc8207'; }
-    else if (level <= 10) { name = 'EXPERT';   color = '#f22922'; }
-    else if (level <= 12) { name = 'MASTER';   color = '#921cec'; }
-    else                  { name = 'ULTIMA';   color = '#000000'; }
-    return { isWorldsEnd: false, isInst: false, name, color, level, over15, totalChars };
+
+    // 自動判定
+    const result = analyzeDifficulty(song);
+    if (!result) {
+        return { isWorldsEnd: false, isInst: true, name: 'Inst', color: '#1e90ff', level: null, over15: false, totalChars: 0 };
+    }
+
+    return {
+        isWorldsEnd: false,
+        isInst: false,
+        name: result.name,
+        color: result.color,
+        level: result.level,
+        over15: result.over15,
+        totalChars: result.totalChars
+    };
 }
 
 function formatDuration(sec) {
@@ -808,6 +965,48 @@ function formatDuration(sec) {
         }
         .btn-edit:hover { background: var(--surface); color: var(--text); }
 
+        /* ===== 録画モード16:9オーバーレイ ===== */
+        #rec-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 9999;
+            background: #000;
+            align-items: center; justify-content: center;
+        }
+        #rec-overlay.active { display: flex; }
+        #rec-inner {
+            position: relative;
+            width: 100%; height: 100%;
+            /* 16:9を内接させる */
+            display: flex; align-items: center; justify-content: center;
+        }
+        #rec-frame {
+            position: relative;
+            aspect-ratio: 16/9;
+            width: min(100vw, 177.78vh);
+            height: min(56.25vw, 100vh);
+            overflow: hidden;
+            background: var(--bg);
+        }
+        /* rec-frame内にゲーム画面を移植するので game-screen を上書き */
+        #rec-frame #game-screen.active {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+        }
+
+        /* ===== かな表示行 ===== */
+        #kana-line {
+            font-size: clamp(0.75rem, 1.6vw, 1.1rem);
+            letter-spacing: 0.08em;
+            text-align: center;
+            min-height: 1.4em;
+            color: var(--text2);
+            font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+        #kana-line .k-correct   { color: var(--correct); }
+        #kana-line .k-current   { color: var(--text); border-bottom: 2px solid var(--text); }
+        #kana-line .k-remaining { color: var(--text2); }
+
         /* ===== 認証・ランキング ===== */
         #auth-bar {
             display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -925,6 +1124,10 @@ function injectConfirmScreen() {
                 <input type="checkbox" id="cb-automode">
                 オートモード（自動入力）
             </label>
+            <label class="confirm-automode">
+                <input type="checkbox" id="cb-record">
+                録画モード（16:9・最高画質）
+            </label>
             <label class="confirm-automode" id="speed-row" style="flex-direction:column;gap:6px;">
                 <span style="display:flex;align-items:center;gap:8px;">
                     <input type="checkbox" id="cb-speed" onchange="onSpeedCheckChange(this)">
@@ -948,6 +1151,7 @@ function injectConfirmScreen() {
 window.addEventListener('DOMContentLoaded', () => {
     injectConfirmScreen();
     injectAuthBar();
+    injectLoginPrompt();
     injectRankingModal();
     injectSortUI();
     injectAllJusticeOverlay();
@@ -988,6 +1192,75 @@ window.addEventListener('DOMContentLoaded', () => {
             });
     }
 });
+
+// ===== ログインプロンプト =====
+function injectLoginPrompt() {
+    const modal = document.createElement('div');
+    modal.id = 'login-prompt';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;';
+    modal.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:min(360px,90vw);display:flex;flex-direction:column;gap:12px;">
+            <h2 style="font-size:1rem;margin:0;color:var(--text);">ログイン / 新規登録</h2>
+            <input type="text"     id="lp-user" placeholder="ユーザー名" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:0.9rem;font-family:inherit;">
+            <input type="password" id="lp-pass" placeholder="パスワード" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:0.9rem;font-family:inherit;">
+            <span id="lp-msg" style="font-size:0.8rem;color:#e05;min-height:1em;"></span>
+            <div style="display:flex;gap:8px;">
+                <button class="auth-btn primary" style="flex:1;" onclick="handleLoginPrompt()">ログイン</button>
+                <button class="auth-btn" style="flex:1;" onclick="handleRegisterPrompt()">新規登録</button>
+            </div>
+            <button class="auth-btn" onclick="closeLoginPrompt()" style="font-size:0.8rem;">キャンセル</button>
+        </div>
+    `;
+    modal.addEventListener('click', e => { if (e.target === modal) closeLoginPrompt(); });
+    // Enterキー
+    modal.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLoginPrompt(); });
+    });
+    document.body.appendChild(modal);
+}
+
+function showLoginPrompt() {
+    const modal = document.getElementById('login-prompt');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.getElementById('lp-user')?.focus();
+}
+
+function closeLoginPrompt() {
+    const modal = document.getElementById('login-prompt');
+    if (modal) modal.style.display = 'none';
+}
+
+function setLpMsg(msg) {
+    const el = document.getElementById('lp-msg');
+    if (el) el.textContent = msg;
+}
+
+async function handleLoginPrompt() {
+    const user = document.getElementById('lp-user')?.value.trim();
+    const pass = document.getElementById('lp-pass')?.value;
+    if (!user || !pass) { setLpMsg('入力してください'); return; }
+    setLpMsg('...');
+    try {
+        await doLogin(user, pass);
+        closeLoginPrompt();
+        renderAuthBar();
+        showSongSelect();
+    } catch(e) { setLpMsg(e.message); }
+}
+
+async function handleRegisterPrompt() {
+    const user = document.getElementById('lp-user')?.value.trim();
+    const pass = document.getElementById('lp-pass')?.value;
+    if (!user || !pass) { setLpMsg('入力してください'); return; }
+    setLpMsg('...');
+    try {
+        await doRegister(user, pass);
+        closeLoginPrompt();
+        renderAuthBar();
+        showSongSelect();
+    } catch(e) { setLpMsg(e.message); }
+}
 
 // ===== 認証バー注入 =====
 function injectAuthBar() {
@@ -1178,6 +1451,8 @@ function updateGameInfoOverlay(show) {
         gioName.textContent = diff.name;
         const lvHtml = diff.over15
             ? '15<sup style="font-size:0.55em;vertical-align:top">+</sup>'
+            : diff.plus
+            ? `${diff.level}<sup style="font-size:0.55em;vertical-align:top">+</sup>`
             : String(diff.level ?? '—');
         gioLevel.className = '';
         gioLevel.innerHTML = `
@@ -1389,7 +1664,7 @@ function makeSongItem(song) {
     const item = document.createElement('div');
     item.className = 'song-item';
     item.onclick = () => {
-        if (!authToken) { setAuthMsg('ログインしてください'); return; }
+        if (!authToken) { showLoginPrompt(); return; }
         selectSong(song);
     };
 
@@ -1408,7 +1683,7 @@ function makeSongItem(song) {
     } else {
         badge.style.background = diff.color;
         if (diff.name === 'ULTIMA') badge.classList.add('diff-badge-ultima');
-        const lvLabel = diff.over15 ? '15+' : diff.level;
+        const lvLabel = diff.over15 ? '15+' : (diff.plus ? `${diff.level}+` : diff.level);
         badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
     }
 
@@ -1502,6 +1777,10 @@ function showTitleScreen() {
 }
 
 function showSongSelect() {
+    if (!authToken) {
+        showLoginPrompt();
+        return;
+    }
     if (player) { try { player.pauseVideo(); } catch(e){} }
     updateGameInfoOverlay(false);
     const cp = document.getElementById('combo-panel');
@@ -1612,13 +1891,20 @@ function onConfirmPlayerReady(event) {
 }
 
 // ===== 確認画面からゲーム開始 =====
-function startGameFromConfirm() {
+async function startGameFromConfirm() {
     autoMode = document.getElementById('cb-automode')?.checked || false;
+    recordMode = document.getElementById('cb-record')?.checked || false;
 
     // 倍速
     const cbSpeed = document.getElementById('cb-speed');
     const selSpeed = document.getElementById('speed-select');
     playbackSpeed = (cbSpeed?.checked && selSpeed) ? parseFloat(selSpeed.value) : 1.0;
+
+    // 録画モード：画面共有を先に取得
+    if (recordMode) {
+        const ok = await enterRecordMode();
+        if (!ok) { recordMode = false; return; }
+    }
 
     // confirm用プレイヤーを破棄
     if (player) { try { player.destroy(); } catch(e){} player = null; }
@@ -2012,6 +2298,15 @@ function convertToRomaji(kana) {
 function displayRomaji() {
     const el = document.getElementById('romaji-line');
     if (!el) return;
+
+    // kana-line を romaji-line の直後に確保
+    let kanaEl = document.getElementById('kana-line');
+    if (!kanaEl) {
+        kanaEl = document.createElement('div');
+        kanaEl.id = 'kana-line';
+        el.parentNode.insertBefore(kanaEl, el.nextSibling);
+    }
+
     let html = '';
     for (let i = 0; i < gameState.currentRomaji.length; i++) {
         const r = gameState.currentRomaji[i].current;
@@ -2031,6 +2326,20 @@ function displayRomaji() {
         }
     }
     el.innerHTML = html;
+
+    // かな表示
+    const kana = gameState.currentRomaji; // 各unitにkanaソース文字が対応
+    const rawKana = gameState._currentKana || [];
+    let kanaHtml = '';
+    rawKana.forEach((k, i) => {
+        if (i < gameState.currentCharIndex)
+            kanaHtml += `<span class="k-correct">${k}</span>`;
+        else if (i === gameState.currentCharIndex)
+            kanaHtml += `<span class="k-current">${k}</span>`;
+        else
+            kanaHtml += `<span class="k-remaining">${k}</span>`;
+    });
+    kanaEl.innerHTML = kanaHtml;
 }
 
 // ===== 入力処理 =====
@@ -2358,6 +2667,7 @@ async function endGame() {
 
     switchScreen('result-screen');
     updateGameInfoOverlay(true);
+    if (recordMode) exitRecordMode();
 
     // COMBOパネルを非表示
     const cp = document.getElementById('combo-panel');
