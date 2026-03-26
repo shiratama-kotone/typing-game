@@ -14,45 +14,92 @@ let allJusticeActive = false;
 let pendingEndGame = false;
 let recordMode = false;
 let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
 
 // ===== 録画モード =====
 async function enterRecordMode() {
-    try {
-        mediaStream = await navigator.mediaDevices.getDisplayMedia({
-            video: { frameRate: 60, width: { ideal: 3840 }, height: { ideal: 2160 } },
-            audio: { echoCancellation: false, noiseSuppression: false, sampleRate: 48000 }
-        });
-    } catch(e) {
-        alert('画面共有がキャンセルされました');
-        return false;
-    }
-    // 16:9フレームを作成
+    // 16:9フレームを先に作成してゲーム画面を移植
     let overlay = document.getElementById('rec-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'rec-overlay';
-        overlay.innerHTML = '<div id="rec-inner"><div id="rec-frame"></div></div>';
+        overlay.innerHTML = '<div id="rec-frame"></div>';
         document.body.appendChild(overlay);
     }
     const frame = document.getElementById('rec-frame');
     const gameScreen = document.getElementById('game-screen');
     frame.appendChild(gameScreen);
     overlay.classList.add('active');
-    // ストリーム終了時（共有停止）に録画モード終了
-    mediaStream.getVideoTracks()[0].addEventListener('ended', exitRecordMode);
+
+    // ALL JUSTICEオーバーレイも rec-overlay 内に移動して表示を維持
+    const ajOverlay = document.getElementById('all-justice-overlay');
+    if (ajOverlay) frame.appendChild(ajOverlay);
+
+    try {
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 60, width: { ideal: 3840 }, height: { ideal: 2160 }, displaySurface: 'browser' },
+            audio: { echoCancellation: false, noiseSuppression: false, sampleRate: 48000, autoGainControl: false },
+            preferCurrentTab: true
+        });
+    } catch(e) {
+        // キャンセル時は元に戻す
+        document.body.appendChild(gameScreen);
+        if (ajOverlay) document.body.appendChild(ajOverlay);
+        overlay.classList.remove('active');
+        alert('画面共有がキャンセルされました');
+        return false;
+    }
+
+    // MediaRecorder 開始
+    recordedChunks = [];
+    const mimeType = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+    mediaRecorder = new MediaRecorder(mediaStream, { mimeType, videoBitsPerSecond: 20_000_000 });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = onRecordingStop;
+    mediaRecorder.start(1000);
+
+    // ストリーム停止時（タブ共有停止）
+    mediaStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
     return true;
 }
 
-function exitRecordMode() {
-    const overlay = document.getElementById('rec-overlay');
-    const frame   = document.getElementById('rec-frame');
-    const gameScreen = document.getElementById('game-screen');
-    if (gameScreen && frame && gameScreen.parentElement === frame) {
-        document.body.appendChild(gameScreen);
-    }
-    if (overlay) overlay.classList.remove('active');
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+
+    // ゲーム画面を元の場所に戻す
+    const overlay    = document.getElementById('rec-overlay');
+    const frame      = document.getElementById('rec-frame');
+    const gameScreen = document.getElementById('game-screen');
+    const ajOverlay  = document.getElementById('all-justice-overlay');
+    if (gameScreen && frame && gameScreen.parentElement === frame) document.body.appendChild(gameScreen);
+    if (ajOverlay  && frame && ajOverlay.parentElement === frame)  document.body.appendChild(ajOverlay);
+    if (overlay) overlay.classList.remove('active');
     recordMode = false;
+}
+
+function onRecordingStop() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url  = URL.createObjectURL(blob);
+
+    // ダウンロードボタンをリザルト画面に表示
+    let dlBtn = document.getElementById('rec-download-btn');
+    if (!dlBtn) {
+        dlBtn = document.createElement('a');
+        dlBtn.id = 'rec-download-btn';
+        dlBtn.style.cssText = 'display:inline-block;margin-top:12px;padding:10px 24px;background:var(--text);color:var(--bg);border-radius:8px;font-weight:700;font-size:0.9rem;text-decoration:none;cursor:pointer;';
+        dlBtn.textContent = '⬇ 録画をダウンロード';
+        const rc = document.querySelector('.result-content') || document.querySelector('.result-details');
+        if (rc) rc.appendChild(dlBtn);
+    }
+    dlBtn.href     = url;
+    dlBtn.download = `typing-game-${Date.now()}.webm`;
+    dlBtn.style.display = 'inline-block';
+}
+
+function exitRecordMode() {
+    stopRecording();
 }
 
 // ===== API設定 =====
@@ -264,8 +311,12 @@ function analyzeDifficulty(song) {
     }
     const repeatRate = repeatCount / totalChars;
 
-    // 総合スコア
-    const score = (totalChars * 0.3) + (kps * 0.4 * 100) + (smallRate * 0.2 * 100) + (repeatRate * 0.1 * 100);
+    // 総合スコア（正規化済み）
+    const lengthScore = Math.min(totalChars / 600, 1) * 30;
+    const speedScore  = Math.max(0, (kps - 1.5) / 4 * 40);
+    const trickyScore = smallRate * 20;
+    const spamScore   = repeatRate * 10;
+    const score = lengthScore + speedScore + trickyScore + spamScore;
 
     // スコア→レベル変換
     const scoreToLevel = (s) => {
@@ -536,7 +587,7 @@ function formatDuration(sec) {
         #all-justice-overlay {
             position: fixed; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            pointer-events: none; z-index: 9999; opacity: 0;
+            pointer-events: none; z-index: 99999; opacity: 0;
         }
         #all-justice-text {
             font-style: italic; font-weight: 900;
@@ -968,17 +1019,11 @@ function formatDuration(sec) {
         /* ===== 録画モード16:9オーバーレイ ===== */
         #rec-overlay {
             display: none;
-            position: fixed; inset: 0; z-index: 9999;
+            position: fixed; inset: 0; z-index: 50000;
             background: #000;
             align-items: center; justify-content: center;
         }
         #rec-overlay.active { display: flex; }
-        #rec-inner {
-            position: relative;
-            width: 100%; height: 100%;
-            /* 16:9を内接させる */
-            display: flex; align-items: center; justify-content: center;
-        }
         #rec-frame {
             position: relative;
             aspect-ratio: 16/9;
@@ -987,11 +1032,11 @@ function formatDuration(sec) {
             overflow: hidden;
             background: var(--bg);
         }
-        /* rec-frame内にゲーム画面を移植するので game-screen を上書き */
-        #rec-frame #game-screen.active {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%;
-            overflow: hidden;
+        #rec-frame #game-screen {
+            position: absolute !important; inset: 0 !important;
+            width: 100% !important; height: 100% !important;
+            top: 0 !important; left: 0 !important;
+            visibility: visible !important;
         }
 
         /* ===== かな表示行 ===== */
@@ -2164,6 +2209,7 @@ function loadLyric(lyric) {
     if (lyric.colorStart) activeColor = lyric.colorStart;
 
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
+    gameState._currentKana        = lyric.kana || [];
     gameState.currentCharIndex    = 0;
     gameState.currentCharPosition = 0;
     gameState.lineTypedChars      = 0;
@@ -2667,7 +2713,7 @@ async function endGame() {
 
     switchScreen('result-screen');
     updateGameInfoOverlay(true);
-    if (recordMode) exitRecordMode();
+    if (recordMode) stopRecording();
 
     // COMBOパネルを非表示
     const cp = document.getElementById('combo-panel');
