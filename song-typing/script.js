@@ -302,11 +302,12 @@ function analyzeDifficulty(song) {
     const repeatRate = repeatCount / totalChars;
 
     // 総合スコア（正規化済み）
-    const lengthScore = Math.min(totalChars / 600, 1) * 30;
-    const speedScore  = Math.max(0, (kps - 1.5) / 4 * 40);
-    const trickyScore = smallRate * 20;
-    const spamScore   = repeatRate * 10;
-    const score = lengthScore + speedScore + trickyScore + spamScore;
+    const lengthScore   = Math.min(totalChars / 600, 1) * 30;
+    const speedScore    = Math.max(-20, Math.min(((kps - 2.5) / 3) * 40, 40));
+    const trickyScore   = smallRate * 20;
+    const spamScore     = repeatRate * 10;
+    const shortPenalty  = Math.min(duration / 90, 1);
+    const score = (lengthScore + speedScore + trickyScore + spamScore) * shortPenalty;
 
     // スコア→レベル変換
     const scoreToLevel = (s) => {
@@ -367,7 +368,14 @@ function analyzeDifficulty(song) {
 
     name = clampName(rank);
 
-    return { level, plus, over15: plus && level === 15, name, color: nameToColor(name), totalChars };
+    // ローマ字換算の総打数（確認画面表示用）
+    let romajiTotal = 0;
+    song.lyrics.forEach(l => {
+        const ra = convertToRomaji(l.kana || []);
+        romajiTotal += ra.reduce((s, c) => s + c.current.length, 0);
+    });
+
+    return { level, plus, over15: plus && level === 15, name, color: nameToColor(name), totalChars: romajiTotal };
 }
 
 function getDifficultyInfo(song) {
@@ -375,6 +383,15 @@ function getDifficultyInfo(song) {
     if (song.worldsEnd !== undefined && song.worldsEnd !== null && song.worldsEnd !== '') {
         return { isWorldsEnd: true, isInst: false, weChar: song.worldsEnd, name: "WORLD'S END", color: null, level: null, over15: false, totalChars: 0 };
     }
+
+    // ローマ字換算打数
+    const romajiCount = (s) => {
+        if (!s.lyrics) return 0;
+        return s.lyrics.reduce((acc, l) => {
+            const ra = convertToRomaji(l.kana || []);
+            return acc + ra.reduce((a, c) => a + c.current.length, 0);
+        }, 0);
+    };
 
     // 手動override
     if (song.override) {
@@ -385,15 +402,12 @@ function getDifficultyInfo(song) {
                     : o.name === 'EXPERT'   ? '#f22922'
                     : o.name === 'MASTER'   ? '#921cec'
                     : '#000000';
-        const level  = o.level  ?? 1;
-        const over15 = o.over15 ?? false;
-        const totalChars = song.lyrics ? song.lyrics.reduce((s, l) => s + (l.kana?.length || 0), 0) : 0;
-        return { isWorldsEnd: false, isInst: false, name, color, level, over15, totalChars };
+        return { isWorldsEnd: false, isInst: false, name, color, level: o.level ?? 1, over15: o.over15 ?? false, totalChars: romajiCount(song) };
     }
 
     // Inst
-    const totalChars = song.lyrics ? song.lyrics.reduce((s, l) => s + (l.kana?.length || 0), 0) : 0;
-    if (totalChars === 0) {
+    const kanaCount = song.lyrics ? song.lyrics.reduce((s, l) => s + (l.kana?.length || 0), 0) : 0;
+    if (kanaCount === 0) {
         return { isWorldsEnd: false, isInst: true, name: 'Inst', color: '#1e90ff', level: null, over15: false, totalChars: 0 };
     }
 
@@ -2098,6 +2112,7 @@ function checkLyricTiming(t) {
                     }
                     for (let i = 0; i < forcedKeys; i++) updateCombo(true);
                     gameState.completedCurrentLine = true;
+                    displayRomaji(); // kanaも全打済み表示
                 } else {
                     gameState.missedLines++;
                     updateCombo(false);
@@ -2194,7 +2209,7 @@ function loadLyric(lyric) {
     if (lyric.colorStart) activeColor = lyric.colorStart;
 
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
-    gameState._currentKana        = lyric.kana || [];
+    gameState._currentKanaUnits   = buildKanaUnits(lyric.kana || []);
     gameState.currentCharIndex    = 0;
     gameState.currentCharPosition = 0;
     gameState.lineTypedChars      = 0;
@@ -2208,6 +2223,8 @@ function loadLyric(lyric) {
     if (!hasKana) {
         const rl = document.getElementById('romaji-line');
         if (rl) rl.innerHTML = '';
+        const kl = document.getElementById('kana-line');
+        if (kl) kl.innerHTML = '';
         if (inp) { inp.value = ''; inp.disabled = true; }
         gameState.completedCurrentLine = true;
     } else {
@@ -2325,6 +2342,31 @@ function convertToRomaji(kana) {
     return result;
 }
 
+// ===== kanaユニット構築（convertToRomajiと同じ分割ロジック） =====
+function buildKanaUnits(kana) {
+    const units = [];
+    let i = 0;
+    while (i < kana.length) {
+        // っ処理
+        if (kana[i] === 'っ') {
+            if (i + 1 < kana.length) {
+                const nxt = kana[i + 1];
+                const combo = nxt + (kana[i + 2] || '');
+                if (COMBO_ROMAJI[combo]) { units.push('っ' + combo); i += 3; continue; }
+                if (ROMAJI_TABLE[nxt]) { units.push('っ' + nxt); i += 2; continue; }
+            }
+            units.push('っ'); i++; continue;
+        }
+        // コンボ
+        if (i + 1 < kana.length) {
+            const combo = kana[i] + kana[i + 1];
+            if (COMBO_ROMAJI[combo]) { units.push(combo); i += 2; continue; }
+        }
+        units.push(kana[i]); i++;
+    }
+    return units;
+}
+
 // ===== ローマ字表示 =====
 function displayRomaji() {
     const el = document.getElementById('romaji-line');
@@ -2358,11 +2400,10 @@ function displayRomaji() {
     }
     el.innerHTML = html;
 
-    // かな表示
-    const kana = gameState.currentRomaji; // 各unitにkanaソース文字が対応
-    const rawKana = gameState._currentKana || [];
+    // かな表示（コンボ単位）
+    const kanaUnits = gameState._currentKanaUnits || [];
     let kanaHtml = '';
-    rawKana.forEach((k, i) => {
+    kanaUnits.forEach((k, i) => {
         if (i < gameState.currentCharIndex)
             kanaHtml += `<span class="k-correct">${k}</span>`;
         else if (i === gameState.currentCharIndex)
