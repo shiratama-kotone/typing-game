@@ -65,17 +65,17 @@ async function enterRecordMode() {
 }
 
 function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-
-    // ゲーム画面を元の場所に戻す
+    // DOMを先に戻す（再生防止）
     const overlay    = document.getElementById('rec-overlay');
     const frame      = document.getElementById('rec-frame');
     const gameScreen = document.getElementById('game-screen');
     const ajOverlay  = document.getElementById('all-justice-overlay');
     if (gameScreen && frame && gameScreen.parentElement === frame) document.body.appendChild(gameScreen);
-    if (ajOverlay  && frame && ajOverlay.parentElement === frame)  document.body.appendChild(ajOverlay);
+    if (ajOverlay  && frame && ajOverlay.parentElement  === frame) document.body.appendChild(ajOverlay);
     if (overlay) overlay.classList.remove('active');
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
     recordMode = false;
 }
 
@@ -274,16 +274,6 @@ const COMBO_ROMAJI = {
 };
 
 // ===== 難易度計算 =====
-function calcTotalChars(song) {
-    if (!song.lyrics || song.lyrics.length === 0) return 0;
-    let total = 0;
-    song.lyrics.forEach(lyric => {
-        const ra = convertToRomaji(lyric.kana);
-        total += ra.reduce((s, c) => s + c.current.length, 0);
-    });
-    return total;
-}
-
 // ===== 難易度自動判定 =====
 function analyzeDifficulty(song) {
     if (!song.lyrics || song.lyrics.length === 0) return null;
@@ -1208,34 +1198,26 @@ window.addEventListener('DOMContentLoaded', () => {
         drawNormaStaff();
     });
 
-    // lyrics-data.js は index.html の <script> で読み込み済み
-    // const SONGS はグローバルスコープで参照可能
-    if (typeof SONGS !== 'undefined' && Array.isArray(SONGS) && SONGS.length > 0) {
+    // lyrics-data*.js を順番に読み込んでSONGSに結合
+    async function loadLyricsFiles() {
+        let songs = typeof SONGS !== 'undefined' && Array.isArray(SONGS) ? [...SONGS] : [];
+        const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
+        for (const file of files) {
+            if (file === './lyrics-data.js' && songs.length > 0) continue; // 既に読み込み済み
+            try {
+                const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
+                const getSongs = new Function(text + '\n; return typeof SONGS !== "undefined" ? SONGS : null;');
+                const result = getSongs();
+                if (Array.isArray(result)) songs = songs.concat(result);
+            } catch(e) {
+                if (e !== 0) console.warn('読み込み失敗:', file, e);
+                // ファイルが存在しなければ無視
+            }
+        }
+        window.SONGS = songs;
         createSongList();
-    } else {
-        // フォールバック: fetch して eval
-        fetch('./lyrics-data.js')
-            .then(r => r.text())
-            .then(text => {
-                try {
-                    // Functionコンストラクタで実行し、戻り値でSONGSを取得
-                    const getSongs = new Function(text + '\n; return typeof SONGS !== "undefined" ? SONGS : null;');
-                    const result = getSongs();
-                    if (result) window.SONGS = result;
-                } catch(e) {
-                    const msg = 'eval error: ' + e;
-                    alert(msg);
-                    navigator.clipboard?.writeText(msg);
-                }
-                createSongList();
-            })
-            .catch(e => {
-                const msg = 'fetch error: ' + e + '\nSONGS type: ' + typeof SONGS + '\nURL: ' + location.href;
-                alert(msg);
-                navigator.clipboard?.writeText(msg);
-                createSongList();
-            });
     }
+    loadLyricsFiles();
 });
 
 // ===== ログインプロンプト =====
@@ -1999,6 +1981,9 @@ async function startGameFromConfirm() {
 
 // ===== ゲーム初期化 =====
 function initGame() {
+    // ダウンロードボタンを隠す
+    const dlBtn = document.getElementById('rec-download-btn');
+    if (dlBtn) dlBtn.style.display = 'none';
     allJusticeActive = false;
     pendingEndGame = false;
     const savedDuration = gameState.totalDuration;
