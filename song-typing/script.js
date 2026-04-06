@@ -1215,15 +1215,16 @@ window.addEventListener('DOMContentLoaded', () => {
         let songs = typeof SONGS !== 'undefined' && Array.isArray(SONGS) ? [...SONGS] : [];
         const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
         for (const file of files) {
-            if (file === './lyrics-data.js' && songs.length > 0) continue; // 既に読み込み済み
+            if (file === './lyrics-data.js' && songs.length > 0) continue;
             try {
                 const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
-                const getSongs = new Function(text + '\n; return typeof SONGS !== "undefined" ? SONGS : null;');
-                const result = getSongs();
+                // const SONGS = [...] を var __SONGS = [...] に置換して衝突回避
+                const safe = text.replace(/^\s*(const|let|var)\s+SONGS\s*=/, 'var __SONGS =');
+                const fn = new Function(safe + '\n; return typeof __SONGS !== "undefined" ? __SONGS : (typeof SONGS !== "undefined" ? SONGS : null);');
+                const result = fn();
                 if (Array.isArray(result)) songs = songs.concat(result);
             } catch(e) {
                 if (e !== 0) console.warn('読み込み失敗:', file, e);
-                // ファイルが存在しなければ無視
             }
         }
         window.SONGS = songs;
