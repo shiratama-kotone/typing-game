@@ -1212,10 +1212,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // lyrics-data*.js を順番に読み込んでSONGSに結合
     async function loadLyricsFiles() {
-        let songs = typeof SONGS !== 'undefined' && Array.isArray(SONGS) ? [...SONGS] : [];
+        let songs = [];
         const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
         for (const file of files) {
-            if (file === './lyrics-data.js' && songs.length > 0) continue;
             try {
                 const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
                 // const SONGS = [...] を var __SONGS = [...] に置換して衝突回避
@@ -1232,7 +1231,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     loadLyricsFiles();
 });
-
 // ===== ログインプロンプト =====
 function injectLoginPrompt() {
     const modal = document.createElement('div');
