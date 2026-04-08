@@ -1213,7 +1213,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // lyrics-data*.js を順番に読み込んでSONGSに結合
     async function loadLyricsFiles() {
         let songs = [];
-        const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
+        const files = ['./lyrics-data.js', './lyrics-data-2.js'];
         for (const file of files) {
             try {
                 const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
