@@ -1369,23 +1369,42 @@ function seekPreview(sec) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    renderDraftList();
-    // ジャンルセレクト初期化
-    const GENRE_OPTIONS = [
-        {id:'pops',label:'ポップス'},{id:'kids',label:'キッズ'},{id:'anime',label:'アニメ'},
-        {id:'vocaloid',label:'ボーカロイド™曲'},{id:'game',label:'ゲームミュージック'},
-        {id:'variety',label:'バラエティ'},{id:'classic',label:'クラシック'},
-        {id:'namco',label:'ナムコオリジナル'},{id:'pjsk',label:'プロジェクトセカイ'},
-        {id:'chunithm',label:'CHUNITHM'},{id:'maimai',label:'maimai'},
-        {id:'ongeki',label:'オンゲキ'},
-    ];
-    ['song-genre','song-genre2','song-genre3'].forEach((selId, i) => {
-        const sel = document.getElementById(selId);
-        if (!sel) return;
-        const blank = i === 0 ? '<option value="">未分類</option>' : '<option value="">なし</option>';
-        sel.innerHTML = blank + GENRE_OPTIONS.map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+// ===== 初期化 =====
+window.addEventListener('DOMContentLoaded', () => {
+    injectConfirmScreen();
+    injectAuthBar();
+    injectLoginPrompt();
+    injectRankingModal();
+    injectSortUI();
+    injectAllJusticeOverlay();
+    injectRecordUI();
+    setupAudio();
+    setupEventListeners();
+
+    window.addEventListener('resize', () => {
+        drawNormaStaff();
     });
+
+    // lyrics-data*.js を順番に読み込んでSONGSに結合
+    async function loadLyricsFiles() {
+        let songs = [];
+        const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
+        for (const file of files) {
+            try {
+                const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
+                // const SONGS = [...] を var __SONGS = [...] に置換して衝突回避
+                const safe = text.replace(/^\s*(const|let|var)\s+SONGS\s*=/, 'var __SONGS =');
+                const fn = new Function(safe + '\n; return typeof __SONGS !== "undefined" ? __SONGS : (typeof SONGS !== "undefined" ? SONGS : null);');
+                const result = fn();
+                if (Array.isArray(result)) songs = songs.concat(result);
+            } catch(e) {
+                if (e !== 0) console.warn('読み込み失敗:', file, e);
+            }
+        }
+        window.SONGS = songs;
+        createSongList();
+    }
+    loadLyricsFiles();
 });
 </script>
 </body>
