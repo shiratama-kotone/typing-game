@@ -287,10 +287,7 @@
             <option value="">-- 曲を選択 --</option>
         </select>
         <button id="lyricsdata-edit-btn" class="btn btn-small" style="display:none;margin-left:6px;" onclick="editSelectedSong()">この曲を編集</button>
-    </div><!-- /setup-section -->
-
-    <div id="main-content" class="main-content">
-        <!-- 下書きバー -->
+    </div><div id="main-content" class="main-content">
         <div class="draft-bar" id="draft-bar">
             <div class="draft-bar-header">
                 <h3>📝 下書き</h3>
@@ -333,7 +330,6 @@
         <div class="lyrics-input-section">
             <h3>歌詞を追加</h3>
 
-            <!-- WORLD'S END 設定 -->
             <div class="worlds-end-row" id="worlds-end-row">
                 <input type="checkbox" id="worlds-end-check" onchange="toggleWorldsEnd()">
                 <label for="worlds-end-check">WORLD'S END</label>
@@ -341,7 +337,6 @@
                 <span id="worlds-end-hint">記号（漢字一文字）を入力</span>
             </div>
 
-            <!-- Inst 設定 -->
             <div class="inst-row" id="inst-row">
                 <input type="checkbox" id="inst-check" onchange="toggleInst()">
                 <label for="inst-check">インスト曲（歌詞なし）</label>
@@ -350,7 +345,6 @@
 
             <div style="margin: 16px 0 12px; border-top: 2px solid #ddd;"></div>
 
-            <!-- 曲の読み・ジャンル -->
             <div class="input-row-2" style="margin-bottom:10px;">
                 <div class="input-group" style="margin-bottom:0;">
                     <label>曲名の読み（五十音ソート用）</label>
@@ -378,7 +372,6 @@
                 </div>
             </div>
 
-            <!-- 歌詞入力エリア（Inst時は非表示） -->
             <div id="lyrics-input-area">
                 <div class="lyrics-input-row">
                     <input type="text"  id="lyrics-text"  placeholder="歌詞（漢字・カタカナOK）">
@@ -399,9 +392,7 @@
                 </div>
                 <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。読みなしの場合は空欄でも追加できます。</p>
             </div>
-        </div><!-- /lyrics-input-section -->
-
-        <div class="lyrics-list" id="lyrics-list"></div>
+        </div><div class="lyrics-list" id="lyrics-list"></div>
 
         <div class="output-section">
             <h3>生成されたコード / インポート</h3>
@@ -418,11 +409,7 @@
                 【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
             </p>
         </div>
-    </div><!-- /main-content -->
-</div><!-- /container -->
-
-<!-- プレビュー -->
-<div class="preview-overlay" id="preview-overlay">
+    </div></div><div class="preview-overlay" id="preview-overlay">
     <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
     <div class="preview-video-wrapper"><div id="preview-player"></div></div>
     <div class="preview-lyrics-area">
@@ -1371,40 +1358,9 @@ function seekPreview(sec) {
 
 // ===== 初期化 =====
 window.addEventListener('DOMContentLoaded', () => {
-    injectConfirmScreen();
-    injectAuthBar();
-    injectLoginPrompt();
-    injectRankingModal();
-    injectSortUI();
-    injectAllJusticeOverlay();
-    injectRecordUI();
-    setupAudio();
-    setupEventListeners();
-
-    window.addEventListener('resize', () => {
-        drawNormaStaff();
-    });
-
-    // lyrics-data*.js を順番に読み込んでSONGSに結合
-    async function loadLyricsFiles() {
-        let songs = [];
-        const files = ['./lyrics-data.js', './lyrics-data-2.js', './lyrics-data-3.js', './lyrics-data-4.js', './lyrics-data-5.js'];
-        for (const file of files) {
-            try {
-                const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
-                // const SONGS = [...] を var __SONGS = [...] に置換して衝突回避
-                const safe = text.replace(/^\s*(const|let|var)\s+SONGS\s*=/, 'var __SONGS =');
-                const fn = new Function(safe + '\n; return typeof __SONGS !== "undefined" ? __SONGS : (typeof SONGS !== "undefined" ? SONGS : null);');
-                const result = fn();
-                if (Array.isArray(result)) songs = songs.concat(result);
-            } catch(e) {
-                if (e !== 0) console.warn('読み込み失敗:', file, e);
-            }
-        }
-        window.SONGS = songs;
-        createSongList();
-    }
-    loadLyricsFiles();
-});</script>
+    // ツール単体で動作するように不要なゲーム処理を削除し、下書きリストの表示のみ行います
+    renderDraftList();
+});
+</script>
 </body>
 </html>
