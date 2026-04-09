@@ -4534,7 +4534,7 @@ const SONGS = [
     title: 'み　む　かｩ　わ　ナ　イ　ス　ト　ラ　イ',
     yomi: 'みむかぅわないすとらい',
     genre: 'vocaloid',
-    videoUrl: 'https://shiratama-kotone.wdfiles.com/local--files/home%3Ahome/%E3%80%90Official%20Music%20Video%E3%80%91%E3%81%BF%E3%82%80%E3%81%8B%EF%BD%A9%E3%82%8F%E3%83%8A%E3%82%A4%E3%82%B9%E3%83%88%E3%83%A9%E3%82%A4%20%20Mimukauwa%20Nice%20Try.mp4',
+    youtubeId: 'Ljr2wMSBHqU',
     lyrics: [
         { time: 1.26, text: '遂に始まりました！！、', kana: ['つ','い','に','は','じ','ま','り','ま','し','た'] },
         { time: 4.04, text: 'ボカコレです！！。', kana: ['ぼ','か','こ','れ','で','す'] },
