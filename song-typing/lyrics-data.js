@@ -4915,8 +4915,6 @@ const SONGS = [
     title: 'INTERNET OVERDOSE(Anime version)',
     yomi: 'いんたーねっとおーばーどーず',
     genre: 'anime',
-    genre2: 'anime',
-    genre3: 'anime',
     youtubeId: 'A_dTp5OBJLI',
     lyrics: [
         { time: 3.35, text: 'この混沌とした令和のインターネットを照らす一筋の光', kana: ['こ','の','こ','ん','と','ん','と','し','た','れ','い','わ','の','い','ん','た','ー','ね','っ','と','を','て','ら','す','ひ','と','す','じ','の','ひ','か','り'] },
