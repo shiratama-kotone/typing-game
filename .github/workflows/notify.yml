@@ -1,0 +1,20 @@
+name: Notify Update
+
+on:
+  push:
+    paths:
+      - 'song-typing/lyrics-data.js'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST送信
+        run: |
+          curl -X POST https://yuyuyu-made-bbs-server.onrender.com/api \
+          -H "Content-Type: application/json" \
+          -d '{
+            "name": "更新お知らせ",
+            "pass": "NHKmYRuf99rD",
+            "content": "歌詞タイピングが更新されたよ"
+          }'
