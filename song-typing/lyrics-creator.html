@@ -901,23 +901,25 @@ function pauseVideo() { if (player) player.pauseVideo(); }
 function playVideo()  { if (player) player.playVideo(); }
 function seekVideo(sec) { if (player) player.seekTo(Math.max(0, currentTime + sec), true); }
 
-// ===== 歌詞追加 =====
+// ===== 歌詞追加（修正版） =====
 function addLyric() {
-    const text     = document.getElementById('lyrics-text').value.trim();
+    // trim()を削除し、入力された空白をそのまま取得する
+    const text     = document.getElementById('lyrics-text').value;
     const kana     = document.getElementById('lyrics-kana').value.trim();
     const colorHex = document.getElementById('lyrics-color-hex').value.trim();
     const colorEnd = document.getElementById('lyrics-color-end').checked;
 
-    if (!text) { alert('歌詞を入力してください'); return; }
+    // 「完全に何も入力されていない」場合のみアラートを出す（空白があればOK）
+    if (text === "") { alert('歌詞を入力してください'); return; }
 
     if (kana && !/^[\u3040-\u309F\u3099\u309Aーa-z0-9 　 ]+$/.test(kana)) {
-    alert('読みはひらがな（濁点含む）、長音記号（ー）、英数字、空白で入力してください');
-    return;
+        alert('読みはひらがな（濁点含む）、長音記号（ー）、英数字、空白で入力してください');
+        return;
     }
 
     const entry = {
         time: currentTime,
-        text: text,
+        text: text, // 空白が含まれていてもそのまま保存
         kana: kana ? kana.split('') : [],
         colorStart: (/^#[0-9a-fA-F]{6}$/.test(colorHex)) ? colorHex : null,
         colorEnd: colorEnd
