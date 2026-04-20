@@ -304,31 +304,29 @@ function analyzeDifficulty(song) {
     // 平均秒速
     const avgKps = totalKana / duration;
 
-    // 瞬間秒速：隣接2行間の密度の最大値
+    // 瞬間秒速：隣接2行間の密度の最大値（ウィンドウ最低1秒）
     let peakKps = 0;
     for (let i = 0; i < timeline.length; i++) {
         const t0 = i === 0 ? 0 : timeline[i - 1].time;
         const t1 = timeline[i].time;
-        const window = t1 - t0;
-        if (window > 0.1) {
-            const density = timeline[i].keys / window;
-            if (density > peakKps) peakKps = density;
-        }
+        const window = Math.max(t1 - t0, 1.0); // 最低1秒
+        const density = timeline[i].keys / window;
+        if (density > peakKps) peakKps = density;
     }
 
     const repeatRate = repeatCount / totalKana;
 
     // スコア計算
-    // 瞬間秒速を最重要（0〜45点）
-    const peakScore   = Math.min(peakKps / 12, 1) * 45;
-    // 平均秒速 補助（-15〜30点）
-    const avgScore    = Math.max(-15, Math.min((avgKps - 1.5) / 5 * 30, 30));
-    // 総打数 体力（0〜20点）
-    const bodyScore   = Math.min(totalKana / 800, 1) * 20;
+    // 瞬間秒速を最重要（0〜40点）: 8打/秒でMAX
+    const peakScore   = Math.min(peakKps / 8, 1) * 40;
+    // 平均秒速 補助（-10〜25点）
+    const avgScore    = Math.max(-10, Math.min((avgKps - 1.5) / 6 * 25, 25));
+    // 総打数 体力（0〜20点）: 1000打でMAX
+    const bodyScore   = Math.min(totalKana / 1000, 1) * 20;
     // 連打（0〜5点）
     const spamScore   = repeatRate * 5;
-    // 短曲ペナルティ
-    const shortFactor = Math.min(duration / 60, 1);
+    // 短曲ペナルティ: 90秒未満でペナルティ
+    const shortFactor = Math.min(duration / 90, 1);
 
     const score = (peakScore + avgScore + bodyScore + spamScore) * shortFactor;
 
@@ -1212,25 +1210,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // lyrics-data*.js を順番に読み込んでSONGSに結合
     async function loadLyricsFiles() {
-        let songs = [];
-        const files = ['./lyrics-data.js', './lyrics-data-2.js'];
-        for (const file of files) {
+        let songs = typeof SONGS !== 'undefined' && Array.isArray(SONGS) ? [...SONGS] : [];
+        // SONGS2, SONGS3... をHTMLで読み込んだ場合に結合
+        for (let i = 2; i <= 9; i++) {
+            const v = window['SONGS' + i];
+            if (Array.isArray(v)) songs = songs.concat(v);
+        }
+        // lyrics-data.jsだけfetchフォールバック
+        if (songs.length === 0) {
             try {
-                const text = await fetch(file).then(r => { if (!r.ok) throw 0; return r.text(); });
-                // const SONGS = [...] を var __SONGS = [...] に置換して衝突回避
+                const text = await fetch('./lyrics-data.js').then(r => { if (!r.ok) throw 0; return r.text(); });
                 const safe = text.replace(/^\s*(const|let|var)\s+SONGS\s*=/, 'var __SONGS =');
-                const fn = new Function(safe + '\n; return typeof __SONGS !== "undefined" ? __SONGS : (typeof SONGS !== "undefined" ? SONGS : null);');
-                const result = fn();
-                if (Array.isArray(result)) songs = songs.concat(result);
-            } catch(e) {
-                if (e !== 0) console.warn('読み込み失敗:', file, e);
-            }
+                const result = new Function(safe + '\n; return typeof __SONGS !== "undefined" ? __SONGS : null;')();
+                if (Array.isArray(result)) songs = result;
+            } catch(e) { console.warn('lyrics-data.js fetch失敗:', e); }
         }
         window.SONGS = songs;
         createSongList();
     }
     loadLyricsFiles();
 });
+
 // ===== ログインプロンプト =====
 function injectLoginPrompt() {
     const modal = document.createElement('div');
