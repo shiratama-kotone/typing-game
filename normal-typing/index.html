@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- タイトル画面 -->
     <div id="title-screen" class="screen active">
         <h1 class="game-title">タイピングゲーム</h1>
         <div class="menu">
@@ -15,7 +14,6 @@
         </div>
     </div>
 
-    <!-- モード選択画面 -->
     <div id="mode-select-screen" class="screen">
         <h2>モード選択</h2>
         <div class="menu">
@@ -25,7 +23,6 @@
         </div>
     </div>
 
-    <!-- 段位選択画面 -->
     <div id="rank-select-screen" class="screen">
         <h2>段位選択</h2>
         <div id="rank-carousel" class="rank-carousel"></div>
@@ -35,16 +32,7 @@
         </div>
     </div>
 
-    <!-- ゲーム画面 -->
     <div id="game-screen" class="screen">
-        <!-- 音楽プレイヤー -->
-        <div id="music-player" class="music-player">
-            <button id="prev-btn" class="player-btn">⏮</button>
-            <button id="play-btn" class="player-btn">▶</button>
-            <button id="next-btn" class="player-btn">⏭</button>
-        </div>
-
-        <!-- 100ノーミスゲージ -->
         <div id="combo-gauge-container" class="combo-gauge-container">
             <div class="combo-label">100ノーミスボーナス</div>
             <div class="combo-gauge-bar">
@@ -53,7 +41,6 @@
             </div>
         </div>
 
-        <!-- ゲージ表示 -->
         <div id="gauges" class="gauges">
             <div class="gauge-container">
                 <div class="gauge-label">正打鍵数</div>
@@ -63,31 +50,27 @@
                 </div>
             </div>
             <div class="gauge-container">
-                <div class="gauge-label">残りミス数</div>
+                <div class="gauge-label">ミス許容</div>
                 <div class="gauge-bar">
                     <div id="miss-gauge" class="gauge-fill miss-fill"></div>
-                    <div id="miss-gauge-text" class="gauge-text">∞</div>
+                    <div id="miss-gauge-text" class="gauge-text">0 / 0</div>
                 </div>
             </div>
         </div>
 
-        <!-- スコア表示 -->
-        <div id="score-display" class="score-display">
+        <div class="score-display">
             <div>スコア: <span id="score">0</span></div>
-            <div id="time-display">残り時間: <span id="time">60</span>秒</div>
+            <div>残り時間: <span id="time">60</span>s</div>
         </div>
 
-        <!-- 単語表示 -->
         <div id="word-display" class="word-display">
             <div id="japanese-word" class="japanese-word"></div>
             <div id="romaji-word" class="romaji-word"></div>
         </div>
 
-        <!-- 入力フィールド -->
         <input type="text" id="input-field" class="input-field" autocomplete="off" autofocus>
     </div>
 
-    <!-- リザルト画面 -->
     <div id="result-screen" class="screen">
         <div id="result-content" class="result-content">
             <div id="result-animation"></div>
@@ -100,17 +83,6 @@
                 <p id="high-score-text"></p>
             </div>
             <button class="menu-button" onclick="backToMenu()">メニューへ</button>
-        </div>
-    </div>
-
-    <!-- 段位解放演出 -->
-    <div id="rank-unlock-overlay" class="rank-unlock-overlay">
-        <div class="rank-unlock-animation">
-            <div class="unlock-bars">
-                <div class="unlock-bar unlock-bar-left"></div>
-                <div class="unlock-bar unlock-bar-right"></div>
-            </div>
-            <div id="unlock-text" class="unlock-text"></div>
         </div>
     </div>
 
