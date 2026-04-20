@@ -1,17 +1,53 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;500;700;800;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg:       #f0f0f2;
+    --bg2:      #e4e4e8;
+    --surface:  rgba(255,255,255,0.72);
+    --surface2: rgba(255,255,255,0.45);
+    --border:   rgba(0,0,0,0.10);
+    --border2:  rgba(0,0,0,0.06);
+    --text:     #1a1a1e;
+    --text2:    #484854;
+    --text3:    #888898;
+    --correct:  #2a8a4a;
+    --shadow:   rgba(0,0,0,0.11);
+    --gauge-bg: rgba(0,0,0,0.08);
+    --input-bg: rgba(255,255,255,0.88);
+    --scrollbar:rgba(0,0,0,0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:       #111113;
+        --bg2:      #1a1a1e;
+        --surface:  rgba(255,255,255,0.05);
+        --surface2: rgba(255,255,255,0.03);
+        --border:   rgba(255,255,255,0.09);
+        --border2:  rgba(255,255,255,0.05);
+        --text:     #e2e2e8;
+        --text2:    #a8a8bc;
+        --text3:    #64647a;
+        --correct:  #5cc87a;
+        --shadow:   rgba(0,0,0,0.55);
+        --gauge-bg: rgba(0,0,0,0.45);
+        --input-bg: rgba(255,255,255,0.06);
+        --scrollbar:rgba(255,255,255,0.14);
+    }
 }
 
 body {
-    font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'M PLUS 1p', sans-serif;
+    background: var(--bg);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    color: var(--text);
+    transition: background 0.3s, color 0.3s;
 }
 
 .screen {
@@ -28,22 +64,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* タイトル画面 */
 .game-title {
-    font-size: 3.5rem;
-    color: #fff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--text);
     margin-bottom: 50px;
-    animation: titlePulse 2s ease-in-out infinite;
-}
-
-@keyframes titlePulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    font-weight: 800;
 }
 
 .menu {
@@ -54,35 +83,32 @@ body {
 }
 
 .menu-button {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    border: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
     padding: 15px 50px;
     font-size: 1.5rem;
-    color: white;
+    color: var(--text);
     border-radius: 50px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    font-weight: bold;
+    transition: all 0.2s;
+    box-shadow: 0 2px 10px var(--shadow);
+    font-weight: 700;
+    backdrop-filter: blur(8px);
 }
 
 .menu-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.menu-button:active {
-    transform: translateY(0);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px var(--shadow);
+    background: var(--surface2);
 }
 
 h2 {
-    color: #fff;
+    color: var(--text);
     font-size: 2.5rem;
     margin-bottom: 30px;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-/* 段位選択画面 - 太鼓の達人風 */
+/* 段位選択 */
 .rank-carousel {
     display: flex;
     justify-content: center;
@@ -94,483 +120,73 @@ h2 {
 
 .rank-box {
     writing-mode: vertical-rl;
-    border: 4px solid #fff;
+    border: 3px solid var(--border);
     padding: 30px 20px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--surface);
     border-radius: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 1.5rem;
-    color: #fff;
+    color: var(--text);
     font-weight: bold;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.rank-box.locked {
-    opacity: 0.3;
-    cursor: not-allowed;
+    backdrop-filter: blur(8px);
 }
 
 .rank-box.selected {
     transform: scale(1.3);
-    border-color: #ffd700;
-    background: rgba(255, 215, 0, 0.3);
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-    z-index: 10;
+    border-color: var(--correct);
+    box-shadow: 0 0 20px var(--shadow);
 }
 
-.rank-controls {
-    color: #fff;
-    font-size: 1.2rem;
-}
-
-.rank-controls p {
-    margin-bottom: 20px;
-}
-
-/* ゲーム画面 */
-.gauges {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.gauge-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.gauge-label {
-    color: #fff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    min-width: 120px;
-    text-align: right;
-}
-
+/* ゲージ */
 .gauge-bar {
     position: relative;
     flex: 1;
     height: 40px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--gauge-bg);
     border-radius: 20px;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border);
 }
 
 .gauge-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
     height: 100%;
     transition: width 0.3s ease;
-    border-radius: 20px;
 }
 
-.correct-fill {
-    background: linear-gradient(90deg, #4CAF50, #8BC34A);
-}
+.correct-fill { background-color: var(--correct); }
+.miss-fill { background-color: #f44336; }
 
-.miss-fill {
-    background: linear-gradient(90deg, #f44336, #e91e63);
-}
-
-.gauge-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-weight: bold;
-    font-size: 1.1rem;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    z-index: 1;
-}
-
-.score-display {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    color: #fff;
-    font-size: 1.5rem;
-}
-
-.score-display div {
-    margin: 10px 0;
-}
-
-#score, #time {
-    font-weight: bold;
-    font-size: 2rem;
-    color: #ffd700;
-}
-
-.word-display {
-    margin: 50px 0;
-}
-
-.japanese-word {
-    font-size: 3rem;
-    color: #fff;
-    margin-bottom: 20px;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    letter-spacing: 0.3em;
-}
-
-.romaji-word {
-    font-size: 2rem;
-    color: #ffd700;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 0.2em;
-}
-
-.romaji-word .correct {
-    color: #4CAF50;
-}
-
-.romaji-word .current {
-    color: #fff;
-    text-decoration: underline;
-    font-weight: bold;
-}
-
-.romaji-word .remaining {
-    color: rgba(255, 255, 255, 0.5);
-}
+.word-display { margin: 50px 0; }
+.japanese-word { font-size: 3rem; margin-bottom: 10px; }
+.romaji-word { font-size: 2rem; color: var(--text3); font-family: monospace; }
+.romaji-word .correct { color: var(--correct); }
 
 .input-field {
     width: 80%;
     max-width: 600px;
     padding: 15px;
     font-size: 1.5rem;
-    border: 3px solid #fff;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.9);
+    color: var(--text);
     text-align: center;
     outline: none;
-}
-
-.input-field:focus {
-    border-color: #ffd700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-}
-
-/* リザルト画面 */
-.result-content {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 40px;
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
-}
-
-#result-animation {
-    margin-bottom: 30px;
-    min-height: 150px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 合格アニメーション */
-.pass-animation {
-    font-size: 5rem;
-    font-weight: bold;
-    color: #ffd700;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
-                 0 0 40px rgba(255, 215, 0, 0.6);
-    animation: passAnimation 2s ease-out forwards;
-    letter-spacing: 2em;
-    margin-left: 2em;
-}
-
-@keyframes passAnimation {
-    0% {
-        opacity: 0;
-        transform: scale(0) translateZ(-1000px);
-        letter-spacing: 0;
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.2) translateZ(0);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) translateZ(500px);
-        letter-spacing: 2em;
-    }
-}
-
-/* 不合格アニメーション */
-.fail-animation {
-    font-size: 4rem;
-    font-weight: bold;
-    color: #f44336;
-    text-shadow: 0 0 20px rgba(244, 67, 54, 0.8);
-    animation: failAnimation 2s ease-out forwards;
-}
-
-@keyframes failAnimation {
-    0% {
-        opacity: 0;
-        transform: translateY(-200px);
-    }
-    60% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    80% {
-        transform: translateY(10px);
-    }
-    100% {
-        transform: translateY(0) rotate(7deg);
-    }
-}
-
-.result-content.fail {
-    background: rgba(0, 0, 0, 0.7);
-}
-
-.result-details {
-    color: #fff;
-    font-size: 1.3rem;
-    margin: 20px 0;
-}
-
-.result-details p {
-    margin: 15px 0;
-}
-
-.result-details span {
-    font-weight: bold;
-    font-size: 1.5rem;
-    color: #ffd700;
-}
-
-#high-score-text {
-    color: #4CAF50;
-    font-weight: bold;
-    margin-top: 20px;
-}
-
-/* 段位解放演出 - CHUNITHM風 */
-.rank-unlock-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 1000;
-    justify-content: center;
-    align-items: center;
-}
-
-.rank-unlock-overlay.active {
-    display: flex;
-    animation: fadeIn 0.5s ease;
-}
-
-.rank-unlock-animation {
-    position: relative;
-    width: 80%;
-    max-width: 800px;
-}
-
-.unlock-bars {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: space-between;
-    z-index: 1;
-}
-
-.unlock-bar {
-    width: 8px;
-    height: 100%;
-    background: linear-gradient(180deg, #ffd700, #ff8c00);
-    animation: barSlide 1s ease-out forwards;
-}
-
-.unlock-bar-left {
-    animation-name: barSlideLeft;
-}
-
-.unlock-bar-right {
-    animation-name: barSlideRight;
-}
-
-@keyframes barSlideLeft {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes barSlideRight {
-    from {
-        transform: translateX(-400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.unlock-text {
-    position: relative;
-    z-index: 2;
-    font-size: 4rem;
-    font-weight: bold;
-    color: #fff;
-    text-align: center;
-    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
-                 0 0 60px rgba(255, 215, 0, 0.6);
-    animation: unlockTextAnimation 5s ease-out forwards;
-    letter-spacing: 0;
-    padding: 50px;
-}
-
-@keyframes unlockTextAnimation {
-    0% {
-        opacity: 0;
-        letter-spacing: 0;
-    }
-    20% {
-        opacity: 1;
-        letter-spacing: 0;
-    }
-    100% {
-        opacity: 1;
-        letter-spacing: 0.5em;
-    }
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 768px) {
-    .game-title {
-        font-size: 2.5rem;
-    }
-    
-    .menu-button {
-        font-size: 1.2rem;
-        padding: 12px 40px;
-    }
-    
-    .japanese-word {
-        font-size: 2rem;
-    }
-    
-    .romaji-word {
-        font-size: 1.5rem;
-    }
-    
-    .rank-box {
-        font-size: 1.2rem;
-        padding: 20px 15px;
-    }
-    
-    .pass-animation, .fail-animation {
-        font-size: 3rem;
-    }
-    
-    .unlock-text {
-        font-size: 2.5rem;
-    }
-}
-
-/* 音楽プレイヤー */
-.music-player {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    z-index: 100;
-}
-
-.player-btn {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    color: white;
-    font-size: 1.2rem;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px);
-}
-
-.player-btn:hover {
-    background: rgba(255, 255, 255, 0.5);
-    transform: scale(1.1);
-}
-
-.player-btn:active {
-    transform: scale(0.95);
+    backdrop-filter: blur(8px);
 }
 
 /* 100ノーミスゲージ */
 .combo-gauge-container {
-    background: rgba(255, 215, 0, 0.2);
-    border: 2px solid rgba(255, 215, 0, 0.5);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 15px;
     padding: 15px;
     margin-bottom: 20px;
 }
 
-.combo-label {
-    color: #ffd700;
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-.combo-gauge-bar {
-    position: relative;
-    height: 30px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 15px;
-    overflow: hidden;
-    border: 2px solid rgba(255, 215, 0, 0.5);
-}
-
 .combo-gauge-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
     height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #ffd700, #ffed4e);
-    border-radius: 15px;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-}
-
-.combo-gauge-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-weight: bold;
-    font-size: 1rem;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
-    z-index: 1;
+    background: linear-gradient(90deg, #ffd700, #ff8c00);
+    transition: width 0.1s ease;
 }
