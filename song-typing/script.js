@@ -16,6 +16,7 @@ let recordMode = false;
 let mediaStream = null;
 let mediaRecorder = null;
 let recordedChunks = [];
+let stayActive = false; // stayStart〜stayEnd間はスクロール固定
 
 // ===== 録画モード =====
 async function enterRecordMode() {
@@ -911,8 +912,9 @@ function formatDuration(sec) {
         #game-screen .combo-gauge-container { order: 2; width: 100%; max-width: 640px; box-sizing: border-box; }
         #game-screen .youtube-container     { order: 3; }
         #game-screen #lyrics-scroll-panel   { order: 4; }
-        #game-screen .lyrics-display        { order: 5; }
-        #game-screen .input-field           { order: 6; }
+        #game-screen #scroll-text-bar        { order: 5; }
+        #game-screen .lyrics-display        { order: 6; }
+        #game-screen .input-field           { order: 7; }
 
         /* スコアバー: 上部横並び */
         #game-screen .score-display {
@@ -1051,6 +1053,23 @@ function formatDuration(sec) {
         #kana-line .k-correct   { color: var(--correct); }
         #kana-line .k-current   { color: var(--text); border-bottom: 2px solid var(--text); }
         #kana-line .k-remaining { color: var(--text2); }
+
+        /* ===== scrollテキスト ===== */
+        #scroll-text-bar {
+            width: 100%; overflow: hidden; height: 2.2em;
+            position: relative; display: none;
+        }
+        #scroll-text-bar.active { display: block; }
+        #scroll-text-inner {
+            position: absolute; white-space: nowrap;
+            font-size: clamp(1rem, 2.2vw, 1.6rem);
+            font-weight: 700; color: var(--text);
+            right: -100%; animation: none;
+        }
+        @keyframes scroll-rtl {
+            from { right: -100%; }
+            to   { right: 110%; }
+        }
 
         /* ===== 認証・ランキング ===== */
         #auth-bar {
@@ -1426,6 +1445,19 @@ function injectRecordUI() {
         </div>
     `;
     document.body.appendChild(gio);
+
+    // scrollテキストバー
+    const stb = document.createElement('div');
+    stb.id = 'scroll-text-bar';
+    stb.innerHTML = '<span id="scroll-text-inner"></span>';
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen) {
+        const lyricsDisplay = gameScreen.querySelector('.lyrics-display');
+        if (lyricsDisplay) gameScreen.insertBefore(stb, lyricsDisplay);
+        else gameScreen.appendChild(stb);
+    } else {
+        document.body.appendChild(stb);
+    }
 
     // COMBOパネル
     const cp = document.createElement('div');
@@ -2000,6 +2032,7 @@ async function startGameFromConfirm() {
 
 // ===== ゲーム初期化 =====
 function initGame() {
+    stayActive = false;
     // ダウンロードボタンを隠す
     const dlBtn = document.getElementById('rec-download-btn');
     if (dlBtn) dlBtn.style.display = 'none';
@@ -2203,7 +2236,11 @@ function updateLyricScroll(idx) {
     if (!activeEl) return;
     const panelH = panel.offsetHeight;
     const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
-    inner.style.transform = `translateY(${-offset}px)`;
+
+    // stay中はスクロール固定（translateY を更新しない）
+    if (!stayActive) {
+        inner.style.transform = `translateY(${-offset}px)`;
+    }
 }
 
 function loadLyric(lyric) {
@@ -2212,6 +2249,40 @@ function loadLyric(lyric) {
     autoTypeTimers = [];
 
     if (lyric.colorStart) activeColor = lyric.colorStart;
+
+    // stay処理
+    if (lyric.stayStart) stayActive = true;
+    if (lyric.stayEnd) {
+        stayActive = false;
+        // 現在位置まで一気にスクロール
+        const inner = document.getElementById('lyrics-scroll-inner');
+        const panel = document.getElementById('lyrics-scroll-panel');
+        const activeEl = document.getElementById(`lsl-${currentLyricIndex}`);
+        if (inner && panel && activeEl) {
+            const panelH = panel.offsetHeight;
+            const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
+            inner.style.transform = `translateY(${-offset}px)`;
+        }
+    }
+
+    // scrollテキスト
+    const stb   = document.getElementById('scroll-text-bar');
+    const stInner = document.getElementById('scroll-text-inner');
+    if (stb && stInner) {
+        stb.classList.remove('active');
+        stInner.style.animation = 'none';
+        stInner.textContent = '';
+        if (lyric.scroll) {
+            const nextLyric = currentSong.lyrics[currentLyricIndex + 1];
+            const endTime   = nextLyric ? nextLyric.time : (gameState.totalDuration || lyric.time + 5);
+            const durationMs = Math.max(500, (endTime - lyric.time) * 1000 / playbackSpeed);
+            stb.classList.add('active');
+            stInner.textContent = lyric.text;
+            // アニメーション再適用
+            void stInner.offsetWidth;
+            stInner.style.animation = `scroll-rtl ${durationMs}ms linear forwards`;
+        }
+    }
 
     gameState.currentRomaji       = convertToRomaji(lyric.kana);
     gameState._currentKanaUnits   = buildKanaUnits(lyric.kana || []);
