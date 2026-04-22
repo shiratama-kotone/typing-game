@@ -440,6 +440,10 @@
         <div id="preview-scroll-panel">
             <div id="preview-scroll-inner"></div>
         </div>
+        <div id="preview-scroll-text-bar" style="width:100%;overflow:hidden;height:2.2em;position:relative;display:none;">
+            <span id="preview-scroll-text-inner" style="position:absolute;white-space:nowrap;font-size:1.3rem;font-weight:700;color:#fff;right:-100%;animation:none;"></span>
+        </div>
+        <style>#preview-scroll-text-bar.active{display:block;}</style>
         <div id="preview-romaji"></div>
     </div>
     <div class="preview-controls">
@@ -1252,13 +1256,17 @@ function updatePreviewScroll(idx) {
     if (!activeEl) return;
     const panelH = panel.offsetHeight;
     const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panelH / 2;
-    if (idx === 0) {
-        inner.style.transition = 'none';
-        inner.style.transform = `translateY(${-offset}px)`;
-        void inner.offsetWidth;
-        inner.style.transition = '';
-    } else {
-        inner.style.transform = `translateY(${-offset}px)`;
+
+    // stay中はスクロール固定
+    if (!previewStayActive) {
+        if (idx === 0) {
+            inner.style.transition = 'none';
+            inner.style.transform = `translateY(${-offset}px)`;
+            void inner.offsetWidth;
+            inner.style.transition = '';
+        } else {
+            inner.style.transform = `translateY(${-offset}px)`;
+        }
     }
 }
 
@@ -1266,6 +1274,7 @@ function openPreview() {
     if (lyricsData.length === 0) { alert('歌詞が1つもありません。'); return; }
     if (player) player.pauseVideo();
     _prevPreviewIdx = -1;
+    previewStayActive = false;
     document.getElementById('preview-overlay').classList.add('active');
     buildPreviewScrollPanel();
     document.getElementById('preview-romaji').textContent = '';
@@ -1308,6 +1317,7 @@ let _prevPreviewIdx = -1;
 let previewCombo = 0;
 let previewComboTimer = null;
 let previewAutoTimers = [];
+let previewStayActive = false;
 
 function updatePreviewCombo(hit) {
     const numEl = document.getElementById('preview-combo-number');
@@ -1353,12 +1363,45 @@ function updatePreviewLyric() {
     if (idx !== _prevPreviewIdx) {
         _prevPreviewIdx = idx;
         if (idx >= 0) {
+            const lyric = lyricsData[idx];
+
+            // stay処理
+            if (lyric.stayStart) previewStayActive = true;
+            if (lyric.stayEnd) {
+                previewStayActive = false;
+                // stayEnd：一気にスクロール解放
+                const inner = document.getElementById('preview-scroll-inner');
+                const panel = document.getElementById('preview-scroll-panel');
+                const activeEl = document.getElementById(`psl-${idx}`);
+                if (inner && panel && activeEl) {
+                    const offset = activeEl.offsetTop + activeEl.offsetHeight / 2 - panel.offsetHeight / 2;
+                    inner.style.transform = `translateY(${-offset}px)`;
+                }
+            }
+
             updatePreviewScroll(idx);
-            const kana = lyricsData[idx].kana || [];
+
+            // scrollテキスト
+            const stb    = document.getElementById('preview-scroll-text-bar');
+            const stInner = document.getElementById('preview-scroll-text-inner');
+            if (stb && stInner) {
+                stb.classList.remove('active');
+                stInner.style.animation = 'none';
+                stInner.textContent = '';
+                if (lyric.scroll) {
+                    const nextTime = lyricsData[idx + 1] ? lyricsData[idx + 1].time : null;
+                    const durationMs = nextTime ? Math.max(500, (nextTime - lyric.time) * 1000) : 4000;
+                    stb.classList.add('active');
+                    stInner.textContent = lyric.text;
+                    void stInner.offsetWidth;
+                    stInner.style.animation = `scroll-rtl ${durationMs}ms linear forwards`;
+                }
+            }
+
+            const kana = lyric.kana || [];
             document.getElementById('preview-romaji').textContent = kana.length > 0 ? toRomaji(kana) : '';
-            // 次の行までの時間でオートタイプ
             const nextTime = lyricsData[idx + 1] ? lyricsData[idx + 1].time : null;
-            const windowMs = nextTime ? Math.max(200, (nextTime - lyricsData[idx].time) * 0.9 * 1000) : 3000;
+            const windowMs = nextTime ? Math.max(200, (nextTime - lyric.time) * 0.9 * 1000) : 3000;
             if (kana.length > 0) schedulePreviewAutoType(kana, windowMs);
         } else {
             document.getElementById('preview-romaji').textContent = '';
@@ -1370,6 +1413,7 @@ function closePreview() {
     if (previewUpdateInterval) { clearInterval(previewUpdateInterval); previewUpdateInterval = null; }
     previewAutoTimers.forEach(t => clearTimeout(t)); previewAutoTimers = [];
     previewCombo = 0;
+    previewStayActive = false;
     _prevPreviewIdx = -1;
     const panel = document.getElementById('preview-combo');
     if (panel) panel.classList.remove('visible');
