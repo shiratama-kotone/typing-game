@@ -287,7 +287,10 @@
             <option value="">-- 曲を選択 --</option>
         </select>
         <button id="lyricsdata-edit-btn" class="btn btn-small" style="display:none;margin-left:6px;" onclick="editSelectedSong()">この曲を編集</button>
-    </div><div id="main-content" class="main-content">
+    </div><!-- /setup-section -->
+
+    <div id="main-content" class="main-content">
+        <!-- 下書きバー -->
         <div class="draft-bar" id="draft-bar">
             <div class="draft-bar-header">
                 <h3>📝 下書き</h3>
@@ -330,6 +333,7 @@
         <div class="lyrics-input-section">
             <h3>歌詞を追加</h3>
 
+            <!-- WORLD'S END 設定 -->
             <div class="worlds-end-row" id="worlds-end-row">
                 <input type="checkbox" id="worlds-end-check" onchange="toggleWorldsEnd()">
                 <label for="worlds-end-check">WORLD'S END</label>
@@ -337,6 +341,7 @@
                 <span id="worlds-end-hint">記号（漢字一文字）を入力</span>
             </div>
 
+            <!-- Inst 設定 -->
             <div class="inst-row" id="inst-row">
                 <input type="checkbox" id="inst-check" onchange="toggleInst()">
                 <label for="inst-check">インスト曲（歌詞なし）</label>
@@ -345,69 +350,35 @@
 
             <div style="margin: 16px 0 12px; border-top: 2px solid #ddd;"></div>
 
+            <!-- 曲の読み・ジャンル -->
             <div class="input-row-2" style="margin-bottom:10px;">
                 <div class="input-group" style="margin-bottom:0;">
                     <label>曲名の読み（五十音ソート用）</label>
                     <input type="text" id="song-yomi" placeholder="例: てれぱしー" oninput="songYomi=this.value">
                 </div>
                 <div class="input-group" style="margin-bottom:0;">
-    <label>ジャンル1</label>
-    <select id="song-genre" onchange="songGenre=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
-        <option value="uncategorized">未分類</option>
-        <option value="pops">ポップス</option>
-        <option value="kids">キッズ</option>
-        <option value="anime">アニメ</option>
-        <option value="vocaloid">ボーカロイド™曲</option>
-        <option value="game">ゲームミュージック</option>
-        <option value="variety">バラエティ</option>
-        <option value="classic">クラシック</option>
-        <option value="namco">ナムコオリジナル</option>
-        <option value="pjsk">プロジェクトセカイ</option>
-        <option value="chunithm">CHUNITHM</option>
-        <option value="maimai">maimai</option>
-        <option value="ongeki">オンゲキ</option>
-    </select>
-</div>
-
-<div class="input-group" style="margin-bottom:0;">
-    <label>ジャンル2（任意）</label>
-    <select id="song-genre2" onchange="songGenre2=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
-        <option value="">なし</option>
-        <option value="pops">ポップス</option>
-        <option value="kids">キッズ</option>
-        <option value="anime">アニメ</option>
-        <option value="vocaloid">ボーカロイド™曲</option>
-        <option value="game">ゲームミュージック</option>
-        <option value="variety">バラエティ</option>
-        <option value="classic">クラシック</option>
-        <option value="namco">ナムコオリジナル</option>
-        <option value="pjsk">プロジェクトセカイ</option>
-        <option value="chunithm">CHUNITHM</option>
-        <option value="maimai">maimai</option>
-        <option value="ongeki">オンゲキ</option>
-    </select>
-</div>
-
-<div class="input-group" style="margin-bottom:0;">
-    <label>ジャンル3（任意）</label>
-    <select id="song-genre3" onchange="songGenre3=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
-        <option value="">なし</option>
-        <option value="pops">ポップス</option>
-        <option value="kids">キッズ</option>
-        <option value="anime">アニメ</option>
-        <option value="vocaloid">ボーカロイド™曲</option>
-        <option value="game">ゲームミュージック</option>
-        <option value="variety">バラエティ</option>
-        <option value="classic">クラシック</option>
-        <option value="namco">ナムコオリジナル</option>
-        <option value="pjsk">プロジェクトセカイ</option>
-        <option value="chunithm">CHUNITHM</option>
-        <option value="maimai">maimai</option>
-        <option value="ongeki">オンゲキ</option>
-    </select>
-</div>
+                    <label>ジャンル1</label>
+                    <select id="song-genre" onchange="songGenre=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">未分類</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-row-2" style="margin-bottom:10px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>ジャンル2（任意）</label>
+                    <select id="song-genre2" onchange="songGenre2=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">なし</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>ジャンル3（任意）</label>
+                    <select id="song-genre3" onchange="songGenre3=this.value" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:0.92rem;">
+                        <option value="">なし</option>
+                    </select>
+                </div>
             </div>
 
+            <!-- 歌詞入力エリア（Inst時は非表示） -->
             <div id="lyrics-input-area">
                 <div class="lyrics-input-row">
                     <input type="text"  id="lyrics-text"  placeholder="歌詞（漢字・カタカナOK）">
@@ -426,9 +397,22 @@
                           style="display:inline-block;width:22px;height:22px;border-radius:4px;border:1px solid #bbb;background:#fff;vertical-align:middle;"></span>
                     <span id="color-preview-label" style="font-size:0.82rem;color:#888;">色なし</span>
                 </div>
-                <p class="hint">歌詞を入力 → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。読みなしの場合は空欄でも追加できます。</p>
+                <div class="color-end-row" style="margin-top:6px;">
+                    <input type="checkbox" id="lyrics-scroll-check">
+                    <label for="lyrics-scroll-check">このラインをスクロール表示（scroll）</label>
+                </div>
+                <div class="color-end-row" style="margin-top:6px;">
+                    <input type="checkbox" id="lyrics-stay-start">
+                    <label for="lyrics-stay-start">ここからSTAY開始（stayStart）</label>
+                </div>
+                <div class="color-end-row" style="margin-top:4px;">
+                    <input type="checkbox" id="lyrics-stay-end">
+                    <label for="lyrics-stay-end">ここでSTAY終了・一気にスクロール（stayEnd）</label>
+                </div> → 読みを入力 → 追加ボタンで現在の時間に追加。色を指定すると <code>colorStart</code> が付きます。読みなしの場合は空欄でも追加できます。</p>
             </div>
-        </div><div class="lyrics-list" id="lyrics-list"></div>
+        </div><!-- /lyrics-input-section -->
+
+        <div class="lyrics-list" id="lyrics-list"></div>
 
         <div class="output-section">
             <h3>生成されたコード / インポート</h3>
@@ -445,7 +429,11 @@
                 【インポート】既存のコードを貼り付けて「📥 インポート」で編集可能
             </p>
         </div>
-    </div></div><div class="preview-overlay" id="preview-overlay">
+    </div><!-- /main-content -->
+</div><!-- /container -->
+
+<!-- プレビュー -->
+<div class="preview-overlay" id="preview-overlay">
     <button class="preview-close-btn" onclick="closePreview()">✕ 閉じる</button>
     <div class="preview-video-wrapper"><div id="preview-player"></div></div>
     <div class="preview-lyrics-area">
@@ -532,7 +520,7 @@ function loadDraft(draftId) {
     songGenre  = d.genre  || '';
     songGenre2 = d.genre2 || '';
     songGenre3 = d.genre3 || '';
-    lyricsData = (d.lyrics || []).map(l => ({ time: l.time, text: l.text, kana: l.kana || [], colorStart: l.colorStart || null, colorEnd: l.colorEnd || false }));
+    lyricsData = (d.lyrics || []).map(l => ({ time: l.time, text: l.text, kana: l.kana || [], colorStart: l.colorStart || null, colorEnd: l.colorEnd || false, scroll: l.scroll || null, stayStart: l.stayStart || null, stayEnd: l.stayEnd || null }));
     _lastSavedJSON = JSON.stringify(getCurrentState());
     // UI復元
     const we = document.getElementById('worlds-end-check'); if (we) we.checked = isWorldsEnd;
@@ -901,28 +889,30 @@ function pauseVideo() { if (player) player.pauseVideo(); }
 function playVideo()  { if (player) player.playVideo(); }
 function seekVideo(sec) { if (player) player.seekTo(Math.max(0, currentTime + sec), true); }
 
-// ===== 歌詞追加（修正版） =====
+// ===== 歌詞追加 =====
 function addLyric() {
-    // trim()を削除し、入力された空白をそのまま取得する
-    const text     = document.getElementById('lyrics-text').value;
+    const text     = document.getElementById('lyrics-text').value.replace(/^[\r\n]+|[\r\n]+$/g, '');
     const kana     = document.getElementById('lyrics-kana').value.trim();
     const colorHex = document.getElementById('lyrics-color-hex').value.trim();
-    const colorEnd = document.getElementById('lyrics-color-end').checked;
+    const colorEnd   = document.getElementById('lyrics-color-end').checked;
+    const scrollCheck = document.getElementById('lyrics-scroll-check').checked;
+    const stayStart   = document.getElementById('lyrics-stay-start').checked;
+    const stayEnd     = document.getElementById('lyrics-stay-end').checked;
 
-    // 「完全に何も入力されていない」場合のみアラートを出す（空白があればOK）
-    if (text === "") { alert('歌詞を入力してください'); return; }
-
-    if (kana && !/^[\u3040-\u309F\u3099\u309Aーa-z0-9 　 ]+$/.test(kana)) {
-        alert('読みはひらがな（濁点含む）、長音記号（ー）、英数字、空白で入力してください');
-        return;
+    if (!text) { alert('歌詞を入力してください'); return; }
+    if (kana && !/^[ぁ-んゔーa-z0-9 ]+$/.test(kana)) {
+        alert('読みはひらがな、ゔ、長音記号（ー）、小文字英数字のみで入力してください'); return;
     }
 
     const entry = {
         time: currentTime,
-        text: text, // 空白が含まれていてもそのまま保存
+        text: text,
         kana: kana ? kana.split('') : [],
         colorStart: (/^#[0-9a-fA-F]{6}$/.test(colorHex)) ? colorHex : null,
-        colorEnd: colorEnd
+        colorEnd: colorEnd,
+        scroll: scrollCheck || null,
+        stayStart: stayStart || null,
+        stayEnd: stayEnd || null
     };
 
     lyricsData.push(entry);
@@ -932,6 +922,9 @@ function addLyric() {
 
     document.getElementById('lyrics-text').value = '';
     document.getElementById('lyrics-kana').value = '';
+    document.getElementById('lyrics-scroll-check').checked = false;
+    document.getElementById('lyrics-stay-start').checked = false;
+    document.getElementById('lyrics-stay-end').checked = false;
 }
 
 function deleteLyric(index) {
@@ -1022,6 +1015,9 @@ function editLyric(index) {
     document.getElementById('lyrics-color-hex').value    = colorHex;
     document.getElementById('lyrics-color-picker').value = colorHex || '#ffffff';
     document.getElementById('lyrics-color-end').checked  = lyric.colorEnd || false;
+    document.getElementById('lyrics-scroll-check').checked = !!lyric.scroll;
+    document.getElementById('lyrics-stay-start').checked   = !!lyric.stayStart;
+    document.getElementById('lyrics-stay-end').checked     = !!lyric.stayEnd;
     updateColorPreview();
 
     // 時間もその歌詞のタイミングにシーク
@@ -1126,7 +1122,10 @@ function generateCode() {
             let extra = '';
             if (lyric.colorStart) extra += `, colorStart: '${lyric.colorStart}'`;
             if (lyric.colorEnd)   extra += `, colorEnd: true`;
-            code += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text}', kana: [${kanaStr}]${extra} }`;
+            if (lyric.scroll)     extra += `, scroll: true`;
+            if (lyric.stayStart)  extra += `, stayStart: true`;
+            if (lyric.stayEnd)    extra += `, stayEnd: true`;
+            code += `        { time: ${lyric.time.toFixed(2)}, text: '${lyric.text.replace(/'/g,"\\'")}', kana: [${kanaStr}]${extra} }`;
             if (i < lyricsData.length - 1) code += ',';
             code += '\n';
         });
@@ -1394,10 +1393,23 @@ function seekPreview(sec) {
     }
 }
 
-// ===== 初期化 =====
-window.addEventListener('DOMContentLoaded', () => {
-    // ツール単体で動作するように不要なゲーム処理を削除し、下書きリストの表示のみ行います
+document.addEventListener('DOMContentLoaded', () => {
     renderDraftList();
+    // ジャンルセレクト初期化
+    const GENRE_OPTIONS = [
+        {id:'pops',label:'ポップス'},{id:'kids',label:'キッズ'},{id:'anime',label:'アニメ'},
+        {id:'vocaloid',label:'ボーカロイド™曲'},{id:'game',label:'ゲームミュージック'},
+        {id:'variety',label:'バラエティ'},{id:'classic',label:'クラシック'},
+        {id:'namco',label:'ナムコオリジナル'},{id:'pjsk',label:'プロジェクトセカイ'},
+        {id:'chunithm',label:'CHUNITHM'},{id:'maimai',label:'maimai'},
+        {id:'ongeki',label:'オンゲキ'},
+    ];
+    ['song-genre','song-genre2','song-genre3'].forEach((selId, i) => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const blank = i === 0 ? '<option value="">未分類</option>' : '<option value="">なし</option>';
+        sel.innerHTML = blank + GENRE_OPTIONS.map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+    });
 });
 </script>
 </body>
