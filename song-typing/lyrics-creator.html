@@ -441,7 +441,7 @@
             <div id="preview-scroll-inner"></div>
         </div>
         <div id="preview-scroll-text-bar" style="width:100%;overflow:hidden;height:2.2em;position:relative;display:none;">
-            <span id="preview-scroll-text-inner" style="position:absolute;white-space:nowrap;font-size:1.3rem;font-weight:700;color:#fff;right:-100%;animation:none;"></span>
+            <span id="preview-scroll-text-inner" style="position:absolute;white-space:nowrap;font-size:1.3rem;font-weight:700;color:#fff;"></span>
         </div>
         <style>#preview-scroll-text-bar.active{display:block;}
         @keyframes scroll-rtl { from { right: -100%; } to { right: 110%; } }
@@ -1388,13 +1388,13 @@ function updatePreviewLyric() {
             const stInner = document.getElementById('preview-scroll-text-inner');
             if (stb && stInner) {
                 stb.classList.remove('active');
-                stInner.style.animation = 'none';
+                stInner.style.removeProperty('animation');
                 stInner.textContent = '';
                 if (lyric.scroll) {
                     const nextTime = lyricsData[idx + 1] ? lyricsData[idx + 1].time : null;
                     const durationMs = nextTime ? Math.max(500, (nextTime - lyric.time) * 1000) : 4000;
-                    stb.classList.add('active');
                     stInner.textContent = lyric.text;
+                    stb.classList.add('active');
                     void stInner.offsetWidth;
                     stInner.style.animation = `scroll-rtl ${durationMs}ms linear forwards`;
                 }
@@ -1440,7 +1440,7 @@ function seekPreview(sec) {
         const stb = document.getElementById('preview-scroll-text-bar');
         const sti = document.getElementById('preview-scroll-text-inner');
         if (stb) stb.classList.remove('active');
-        if (sti) { sti.style.animation = 'none'; sti.textContent = ''; }
+        if (sti) { sti.style.removeProperty('animation'); sti.textContent = ''; }
         previewPlayer.seekTo(Math.max(0, previewCurrentTime + sec), true);
     }
 }
