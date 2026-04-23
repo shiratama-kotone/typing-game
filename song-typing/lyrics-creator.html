@@ -443,7 +443,9 @@
         <div id="preview-scroll-text-bar" style="width:100%;overflow:hidden;height:2.2em;position:relative;display:none;">
             <span id="preview-scroll-text-inner" style="position:absolute;white-space:nowrap;font-size:1.3rem;font-weight:700;color:#fff;right:-100%;animation:none;"></span>
         </div>
-        <style>#preview-scroll-text-bar.active{display:block;}</style>
+        <style>#preview-scroll-text-bar.active{display:block;}
+        @keyframes scroll-rtl { from { right: -100%; } to { right: 110%; } }
+        </style>
         <div id="preview-romaji"></div>
     </div>
     <div class="preview-controls">
@@ -1433,6 +1435,12 @@ function seekPreview(sec) {
         previewAutoTimers.forEach(t => clearTimeout(t)); previewAutoTimers = [];
         updatePreviewCombo(false);
         _prevPreviewIdx = -2;
+        previewStayActive = false;
+        // scrollテキストをリセット
+        const stb = document.getElementById('preview-scroll-text-bar');
+        const sti = document.getElementById('preview-scroll-text-inner');
+        if (stb) stb.classList.remove('active');
+        if (sti) { sti.style.animation = 'none'; sti.textContent = ''; }
         previewPlayer.seekTo(Math.max(0, previewCurrentTime + sec), true);
     }
 }
