@@ -281,12 +281,11 @@ function analyzeDifficulty(song) {
 
     // 1ループで全集計
     let totalKana = 0, repeatCount = 0, prevKana = '';
-    const timeline = []; // {time, keys} per line
+    const timeline = [];
 
     for (const l of song.lyrics) {
         const kana = l.kana || [];
         if (kana.length === 0) continue;
-        // ローマ字換算打数
         const ra = convertToRomaji(kana);
         const keys = ra.reduce((s, c) => s + c.current.length, 0);
         timeline.push({ time: l.time, keys });
@@ -297,82 +296,66 @@ function analyzeDifficulty(song) {
         }
     }
 
-    if (totalKana === 0) return null;
+    if (totalKana === 0 || timeline.length === 0) return null;
 
-    const duration = timeline.length > 0 ? timeline[timeline.length - 1].time : 1;
+    const duration = timeline[timeline.length - 1].time;
     if (duration <= 0) return null;
 
-    // 平均秒速
+    // 平均kps
     const avgKps = totalKana / duration;
 
-    // 瞬間秒速：隣接2行間の密度の最大値（ウィンドウ最低1秒）
+    // 瞬間peakKps（ウィンドウ最低1秒）
     let peakKps = 0;
     for (let i = 0; i < timeline.length; i++) {
         const t0 = i === 0 ? 0 : timeline[i - 1].time;
-        const t1 = timeline[i].time;
-        const window = Math.max(t1 - t0, 1.0); // 最低1秒
-        const density = timeline[i].keys / window;
-        if (density > peakKps) peakKps = density;
+        const win = Math.max(timeline[i].time - t0, 1.0);
+        const d = timeline[i].keys / win;
+        if (d > peakKps) peakKps = d;
     }
 
     const repeatRate = repeatCount / totalKana;
-
-    // スコア計算
-    // 瞬間秒速を最重要（0〜40点）: 8打/秒でMAX
-    const peakScore   = Math.min(peakKps / 8, 1) * 40;
-    // 平均秒速 補助（-10〜25点）
-    const avgScore    = Math.max(-10, Math.min((avgKps - 1.5) / 6 * 25, 25));
-    // 総打数 体力（0〜20点）: 1000打でMAX
-    const bodyScore   = Math.min(totalKana / 1000, 1) * 20;
-    // 連打（0〜5点）
-    const spamScore   = repeatRate * 5;
-    // 短曲ペナルティ: 90秒未満でペナルティ
     const shortFactor = Math.min(duration / 90, 1);
 
-    const score = (peakScore + avgScore + bodyScore + spamScore) * shortFactor;
+    // ===== 譜面定数計算 =====
+    // avgKps: 8打/秒でMAX → 0〜10点（普通の曲は2〜4打/秒 → 2.5〜5点）
+    const speedConst = Math.min(avgKps / 8, 1) * 10;
+    // peakKps: 6打/秒でMAX → 0〜4点（補助）
+    const peakConst  = Math.min(peakKps / 6, 1) * 4;
+    // 総打数: 500〜3000打 → 0〜1点
+    const bodyConst  = Math.min(Math.max(totalKana - 500, 0) / 2500, 1) * 1;
 
-    // スコア→レベル変換（既存維持）
-    const scoreToLevel = (s) => {
-        if (s >= 90)  return { level: 15, plus: true  };
-        if (s >= 80)  return { level: 15, plus: false };
-        if (s >= 70)  return { level: 14, plus: true  };
-        if (s >= 60)  return { level: 14, plus: false };
-        if (s >= 50)  return { level: 13, plus: true  };
-        if (s >= 40)  return { level: 13, plus: false };
-        if (s >= 30)  return { level: 12, plus: true  };
-        if (s >= 20)  return { level: 12, plus: false };
-        if (s >= 15)  return { level: 11, plus: true  };
-        if (s >= 10)  return { level: 11, plus: false };
-        if (s >= 8)   return { level: 10, plus: true  };
-        if (s >= 6)   return { level: 10, plus: false };
-        if (s >= 5)   return { level: 9,  plus: true  };
-        if (s >= 4)   return { level: 9,  plus: false };
-        if (s >= 3)   return { level: 8,  plus: true  };
-        if (s >= 2)   return { level: 8,  plus: false };
-        if (s >= 1.5) return { level: 7,  plus: true  };
-        if (s >= 1.2) return { level: 7,  plus: false };
-        if (s >= 1.0) return { level: 6,  plus: false };
-        if (s >= 0.8) return { level: 5,  plus: false };
-        if (s >= 0.6) return { level: 4,  plus: false };
-        if (s >= 0.4) return { level: 3,  plus: false };
-        if (s >= 0.2) return { level: 2,  plus: false };
-        return          { level: 1,  plus: false };
-    };
-    const levelToName = (level, plus) => {
-        if (plus && level === 15) return 'ULTIMA';
-        if (level >= 14) return 'MASTER';
-        if (level >= 11 || (level === 10 && plus)) return 'EXPERT';
-        if (level >= 7)  return 'ADVANCED';
+    // 生定数 0〜15 → +1で 1〜16
+    const raw = (speedConst + peakConst + bodyConst) * shortFactor;
+    const constant = Math.max(1.0, Math.min(raw + 1.0, 16.0));
+
+    // 定数→レベル・plus（小数 >= 0.7 で+付き、16に+はない）
+    const floor = Math.floor(constant);
+    const frac  = constant - floor;
+    let level = Math.min(floor, 16);
+    let plus  = level < 16 && frac >= 0.7;
+
+    // 難易度名
+    const levelToName = (lv, pl) => {
+        if (lv >= 15)                      return 'ULTIMA';
+        if (lv >= 14)                      return 'MASTER';
+        if (lv >= 11 || (lv === 10 && pl)) return 'EXPERT';
+        if (lv >= 7)                       return 'ADVANCED';
         return 'BASIC';
     };
     const nameToColor = n =>
-        n === 'BASIC' ? '#00ac7e' : n === 'ADVANCED' ? '#fc8207' :
-        n === 'EXPERT' ? '#f22922' : n === 'MASTER' ? '#921cec' : '#000000';
+        n === 'BASIC'    ? '#00ac7e' :
+        n === 'ADVANCED' ? '#fc8207' :
+        n === 'EXPERT'   ? '#f22922' :
+        n === 'MASTER'   ? '#921cec' : '#000000';
 
-    const { level, plus } = scoreToLevel(score);
-    const name = levelToName(level, plus);
-
-    return { level, plus, over15: plus && level === 15, name, color: nameToColor(name), totalChars: totalKana };
+    let name = levelToName(level, plus);
+    // 連打率20%超：難易度名を1段上げる（レベルはそのまま）
+    if (repeatRate > 0.2) {
+        const rankNames = ['BASIC','ADVANCED','EXPERT','MASTER','ULTIMA'];
+        const idx = rankNames.indexOf(name);
+        if (idx >= 0 && idx < rankNames.length - 1) name = rankNames[idx + 1];
+    }
+    return { level, plus, over15: level >= 16, name, color: nameToColor(name), totalChars: totalKana, constant };
 }
 
 function getDifficultyInfo(song) {
@@ -420,8 +403,10 @@ function getDifficultyInfo(song) {
         name: result.name,
         color: result.color,
         level: result.level,
+        plus: result.plus,
         over15: result.over15,
-        totalChars: result.totalChars
+        totalChars: result.totalChars,
+        constant: result.constant
     };
 }
 
@@ -1183,6 +1168,12 @@ function injectConfirmScreen() {
                         <span class="confirm-stat-unit">行</span>
                     </div>
                 </div>
+                <div class="confirm-stat">
+                    <div class="confirm-stat-label">譜面定数</div>
+                    <div class="confirm-stat-value">
+                        <span id="cs-constant">---</span>
+                    </div>
+                </div>
             </div>
             <label class="confirm-automode">
                 <input type="checkbox" id="cb-automode">
@@ -1520,7 +1511,7 @@ function updateGameInfoOverlay(show) {
         gioName.className = '';
         gioName.textContent = diff.name;
         const lvHtml = diff.over15
-            ? '15<sup style="font-size:0.55em;vertical-align:top">+</sup>'
+            ? '16'
             : diff.plus
             ? `${diff.level}<sup style="font-size:0.55em;vertical-align:top">+</sup>`
             : String(diff.level ?? '—');
@@ -1710,7 +1701,7 @@ function createSongList() {
         songs.sort((a, b) => {
             const da = getDifficultyInfo(a);
             const db = getDifficultyInfo(b);
-            const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.over15 ? 9997 : (d.level ?? 0));
+            const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.over15 ? 16.5 : (d.level ?? 0) + (d.plus ? 0.5 : 0));
             return rank(da) - rank(db);
         });
     } else if (songSortOrder === 'yomi') {
@@ -1753,7 +1744,7 @@ function makeSongItem(song) {
     } else {
         badge.style.background = diff.color;
         if (diff.name === 'ULTIMA') badge.classList.add('diff-badge-ultima');
-        const lvLabel = diff.over15 ? '15+' : (diff.plus ? `${diff.level}+` : diff.level);
+        const lvLabel = diff.over15 ? '16' : (diff.plus ? `${diff.level}+` : diff.level);
         badge.innerHTML = `${diff.name} Lv.${lvLabel}`;
     }
 
@@ -1885,7 +1876,7 @@ function showConfirmScreen(song) {
         dnEl.textContent = diff.name;
     }
 
-    const lvLabel = diff.over15 ? '15<sup>+</sup>' : diff.level;
+    const lvLabel = diff.over15 ? '16' : (diff.plus ? `${diff.level}<sup>+</sup>` : diff.level);
     const dlEl = document.getElementById('cs-diff-level');
     if (diff.isWorldsEnd || diff.isInst) {
         dlEl.innerHTML = '';
@@ -1897,6 +1888,7 @@ function showConfirmScreen(song) {
     if (diff.isInst) {
         document.getElementById('cs-total').textContent = '---';
         document.getElementById('cs-lines').textContent = '---';
+        document.getElementById('cs-constant').textContent = '---';
     } else {
         // WE・通常曲ともローマ字換算打数を表示
         const weTotal = song.lyrics ? song.lyrics.reduce((acc, l) => {
@@ -1905,6 +1897,7 @@ function showConfirmScreen(song) {
         }, 0) : 0;
         document.getElementById('cs-total').textContent = weTotal || '---';
         document.getElementById('cs-lines').textContent = song.lyrics ? song.lyrics.length : '---';
+        document.getElementById('cs-constant').textContent = diff.constant != null ? diff.constant.toFixed(1) : '---';
     }
 
     // 長さ・速度はロード後
