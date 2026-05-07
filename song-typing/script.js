@@ -325,7 +325,7 @@ function analyzeDifficulty(song) {
     const lvFloor = Math.floor(constant);
     const lvFrac  = constant - lvFloor;
     const level   = Math.min(lvFloor, 16);
-    const plus    = level < 16 && lvFrac >= 0.7;
+    const plus    = level >= 7 && level < 16 && lvFrac >= 0.7;
 
     // ===== 難易度名：瞬間速度・連打・拗音で独立決定 =====
     // peakKps 0〜12打/秒 → 0〜4点
@@ -1706,7 +1706,7 @@ function createSongList() {
         songs.sort((a, b) => {
             const da = getDifficultyInfo(a);
             const db = getDifficultyInfo(b);
-            const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.over15 ? 16.5 : (d.level ?? 0) + (d.plus ? 0.5 : 0));
+            const rank = d => d.isInst ? 10000 : d.isWorldsEnd ? 9999 : (d.constant ?? (d.over15 ? 16.5 : (d.level ?? 0) + (d.plus ? 0.5 : 0)));
             return rank(da) - rank(db);
         });
     } else if (songSortOrder === 'yomi') {
