@@ -5342,7 +5342,7 @@ const SONGS = [
 },
     {
     id: 'anatwura',
-    title: 'あなたトゥラッタッタ',
+    title: 'あなたとトゥラッタッタ♪',
     yomi: 'あなたととぅらったった',
     genre: 'variety',
     youtubeId: 'E0t-P4YmI34',
